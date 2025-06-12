@@ -1,4 +1,4 @@
-![figures/readme.jpg](figures/readme.jpg)
+Forked:https://github.com/datawhalechina/llm-cookbook
 
 # 開発者向け大規模言語モデルハンドブック - LLM Cookbook
 
