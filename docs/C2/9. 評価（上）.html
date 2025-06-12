@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>9. 評価（上）</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第九章-評価上簡単な正解が存在する場合">第九章
+評価（上）——簡単な正解が存在する場合</h1>
+<p>過去の章では、LLMを使ってアプリケーションを構築する方法を示しました。これには入力の評価、入力の処理、ユーザーに結果を提示する前の最終的な結果確認が含まれます。しかし、そのようなシステムを構築した後、その動作状況をどのように確認すればよいでしょうか？さらに、それを展開してユーザーが使い始めた後、そのパフォーマンスをどのように追跡し、潜在的な問題を発見し、回答品質を継続的に最適化すればよいでしょうか？この章では、LLM出力を評価するベストプラクティスをいくつか紹介します。</p>
+<p>LLMベースのアプリケーションの構築は、従来の教師あり学習アプリケーションの構築とは異なります。LLMベースのアプリケーションを迅速に構築できるため、評価は通常テストセットから始まりません。代わりに、テストサンプルの集合を段階的に構築していきます。</p>
+<p>従来の教師あり学習環境では、訓練セット、開発セット、またはクロスバリデーション用の留保セットを収集し、開発プロセス全体でそれらを使用する必要があります。しかし、数分でPromptを定義し、数時間でフィードバック結果を得ることができるなら、1000個のテストサンプルを収集するために立ち止まることは非常に面倒になります。なぜなら今は、いかなる訓練サンプルもなしに結果を得ることができるからです。</p>
+<p>したがって、LLMを使ってアプリケーションを構築する際は、次のような流れを経験する可能性があります：まず、1〜3個のサンプルの小規模サンプルでPromptを調整し、これらのサンプルで機能するよう試行します。その後、システムをさらにテストする際に、Promptやアルゴリズムでは解決できない厄介な例に遭遇する可能性があります。これがChatGPT
+APIを使ってアプリケーションを構築する開発者が直面する課題です。このような場合、これらの追加のいくつかの例をテストしている集合に加え、他の処理困難な例を有機的に追加できます。最終的に、段階的に拡大する開発セットに十分多くのこれらの例を追加し、各例を手動で実行してPromptをテストすることがやや不便になるほどになります。その時点で、これらの小規模サンプル集合でのパフォーマンスを測定するためのメトリクス、例えば平均精度などを開発し始めます。このプロセスの興味深い点は、システムが十分良いと感じたら、いつでも停止して改善をやめることができることです。実際、多くの既に展開されているアプリケーションは第一段階または第二段階で停止し、非常によく動作しています。</p>
+<p>注目すべきは、多くの大規模モデルのアプリケーションには実質的なリスクがなく、たとえ完全に正しい答えを与えなくても問題ないということです。しかし、偏見や不適切な出力が誰かに害を与える可能性があるような高リスクアプリケーションの場合、テストセットの収集、システムパフォーマンスの厳格な評価、および使用前に正しく動作することの確認が特に重要になります。しかし、自分で読むための記事要約にそれを使っているだけで、他の人に見せるわけではない場合、リスクは小さくなり、大規模データセット収集の大きなコストをかけることなく、このプロセスで早めに停止することができます。</p>
+<p>今度はより実用的な応用段階に入り、先ほど学んだ理論知識を実践に転換しましょう。実際のデータを一緒に研究し、その構造を理解し、ツールを使って分析してみましょう。私たちのケースでは、分類情報とその製品名のセットを取得します。以下のコードを実行して、これらの分類情報とその製品名を見てみましょう</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> utils_zh</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>products_and_category <span class="op">=</span> utils_zh.get_products_and_category()</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>products_and_category</span></code></pre></div>
+<pre><code>{&#39;コンピューターとノートパソコン&#39;: [&#39;TechPro 超极本&#39;,
+  &#39;BlueWave ゲーミングノートパソコン&#39;,
+  &#39;PowerLite Convertible&#39;,
+  &#39;TechPro Desktop&#39;,
+  &#39;BlueWave Chromebook&#39;],
+ &#39;スマートフォンとアクセサリー&#39;: [&#39;SmartX ProPhone&#39;],
+ &#39;プロフェッショナル携帯電話&#39;: [&#39;MobiTech PowerCase&#39;,
+  &#39;SmartX MiniPhone&#39;,
+  &#39;MobiTech Wireless Charger&#39;,
+  &#39;SmartX EarBuds&#39;],
+ &#39;テレビとホームシアターシステム&#39;: [&#39;CineView 4K TV&#39;,
+  &#39;SoundMax Home Theater&#39;,
+  &#39;CineView 8K TV&#39;,
+  &#39;SoundMax Soundbar&#39;,
+  &#39;CineView OLED TV&#39;],
+ &#39;ゲーム機とアクセサリー&#39;: [&#39;GameSphere X&#39;,
+  &#39;ProGamer Controller&#39;,
+  &#39;GameSphere Y&#39;,
+  &#39;ProGamer Racing Wheel&#39;,
+  &#39;GameSphere VR Headset&#39;],
+ &#39;オーディオ機器&#39;: [&#39;AudioPhonic Noise-Canceling Headphones&#39;,
+  &#39;WaveSound Bluetooth Speaker&#39;,
+  &#39;AudioPhonic True Wireless Earbuds&#39;,
+  &#39;WaveSound Soundbar&#39;,
+  &#39;AudioPhonic Turntable&#39;],
+ &#39;カメラとビデオカメラ&#39;: [&#39;FotoSnap DSLR Camera&#39;,
+  &#39;ActionCam 4K&#39;,
+  &#39;FotoSnap Mirrorless Camera&#39;,
+  &#39;ZoomMaster Camcorder&#39;,
+  &#39;FotoSnap Instant Camera&#39;]}</code></pre>
+<h2
+id="一関連製品とカテゴリー名の検索">一、関連製品とカテゴリー名の検索</h2>
+<p>開発中、通常はユーザーの入力を処理・解析する必要があります。特にeコマース分野では、「最も高価なコンピューターが欲しい」などの様々なユーザークエリがある可能性があります。このような文脈を理解し、関連する製品とカテゴリーを提供できるツールが必要です。以下のコードが実装する機能がまさにそれです。</p>
+<p>まず<code>find_category_and_product_v1</code>という関数を定義しました。この関数の主な目的は、ユーザーの入力から製品とカテゴリーを解析することです。この関数には2つのパラメーターが必要です：<code>user_input</code>はユーザーのクエリを表し、<code>products_and_category</code>は製品タイプと対応する製品の情報を含む辞書です。</p>
+<p>関数の開始時に、区切り文字<code>delimiter</code>を定義し、カスタマーサービスクエリでコンテンツを分離するために使用します。その後、システムメッセージを作成しました。このメッセージは主にシステムの動作方式を説明します：ユーザーがカスタマーサービスクエリを提供し、クエリは区切り文字<code>delimiter</code>で分離されます。システムはPythonリストを出力し、リスト内の各オブジェクトはJsonオブジェクトです。各オブジェクトには「カテゴリー」と「名前」の2つのフィールドが含まれ、それぞれ製品のカテゴリーと名前に対応します。</p>
+<p><code>messages</code>という名前のリストを作成し、これらのサンプル対話とユーザーのクエリを保存するために使用しました。最後に、<code>get_completion_from_messages</code>関数を使ってこれらのメッセージを処理し、処理結果を返します。</p>
+<p>このコードを通じて、対話方式でユーザーのクエリを理解・処理し、より良いユーザー体験を提供する方法を見ることができます。</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tool <span class="im">import</span> get_completion_from_messages</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_category_and_product_v1(user_input,products_and_category):</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">    ユーザー入力から製品とカテゴリーを取得</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">    パラメーター：</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">    user_input：ユーザーのクエリ</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">    products_and_category：製品タイプと対応する製品の辞書</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    delimiter <span class="op">=</span> <span class="st">&quot;####&quot;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    system_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="ss">    カスタマーサービスクエリを提供します。</span><span class="ch">\</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="ss">    カスタマーサービスクエリは</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss">文字で分離されます。</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="ss">    Python リストを出力し、リスト内の各オブジェクトは Json オブジェクト、各オブジェクトの形式は以下の通りです：</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="ss">        &#39;カテゴリー&#39;: &lt;コンピューターとノートパソコン, スマートフォンとアクセサリー, テレビとホームシアターシステム, </span><span class="ch">\</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="ss">    ゲーム機とアクセサリー, オーディオ機器, カメラとビデオカメラの一つ&gt;,</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="ss">    および</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="ss">        &#39;名前&#39;: &lt;以下の許可された製品リストで見つけなければならない製品リスト&gt;</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="ss">    </span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="ss">    カテゴリーと製品はカスタマーサービスクエリで見つからなければなりません。</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="ss">    製品が言及された場合、以下の許可された製品リストの正しいカテゴリーと関連付けられなければなりません。</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="ss">    製品やカテゴリーが見つからない場合、空のリストを出力してください。</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="ss">    </span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="ss">    製品名と製品カテゴリーとカスタマーサービスクエリの関連性に基づいて、すべての関連製品をリストアップしてください。</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="ss">    製品名から相対的品質や価格などの特性や属性を推測しないでください。</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="ss">    </span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="ss">    許可された製品はJSON形式で提供されます。</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="ss">    各項目のキーはカテゴリーを表します。</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="ss">    各項目の値はそのカテゴリー内の製品リストです。</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="ss">    許可された製品：</span><span class="sc">{</span>products_and_category<span class="sc">}</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="ss">    </span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="ss">    &quot;&quot;&quot;</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    few_shot_user_1 <span class="op">=</span> <span class="st">&quot;&quot;&quot;最も高価なコンピューターが欲しいです。&quot;&quot;&quot;</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    few_shot_assistant_1 <span class="op">=</span> <span class="st">&quot;&quot;&quot; </span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="st">    [{&#39;category&#39;: &#39;コンピューターとノートパソコン&#39;, </span><span class="ch">\</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;products&#39;: [&#39;TechPro 超极本&#39;, &#39;BlueWave ゲーミングノートパソコン&#39;, &#39;PowerLite Convertible&#39;, &#39;TechPro Desktop&#39;, &#39;BlueWave Chromebook&#39;]}]</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;&quot;&quot;</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    messages <span class="op">=</span>  [  </span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>: system_message},    </span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>: <span class="ss">f&quot;</span><span class="sc">{</span>delimiter<span class="sc">}{</span>few_shot_user_1<span class="sc">}{</span>delimiter<span class="sc">}</span><span class="ss">&quot;</span>},  </span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;role&#39;</span>:<span class="st">&#39;assistant&#39;</span>, <span class="st">&#39;content&#39;</span>: few_shot_assistant_1 },</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>: <span class="ss">f&quot;</span><span class="sc">{</span>delimiter<span class="sc">}{</span>user_input<span class="sc">}{</span>delimiter<span class="sc">}</span><span class="ss">&quot;</span>},  </span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>    ] </span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> get_completion_from_messages(messages)</span></code></pre></div>
+<h2 id="二いくつかのクエリでの評価">二、いくつかのクエリでの評価</h2>
+<p>上記のシステムについて、まずいくつかの簡単なクエリで評価を行うことができます：</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 第一の評価クエリ</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>customer_msg_0 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;予算が限られている場合、どのテレビを購入できますか？&quot;&quot;&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>products_by_category_0 <span class="op">=</span> find_category_and_product_v1(customer_msg_0,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                                                      products_and_category)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(products_by_category_0)</span></code></pre></div>
+<pre><code>    [{&#39;category&#39;: &#39;テレビとホームシアターシステム&#39;, &#39;products&#39;: [&#39;CineView 4K TV&#39;, &#39;SoundMax Home Theater&#39;, &#39;CineView 8K TV&#39;, &#39;SoundMax Soundbar&#39;, &#39;CineView OLED TV&#39;]}]</code></pre>
+<p>正しい回答を出力しました。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>customer_msg_1 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;スマートフォンの充電器が必要です&quot;&quot;&quot;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>products_by_category_1 <span class="op">=</span> find_category_and_product_v1(customer_msg_1,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                                                      products_and_category)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(products_by_category_1)</span></code></pre></div>
+<pre><code>    [{&#39;category&#39;: &#39;スマートフォンとアクセサリー&#39;, &#39;products&#39;: [&#39;MobiTech PowerCase&#39;, &#39;SmartX MiniPhone&#39;, &#39;MobiTech Wireless Charger&#39;, &#39;SmartX EarBuds&#39;]}]</code></pre>
+<p>正しい回答を出力しました。</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>customer_msg_2 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ss">どのようなコンピューターがありますか？&quot;&quot;&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>products_by_category_2 <span class="op">=</span> find_category_and_product_v1(customer_msg_2,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                                                      products_and_category)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>products_by_category_2</span></code></pre></div>
+<pre><code>&quot; \n    [{&#39;category&#39;: &#39;コンピューターとノートパソコン&#39;, &#39;products&#39;: [&#39;TechPro 超极本&#39;, &#39;BlueWave ゲーミングノートパソコン&#39;, &#39;PowerLite Convertible&#39;, &#39;TechPro Desktop&#39;, &#39;BlueWave Chromebook&#39;]}]&quot;</code></pre>
+<p>回答は正しいですが、形式に誤りがあります。</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>customer_msg_3 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ss">smartx pro手机とfotosnap相机、そのDSLRについて教えてください。</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ss">予算が限られているので、どのコストパフォーマンスの高いテレビをお勧めしますか？&quot;&quot;&quot;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>products_by_category_3 <span class="op">=</span> find_category_and_product_v1(customer_msg_3,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                                                      products_and_category)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(products_by_category_3)</span></code></pre></div>
+<pre><code>    [{&#39;category&#39;: &#39;スマートフォンとアクセサリー&#39;, &#39;products&#39;: [&#39;SmartX ProPhone&#39;]}, {&#39;category&#39;: &#39;カメラとビデオカメラ&#39;, &#39;products&#39;: [&#39;FotoSnap DSLR Camera&#39;]}]
+    
+    [{&#39;category&#39;: &#39;テレビとホームシアターシステム&#39;, &#39;products&#39;: [&#39;CineView 4K TV&#39;, &#39;SoundMax Home Theater&#39;, &#39;CineView 8K TV&#39;, &#39;SoundMax Soundbar&#39;, &#39;CineView OLED TV&#39;]}]</code></pre>
+<p>正しいデータを出力したようですが、要求された形式で出力していません。これによりPython辞書リストとして解析するのがより困難になります。</p>
+<h2 id="三より困難なテストケース">三、より困難なテストケース</h2>
+<p>続いて、実際の使用でモデルのパフォーマンスが期待に満たないクエリをいくつか提供できます。</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>customer_msg_4 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ss">CineViewテレビ、その8Kテレビ、およびGameSphereゲーム機、X機について教えてください。</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="ss">予算が限られているので、どのようなコンピューターがありますか？&quot;&quot;&quot;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>products_by_category_4 <span class="op">=</span> find_category_and_product_v1(customer_msg_4,products_and_category)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(products_by_category_4)</span></code></pre></div>
+<pre><code>    [{&#39;category&#39;: &#39;テレビとホームシアターシステム&#39;, &#39;products&#39;: [&#39;CineView 4K TV&#39;, &#39;SoundMax Home Theater&#39;, &#39;CineView 8K TV&#39;, &#39;SoundMax Soundbar&#39;, &#39;CineView OLED TV&#39;]}]
+    [{&#39;category&#39;: &#39;ゲーム機とアクセサリー&#39;, &#39;products&#39;: [&#39;GameSphere X&#39;, &#39;ProGamer Controller&#39;, &#39;GameSphere Y&#39;, &#39;ProGamer Racing Wheel&#39;, &#39;GameSphere VR Headset&#39;]}]
+    [{&#39;category&#39;: &#39;コンピューターとノートパソコン&#39;, &#39;products&#39;: [&#39;TechPro 超极本&#39;, &#39;BlueWave ゲーミングノートパソコン&#39;, &#39;PowerLite Convertible&#39;, &#39;TechPro Desktop&#39;, &#39;BlueWave Chromebook&#39;]}]</code></pre>
+<h2
+id="四困難なテストケースを処理するための指示の修正">四、困難なテストケースを処理するための指示の修正</h2>
+<p>総合すると、実装した最初のバージョンは上記のいくつかのテストケースでパフォーマンスが満足できませんでした。</p>
+<p>効果を向上させるため、プロンプトに以下の内容を追加しました：JSON形式以外の追加テキストを出力せず、ユーザーとアシスタントメッセージを使用したfew-shot
+プロンプト用の第二の例を追加しました。</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_category_and_product_v2(user_input,products_and_category):</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">    ユーザー入力から製品とカテゴリーを取得</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">    追加：JSON形式に適合しない追加テキストを出力しない。</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">    第二の例を追加（few-shot プロンプト用）、ユーザーが最も安いコンピューターについて尋ねる。</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co">    これら2つのfew-shot例では、表示される応答はJSON形式の完全な製品リストのみです。</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co">    パラメーター：</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co">    user_input：ユーザーのクエリ</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co">    products_and_category：製品タイプと対応する製品の辞書    </span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    delimiter <span class="op">=</span> <span class="st">&quot;####&quot;</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    system_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="ss">    カスタマーサービスクエリを提供します。</span><span class="ch">\</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="ss">    カスタマーサービスクエリは</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss">文字で分離されます。</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="ss">    Python リストを出力し、リスト内の各オブジェクトは JSON オブジェクト、各オブジェクトの形式は以下の通りです：</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="ss">        &#39;カテゴリー&#39;: &lt;コンピューターとノートパソコン, スマートフォンとアクセサリー, テレビとホームシアターシステム, </span><span class="ch">\</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="ss">    ゲーム機とアクセサリー, オーディオ機器, カメラとビデオカメラの一つ&gt;,</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="ss">    および</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a><span class="ss">        &#39;名前&#39;: &lt;以下の許可された製品リストで見つけなければならない製品リスト&gt;</span></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="ss">    JSON形式以外の追加テキストを出力しないでください。</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a><span class="ss">    要求されたJSONを出力した後、説明テキストを書かないでください。</span></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a><span class="ss">    </span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a><span class="ss">    カテゴリーと製品はカスタマーサービスクエリで見つからなければなりません。</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a><span class="ss">    製品が言及された場合、以下の許可された製品リストの正しいカテゴリーと関連付けられなければなりません。</span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a><span class="ss">    製品やカテゴリーが見つからない場合、空のリストを出力してください。</span></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a><span class="ss">    </span></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a><span class="ss">    製品名と製品カテゴリーとカスタマーサービスクエリの関連性に基づいて、すべての関連製品をリストアップしてください。</span></span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a><span class="ss">    製品名から相対的品質や価格などの特性や属性を推測しないでください。</span></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a><span class="ss">    </span></span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a><span class="ss">    許可された製品はJSON形式で提供されます。</span></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a><span class="ss">    各項目のキーはカテゴリーを表します。</span></span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a><span class="ss">    各項目の値はそのカテゴリー内の製品リストです。</span></span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a><span class="ss">    許可された製品：</span><span class="sc">{</span>products_and_category<span class="sc">}</span></span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a><span class="ss">    </span></span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a><span class="ss">    &quot;&quot;&quot;</span></span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>    few_shot_user_1 <span class="op">=</span> <span class="st">&quot;&quot;&quot;最も高価なコンピューターが欲しいです。お勧めは何ですか？&quot;&quot;&quot;</span></span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>    few_shot_assistant_1 <span class="op">=</span> <span class="st">&quot;&quot;&quot; </span></span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a><span class="st">    [{&#39;category&#39;: &#39;コンピューターとノートパソコン&#39;, </span><span class="ch">\</span></span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;products&#39;: [&#39;TechPro 超极本&#39;, &#39;BlueWave ゲーミングノートパソコン&#39;, &#39;PowerLite Convertible&#39;, &#39;TechPro Desktop&#39;, &#39;BlueWave Chromebook&#39;]}]</span></span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a><span class="st">     &quot;&quot;&quot;</span></span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>    few_shot_user_2 <span class="op">=</span> <span class="st">&quot;&quot;&quot;最も安いコンピューターが欲しいです。お勧めは何ですか？&quot;&quot;&quot;</span></span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a>    few_shot_assistant_2 <span class="op">=</span> <span class="st">&quot;&quot;&quot; </span></span>
+<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a><span class="st">    [{&#39;category&#39;: &#39;コンピューターとノートパソコン&#39;, </span><span class="ch">\</span></span>
+<span id="cb14-48"><a href="#cb14-48" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;products&#39;: [&#39;TechPro 超极本&#39;, &#39;BlueWave ゲーミングノートパソコン&#39;, &#39;PowerLite Convertible&#39;, &#39;TechPro Desktop&#39;, &#39;BlueWave Chromebook&#39;]}]</span></span>
+<span id="cb14-49"><a href="#cb14-49" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;&quot;&quot;</span></span>
+<span id="cb14-50"><a href="#cb14-50" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb14-51"><a href="#cb14-51" aria-hidden="true" tabindex="-1"></a>    messages <span class="op">=</span>  [  </span>
+<span id="cb14-52"><a href="#cb14-52" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>: system_message},    </span>
+<span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>: <span class="ss">f&quot;</span><span class="sc">{</span>delimiter<span class="sc">}{</span>few_shot_user_1<span class="sc">}{</span>delimiter<span class="sc">}</span><span class="ss">&quot;</span>},  </span>
+<span id="cb14-54"><a href="#cb14-54" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;role&#39;</span>:<span class="st">&#39;assistant&#39;</span>, <span class="st">&#39;content&#39;</span>: few_shot_assistant_1 },</span>
+<span id="cb14-55"><a href="#cb14-55" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>: <span class="ss">f&quot;</span><span class="sc">{</span>delimiter<span class="sc">}{</span>few_shot_user_2<span class="sc">}{</span>delimiter<span class="sc">}</span><span class="ss">&quot;</span>},  </span>
+<span id="cb14-56"><a href="#cb14-56" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;role&#39;</span>:<span class="st">&#39;assistant&#39;</span>, <span class="st">&#39;content&#39;</span>: few_shot_assistant_2 },</span>
+<span id="cb14-57"><a href="#cb14-57" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>: <span class="ss">f&quot;</span><span class="sc">{</span>delimiter<span class="sc">}{</span>user_input<span class="sc">}{</span>delimiter<span class="sc">}</span><span class="ss">&quot;</span>},  </span>
+<span id="cb14-58"><a href="#cb14-58" aria-hidden="true" tabindex="-1"></a>    ] </span>
+<span id="cb14-59"><a href="#cb14-59" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> get_completion_from_messages(messages)</span></code></pre></div>
+<h2
+id="五困難なテストケースでの修正後の指示の評価">五、困難なテストケースでの修正後の指示の評価</h2>
+<p>以前のパフォーマンスが期待に満たなかった困難なテストケースで、改善されたシステムの効果を評価できます：</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>customer_msg_3 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ss">smartx pro手机とfotosnap相机について教えてください、そのDSLRのものです。</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="ss">それから、どのようなテレビがありますか？&quot;&quot;&quot;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>products_by_category_3 <span class="op">=</span> find_category_and_product_v2(customer_msg_3,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>                                                      products_and_category)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(products_by_category_3)</span></code></pre></div>
+<pre><code>    [{&#39;category&#39;: &#39;スマートフォンとアクセサリー&#39;, &#39;products&#39;: [&#39;SmartX ProPhone&#39;]}, {&#39;category&#39;: &#39;カメラとビデオカメラ&#39;, &#39;products&#39;: [&#39;FotoSnap DSLR Camera&#39;, &#39;ActionCam 4K&#39;, &#39;FotoSnap Mirrorless Camera&#39;, &#39;ZoomMaster Camcorder&#39;, &#39;FotoSnap Instant Camera&#39;]}, {&#39;category&#39;: &#39;テレビとホームシアターシステム&#39;, &#39;products&#39;: [&#39;CineView 4K TV&#39;, &#39;SoundMax Home Theater&#39;, &#39;CineView 8K TV&#39;, &#39;SoundMax Soundbar&#39;, &#39;CineView OLED TV&#39;]}]
+    </code></pre>
+<h2
+id="六回帰テストモデルが以前のテストケースでまだ有効であることを確認">六、回帰テスト：モデルが以前のテストケースでまだ有効であることを確認</h2>
+<p>困難なテストケースの効果を向上させるためにモデルをチェック・修正すると同時に、この修正が以前のテストケースのパフォーマンスに悪影響を与えないことを確保します。</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>customer_msg_0 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;予算が限られている場合、どのテレビを購入できますか？&quot;&quot;&quot;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>products_by_category_0 <span class="op">=</span> find_category_and_product_v2(customer_msg_0,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>                                                      products_and_category)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(products_by_category_0)</span></code></pre></div>
+<pre><code>    [{&#39;category&#39;: &#39;テレビとホームシアターシステム&#39;, &#39;products&#39;: [&#39;CineView 4K TV&#39;, &#39;SoundMax Home Theater&#39;, &#39;CineView 8K TV&#39;, &#39;SoundMax Soundbar&#39;, &#39;CineView OLED TV&#39;]}]</code></pre>
+<h2
+id="七自動化テスト用の開発セットの収集">七、自動化テスト用の開発セットの収集</h2>
+<p>アプリケーションが徐々に成熟するにつれて、テストの重要性も高まります。通常、少数のサンプルのみを処理する場合、手動でテストを実行し結果を評価することは可能です。しかし、開発セットが大きくなるにつれて、この方法は面倒で非効率になります。この時、自動化テストを導入して作業効率を向上させ、テストの正確性を確保する必要があります。以下では自動化テストフローをコード化し始めます。これは効率を向上させ、テストの正確性を確保するのに役立ちます。</p>
+<p>以下は、LLM回答の正確性を評価するためのユーザー質問の標準回答です。機械学習の検証セットの役割と同等です。</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>msg_ideal_pairs_set <span class="op">=</span> [</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># eg 0</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;customer_msg&#39;</span>:<span class="st">&quot;&quot;&quot;予算が限られている場合、どのような種類のテレビを購入できますか？&quot;&quot;&quot;</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>     <span class="st">&#39;ideal_answer&#39;</span>:{</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;テレビとホームシアターシステム&#39;</span>:<span class="bu">set</span>(</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>            [<span class="st">&#39;CineView 4K TV&#39;</span>, <span class="st">&#39;SoundMax Home Theater&#39;</span>, <span class="st">&#39;CineView 8K TV&#39;</span>, <span class="st">&#39;SoundMax Soundbar&#39;</span>, <span class="st">&#39;CineView OLED TV&#39;</span>]</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        )}</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># eg 1</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;customer_msg&#39;</span>:<span class="st">&quot;&quot;&quot;スマートフォンの充電器が必要です&quot;&quot;&quot;</span>,</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>     <span class="st">&#39;ideal_answer&#39;</span>:{</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;スマートフォンとアクセサリー&#39;</span>:<span class="bu">set</span>(</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>            [<span class="st">&#39;MobiTech PowerCase&#39;</span>, <span class="st">&#39;MobiTech Wireless Charger&#39;</span>, <span class="st">&#39;SmartX EarBuds&#39;</span>]</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>        )}</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># eg 2</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;customer_msg&#39;</span>:<span class="ss">f&quot;&quot;&quot;どのようなコンピューターがありますか&quot;&quot;&quot;</span>,</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>     <span class="st">&#39;ideal_answer&#39;</span>:{</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>           <span class="st">&#39;コンピューターとノートパソコン&#39;</span>:<span class="bu">set</span>(</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>               [<span class="st">&#39;TechPro 超极本&#39;</span>, <span class="st">&#39;BlueWave ゲーミングノートパソコン&#39;</span>, <span class="st">&#39;PowerLite Convertible&#39;</span>, <span class="st">&#39;TechPro Desktop&#39;</span>, <span class="st">&#39;BlueWave Chromebook&#39;</span></span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>               ])</span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>                }</span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># eg 3</span></span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;customer_msg&#39;</span>:<span class="ss">f&quot;&quot;&quot;smartx pro手机とfotosnap相机について教えてください、そのDSLRのものです。</span><span class="ch">\</span></span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a><span class="ss">それから、どのようなテレビがありますか？&quot;&quot;&quot;</span>,</span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a>     <span class="st">&#39;ideal_answer&#39;</span>:{</span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;スマートフォンとアクセサリー&#39;</span>:<span class="bu">set</span>(</span>
+<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a>            [<span class="st">&#39;SmartX ProPhone&#39;</span>]),</span>
+<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;カメラとビデオカメラ&#39;</span>:<span class="bu">set</span>(</span>
+<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a>            [<span class="st">&#39;FotoSnap DSLR Camera&#39;</span>]),</span>
+<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;テレビとホームシアターシステム&#39;</span>:<span class="bu">set</span>(</span>
+<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a>            [<span class="st">&#39;CineView 4K TV&#39;</span>, <span class="st">&#39;SoundMax Home Theater&#39;</span>,<span class="st">&#39;CineView 8K TV&#39;</span>, <span class="st">&#39;SoundMax Soundbar&#39;</span>, <span class="st">&#39;CineView OLED TV&#39;</span>])</span>
+<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb19-38"><a href="#cb19-38" aria-hidden="true" tabindex="-1"></a>    }, </span>
+<span id="cb19-39"><a href="#cb19-39" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb19-40"><a href="#cb19-40" aria-hidden="true" tabindex="-1"></a>    <span class="co"># eg 4</span></span>
+<span id="cb19-41"><a href="#cb19-41" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;customer_msg&#39;</span>:<span class="st">&quot;&quot;&quot;CineViewテレビ、その8KテレビおよびGameSphereゲーム機、Xゲーム機について教えてください。予算が限られているので、どのようなコンピューターがありますか？&quot;&quot;&quot;</span>,</span>
+<span id="cb19-42"><a href="#cb19-42" aria-hidden="true" tabindex="-1"></a>     <span class="st">&#39;ideal_answer&#39;</span>:{</span>
+<span id="cb19-43"><a href="#cb19-43" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;テレビとホームシアターシステム&#39;</span>:<span class="bu">set</span>(</span>
+<span id="cb19-44"><a href="#cb19-44" aria-hidden="true" tabindex="-1"></a>            [<span class="st">&#39;CineView 8K TV&#39;</span>]),</span>
+<span id="cb19-45"><a href="#cb19-45" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;ゲーム機とアクセサリー&#39;</span>:<span class="bu">set</span>(</span>
+<span id="cb19-46"><a href="#cb19-46" aria-hidden="true" tabindex="-1"></a>            [<span class="st">&#39;GameSphere X&#39;</span>]),</span>
+<span id="cb19-47"><a href="#cb19-47" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;コンピューターとノートパソコン&#39;</span>:<span class="bu">set</span>(</span>
+<span id="cb19-48"><a href="#cb19-48" aria-hidden="true" tabindex="-1"></a>            [<span class="st">&#39;TechPro Ultrabook&#39;</span>, <span class="st">&#39;BlueWave Gaming Laptop&#39;</span>, <span class="st">&#39;PowerLite Convertible&#39;</span>, <span class="st">&#39;TechPro Desktop&#39;</span>, <span class="st">&#39;BlueWave Chromebook&#39;</span>])</span>
+<span id="cb19-49"><a href="#cb19-49" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb19-50"><a href="#cb19-50" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb19-51"><a href="#cb19-51" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb19-52"><a href="#cb19-52" aria-hidden="true" tabindex="-1"></a>    <span class="co"># eg 5</span></span>
+<span id="cb19-53"><a href="#cb19-53" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;customer_msg&#39;</span>:<span class="ss">f&quot;&quot;&quot;どのようなスマートフォンがありますか&quot;&quot;&quot;</span>,</span>
+<span id="cb19-54"><a href="#cb19-54" aria-hidden="true" tabindex="-1"></a>     <span class="st">&#39;ideal_answer&#39;</span>:{</span>
+<span id="cb19-55"><a href="#cb19-55" aria-hidden="true" tabindex="-1"></a>           <span class="st">&#39;スマートフォンとアクセサリー&#39;</span>:<span class="bu">set</span>(</span>
+<span id="cb19-56"><a href="#cb19-56" aria-hidden="true" tabindex="-1"></a>               [<span class="st">&#39;SmartX ProPhone&#39;</span>, <span class="st">&#39;MobiTech PowerCase&#39;</span>, <span class="st">&#39;SmartX MiniPhone&#39;</span>, <span class="st">&#39;MobiTech Wireless Charger&#39;</span>, <span class="st">&#39;SmartX EarBuds&#39;</span></span>
+<span id="cb19-57"><a href="#cb19-57" aria-hidden="true" tabindex="-1"></a>               ])</span>
+<span id="cb19-58"><a href="#cb19-58" aria-hidden="true" tabindex="-1"></a>                    }</span>
+<span id="cb19-59"><a href="#cb19-59" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb19-60"><a href="#cb19-60" aria-hidden="true" tabindex="-1"></a>    <span class="co"># eg 6</span></span>
+<span id="cb19-61"><a href="#cb19-61" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;customer_msg&#39;</span>:<span class="ss">f&quot;&quot;&quot;予算が限られています。スマートフォンをお勧めしてもらえますか？&quot;&quot;&quot;</span>,</span>
+<span id="cb19-62"><a href="#cb19-62" aria-hidden="true" tabindex="-1"></a>     <span class="st">&#39;ideal_answer&#39;</span>:{</span>
+<span id="cb19-63"><a href="#cb19-63" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;スマートフォンとアクセサリー&#39;</span>:<span class="bu">set</span>(</span>
+<span id="cb19-64"><a href="#cb19-64" aria-hidden="true" tabindex="-1"></a>            [<span class="st">&#39;SmartX EarBuds&#39;</span>, <span class="st">&#39;SmartX MiniPhone&#39;</span>, <span class="st">&#39;MobiTech PowerCase&#39;</span>, <span class="st">&#39;SmartX ProPhone&#39;</span>, <span class="st">&#39;MobiTech Wireless Charger&#39;</span>]</span>
+<span id="cb19-65"><a href="#cb19-65" aria-hidden="true" tabindex="-1"></a>        )}</span>
+<span id="cb19-66"><a href="#cb19-66" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb19-67"><a href="#cb19-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-68"><a href="#cb19-68" aria-hidden="true" tabindex="-1"></a>    <span class="co"># eg 7 # this will output a subset of the ideal answer</span></span>
+<span id="cb19-69"><a href="#cb19-69" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;customer_msg&#39;</span>:<span class="ss">f&quot;&quot;&quot;レーシングゲーム好きの友人にはどのようなゲーム機が適していますか？&quot;&quot;&quot;</span>,</span>
+<span id="cb19-70"><a href="#cb19-70" aria-hidden="true" tabindex="-1"></a>     <span class="st">&#39;ideal_answer&#39;</span>:{</span>
+<span id="cb19-71"><a href="#cb19-71" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;ゲーム機とアクセサリー&#39;</span>:<span class="bu">set</span>([</span>
+<span id="cb19-72"><a href="#cb19-72" aria-hidden="true" tabindex="-1"></a>            <span class="st">&#39;GameSphere X&#39;</span>,</span>
+<span id="cb19-73"><a href="#cb19-73" aria-hidden="true" tabindex="-1"></a>            <span class="st">&#39;ProGamer Controller&#39;</span>,</span>
+<span id="cb19-74"><a href="#cb19-74" aria-hidden="true" tabindex="-1"></a>            <span class="st">&#39;GameSphere Y&#39;</span>,</span>
+<span id="cb19-75"><a href="#cb19-75" aria-hidden="true" tabindex="-1"></a>            <span class="st">&#39;ProGamer Racing Wheel&#39;</span>,</span>
+<span id="cb19-76"><a href="#cb19-76" aria-hidden="true" tabindex="-1"></a>            <span class="st">&#39;GameSphere VR Headset&#39;</span></span>
+<span id="cb19-77"><a href="#cb19-77" aria-hidden="true" tabindex="-1"></a>     ])}</span>
+<span id="cb19-78"><a href="#cb19-78" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb19-79"><a href="#cb19-79" aria-hidden="true" tabindex="-1"></a>    <span class="co"># eg 8</span></span>
+<span id="cb19-80"><a href="#cb19-80" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;customer_msg&#39;</span>:<span class="ss">f&quot;&quot;&quot;カメラマンの友人に何のプレゼントが適していますか？&quot;&quot;&quot;</span>,</span>
+<span id="cb19-81"><a href="#cb19-81" aria-hidden="true" tabindex="-1"></a>     <span class="st">&#39;ideal_answer&#39;</span>: {</span>
+<span id="cb19-82"><a href="#cb19-82" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;カメラとビデオカメラ&#39;</span>:<span class="bu">set</span>([</span>
+<span id="cb19-83"><a href="#cb19-83" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;FotoSnap DSLR Camera&#39;</span>, <span class="st">&#39;ActionCam 4K&#39;</span>, <span class="st">&#39;FotoSnap Mirrorless Camera&#39;</span>, <span class="st">&#39;ZoomMaster Camcorder&#39;</span>, <span class="st">&#39;FotoSnap Instant Camera&#39;</span></span>
+<span id="cb19-84"><a href="#cb19-84" aria-hidden="true" tabindex="-1"></a>        ])}</span>
+<span id="cb19-85"><a href="#cb19-85" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb19-86"><a href="#cb19-86" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb19-87"><a href="#cb19-87" aria-hidden="true" tabindex="-1"></a>    <span class="co"># eg 9</span></span>
+<span id="cb19-88"><a href="#cb19-88" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&#39;customer_msg&#39;</span>:<span class="ss">f&quot;&quot;&quot;ホットタブタイムマシンが欲しいです&quot;&quot;&quot;</span>,</span>
+<span id="cb19-89"><a href="#cb19-89" aria-hidden="true" tabindex="-1"></a>     <span class="st">&#39;ideal_answer&#39;</span>: []</span>
+<span id="cb19-90"><a href="#cb19-90" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb19-91"><a href="#cb19-91" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb19-92"><a href="#cb19-92" aria-hidden="true" tabindex="-1"></a>]</span></code></pre></div>
+<h2
+id="八理想的回答との比較によるテストケースの評価">八、理想的回答との比較によるテストケースの評価</h2>
+<p>以下の関数<code>eval_response_with_ideal</code>を通じてLLM回答の正確性を評価します。この関数はLLM回答と理想的回答を比較することで、システムのテストケースでの効果を評価します。</p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> eval_response_with_ideal(response,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>                              ideal,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>                              debug<span class="op">=</span><span class="va">False</span>):</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co">    回答が理想的回答と一致するかを評価</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="co">    </span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="co">    パラメーター：</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co">    response: 回答の内容</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="co">    ideal: 理想的回答</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="co">    debug: デバッグ情報を出力するかどうか</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> debug:</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">&quot;回答：&quot;</span>)</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(response)</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># json.loads() は二重引用符のみ解析できるため、ここで単一引用符を二重引用符に置換</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>    json_like_str <span class="op">=</span> response.replace(<span class="st">&quot;&#39;&quot;</span>,<span class="st">&#39;&quot;&#39;</span>)</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 一連の辞書として解析</span></span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>    l_of_d <span class="op">=</span> json.loads(json_like_str)</span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 応答が空、つまり商品が見つからなかった場合</span></span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> l_of_d <span class="op">==</span> [] <span class="kw">and</span> ideal <span class="op">==</span> []:</span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">1</span></span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># もう一つの異常状況は、標準回答数と回答数が一致しない場合</span></span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> l_of_d <span class="op">==</span> [] <span class="kw">or</span> ideal <span class="op">==</span> []:</span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span></span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 正解数をカウント</span></span>
+<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a>    correct <span class="op">=</span> <span class="dv">0</span>    </span>
+<span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> debug:</span>
+<span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">&quot;l_of_d is&quot;</span>)</span>
+<span id="cb20-36"><a href="#cb20-36" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(l_of_d)</span>
+<span id="cb20-37"><a href="#cb20-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-38"><a href="#cb20-38" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 各質問回答ペアについて  </span></span>
+<span id="cb20-39"><a href="#cb20-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> d <span class="kw">in</span> l_of_d:</span>
+<span id="cb20-40"><a href="#cb20-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-41"><a href="#cb20-41" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 製品とカテゴリーを取得</span></span>
+<span id="cb20-42"><a href="#cb20-42" aria-hidden="true" tabindex="-1"></a>        cat <span class="op">=</span> d.get(<span class="st">&#39;category&#39;</span>)</span>
+<span id="cb20-43"><a href="#cb20-43" aria-hidden="true" tabindex="-1"></a>        prod_l <span class="op">=</span> d.get(<span class="st">&#39;products&#39;</span>)</span>
+<span id="cb20-44"><a href="#cb20-44" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 製品とカテゴリーを取得した場合</span></span>
+<span id="cb20-45"><a href="#cb20-45" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> cat <span class="kw">and</span> prod_l:</span>
+<span id="cb20-46"><a href="#cb20-46" aria-hidden="true" tabindex="-1"></a>            <span class="co"># convert list to set for comparison</span></span>
+<span id="cb20-47"><a href="#cb20-47" aria-hidden="true" tabindex="-1"></a>            prod_set <span class="op">=</span> <span class="bu">set</span>(prod_l)</span>
+<span id="cb20-48"><a href="#cb20-48" aria-hidden="true" tabindex="-1"></a>            <span class="co"># get ideal set of products</span></span>
+<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a>            ideal_cat <span class="op">=</span> ideal.get(cat)</span>
+<span id="cb20-50"><a href="#cb20-50" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> ideal_cat:</span>
+<span id="cb20-51"><a href="#cb20-51" aria-hidden="true" tabindex="-1"></a>                prod_set_ideal <span class="op">=</span> <span class="bu">set</span>(ideal.get(cat))</span>
+<span id="cb20-52"><a href="#cb20-52" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb20-53"><a href="#cb20-53" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> debug:</span>
+<span id="cb20-54"><a href="#cb20-54" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">print</span>(<span class="ss">f&quot;標準回答でカテゴリー </span><span class="sc">{</span>cat<span class="sc">}</span><span class="ss"> が見つかりません&quot;</span>)</span>
+<span id="cb20-55"><a href="#cb20-55" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">print</span>(<span class="ss">f&quot;標準回答: </span><span class="sc">{</span>ideal<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb20-56"><a href="#cb20-56" aria-hidden="true" tabindex="-1"></a>                <span class="cf">continue</span></span>
+<span id="cb20-57"><a href="#cb20-57" aria-hidden="true" tabindex="-1"></a>                </span>
+<span id="cb20-58"><a href="#cb20-58" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> debug:</span>
+<span id="cb20-59"><a href="#cb20-59" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="st">&quot;製品セット：</span><span class="ch">\n</span><span class="st">&quot;</span>,prod_set)</span>
+<span id="cb20-60"><a href="#cb20-60" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>()</span>
+<span id="cb20-61"><a href="#cb20-61" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="st">&quot;標準回答の製品セット：</span><span class="ch">\n</span><span class="st">&quot;</span>,prod_set_ideal)</span>
+<span id="cb20-62"><a href="#cb20-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-63"><a href="#cb20-63" aria-hidden="true" tabindex="-1"></a>            <span class="co"># 見つかった製品セットと標準製品セットが一致</span></span>
+<span id="cb20-64"><a href="#cb20-64" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> prod_set <span class="op">==</span> prod_set_ideal:</span>
+<span id="cb20-65"><a href="#cb20-65" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> debug:</span>
+<span id="cb20-66"><a href="#cb20-66" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">print</span>(<span class="st">&quot;正しい&quot;</span>)</span>
+<span id="cb20-67"><a href="#cb20-67" aria-hidden="true" tabindex="-1"></a>                correct <span class="op">+=</span><span class="dv">1</span></span>
+<span id="cb20-68"><a href="#cb20-68" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb20-69"><a href="#cb20-69" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="st">&quot;間違い&quot;</span>)</span>
+<span id="cb20-70"><a href="#cb20-70" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="ss">f&quot;製品セット: </span><span class="sc">{</span>prod_set<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb20-71"><a href="#cb20-71" aria-hidden="true" tabindex="-1"></a>                <span class="bu">print</span>(<span class="ss">f&quot;標準の製品セット: </span><span class="sc">{</span>prod_set_ideal<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb20-72"><a href="#cb20-72" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> prod_set <span class="op">&lt;=</span> prod_set_ideal:</span>
+<span id="cb20-73"><a href="#cb20-73" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">print</span>(<span class="st">&quot;回答は標準回答のサブセットです&quot;</span>)</span>
+<span id="cb20-74"><a href="#cb20-74" aria-hidden="true" tabindex="-1"></a>                <span class="cf">elif</span> prod_set <span class="op">&gt;=</span> prod_set_ideal:</span>
+<span id="cb20-75"><a href="#cb20-75" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">print</span>(<span class="st">&quot;回答は標準回答のスーパーセットです&quot;</span>)</span>
+<span id="cb20-76"><a href="#cb20-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-77"><a href="#cb20-77" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 正解数を計算</span></span>
+<span id="cb20-78"><a href="#cb20-78" aria-hidden="true" tabindex="-1"></a>    pc_correct <span class="op">=</span> correct <span class="op">/</span> <span class="bu">len</span>(l_of_d)</span>
+<span id="cb20-79"><a href="#cb20-79" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb20-80"><a href="#cb20-80" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> pc_correct</span></code></pre></div>
+<p>上記のテストケースの一つを使用してテストを行い、まず標準回答を見てみましょう：</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&#39;ユーザー質問: </span><span class="sc">{</span>msg_ideal_pairs_set[<span class="dv">7</span>][<span class="st">&quot;customer_msg&quot;</span>]<span class="sc">}</span><span class="ss">&#39;</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&#39;標準回答: </span><span class="sc">{</span>msg_ideal_pairs_set[<span class="dv">7</span>][<span class="st">&quot;ideal_answer&quot;</span>]<span class="sc">}</span><span class="ss">&#39;</span>)</span></code></pre></div>
+<pre><code>ユーザー質問: カメラマンの友人に何のプレゼントが適していますか？
+標準回答: {&#39;カメラとビデオカメラ&#39;: {&#39;FotoSnap DSLR Camera&#39;, &#39;ActionCam 4K&#39;, &#39;FotoSnap Mirrorless Camera&#39;, &#39;ZoomMaster Camcorder&#39;, &#39;FotoSnap Instant Camera&#39;}}</code></pre>
+<p>次にLLMの回答と比較し、検証関数を使用してスコアリングを行います：</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> find_category_and_product_v2(msg_ideal_pairs_set[<span class="dv">7</span>][<span class="st">&quot;customer_msg&quot;</span>],</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>                                         products_and_category)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&#39;回答: </span><span class="sc">{</span>response<span class="sc">}</span><span class="ss">&#39;</span>)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>eval_response_with_ideal(response,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>                              msg_ideal_pairs_set[<span class="dv">7</span>][<span class="st">&quot;ideal_answer&quot;</span>])</span></code></pre></div>
+<pre><code>回答:  
+    [{&#39;category&#39;: &#39;カメラとビデオカメラ&#39;, &#39;products&#39;: [&#39;FotoSnap DSLR Camera&#39;, &#39;ActionCam 4K&#39;, &#39;FotoSnap Mirrorless Camera&#39;, &#39;ZoomMaster Camcorder&#39;, &#39;FotoSnap Instant Camera&#39;]}]
+    
+
+
+
+
+1.0</code></pre>
+<p>この検証関数のスコアリングが正確であることがわかります。</p>
+<h2
+id="九すべてのテストケースでの評価実行と正解ケース比率の計算">九、すべてのテストケースでの評価実行と正解ケース比率の計算</h2>
+<p>以下でテストケース内のすべての質問を検証し、LLMが正解した正確率を計算します</p>
+<blockquote>
+<p>注意：API呼び出しがタイムアウトした場合、実行できません</p>
+</blockquote>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>score_accum <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, pair <span class="kw">in</span> <span class="bu">enumerate</span>(msg_ideal_pairs_set):</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    time.sleep(<span class="dv">20</span>)</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;例 </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    customer_msg <span class="op">=</span> pair[<span class="st">&#39;customer_msg&#39;</span>]</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    ideal <span class="op">=</span> pair[<span class="st">&#39;ideal_answer&#39;</span>]</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># print(&quot;Customer message&quot;,customer_msg)</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># print(&quot;ideal:&quot;,ideal)</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> find_category_and_product_v2(customer_msg,</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>                                                      products_and_category)</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># print(&quot;products_by_category&quot;,products_by_category)</span></span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    score <span class="op">=</span> eval_response_with_ideal(response,ideal,debug<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>score<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    score_accum <span class="op">+=</span> score</span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>n_examples <span class="op">=</span> <span class="bu">len</span>(msg_ideal_pairs_set)</span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>fraction_correct <span class="op">=</span> score_accum <span class="op">/</span> n_examples</span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;正解比率 </span><span class="sc">{</span>n_examples<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>fraction_correct<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+<pre><code>例 0
+0: 1.0
+例 1
+間違い
+製品セット: {&#39;SmartX ProPhone&#39;}
+標準の製品セット: {&#39;MobiTech Wireless Charger&#39;, &#39;SmartX EarBuds&#39;, &#39;MobiTech PowerCase&#39;}
+1: 0.0
+例 2
+2: 1.0
+例 3
+3: 1.0
+例 4
+間違い
+製品セット: {&#39;SoundMax Home Theater&#39;, &#39;CineView 8K TV&#39;, &#39;CineView 4K TV&#39;, &#39;CineView OLED TV&#39;, &#39;SoundMax Soundbar&#39;}
+標準の製品セット: {&#39;CineView 8K TV&#39;}
+回答は標準回答のスーパーセットです
+間違い
+製品セット: {&#39;ProGamer Racing Wheel&#39;, &#39;ProGamer Controller&#39;, &#39;GameSphere Y&#39;, &#39;GameSphere VR Headset&#39;, &#39;GameSphere X&#39;}
+標準の製品セット: {&#39;GameSphere X&#39;}
+回答は標準回答のスーパーセットです
+間違い
+製品セット: {&#39;TechPro 超极本&#39;, &#39;TechPro Desktop&#39;, &#39;BlueWave Chromebook&#39;, &#39;PowerLite Convertible&#39;, &#39;BlueWave ゲーミングノートパソコン&#39;}
+標準の製品セット: {&#39;TechPro Desktop&#39;, &#39;BlueWave Chromebook&#39;, &#39;TechPro Ultrabook&#39;, &#39;PowerLite Convertible&#39;, &#39;BlueWave Gaming Laptop&#39;}
+4: 0.0
+例 5
+間違い
+製品セット: {&#39;SmartX ProPhone&#39;}
+標準の製品セット: {&#39;MobiTech Wireless Charger&#39;, &#39;SmartX EarBuds&#39;, &#39;SmartX MiniPhone&#39;, &#39;SmartX ProPhone&#39;, &#39;MobiTech PowerCase&#39;}
+回答は標準回答のサブセットです
+5: 0.0
+例 6
+間違い
+製品セット: {&#39;SmartX ProPhone&#39;}
+標準の製品セット: {&#39;MobiTech Wireless Charger&#39;, &#39;SmartX EarBuds&#39;, &#39;SmartX MiniPhone&#39;, &#39;SmartX ProPhone&#39;, &#39;MobiTech PowerCase&#39;}
+回答は標準回答のサブセットです
+6: 0.0
+例 7
+7: 1.0
+例 8
+8: 1.0
+例 9
+9: 1
+正解比率 10: 0.6</code></pre>
+<p>Promptを使ってアプリケーションを構築するワークフローは、教師あり学習を使ってアプリケーションを構築するワークフローとは大きく異なります。したがって、これは記憶しておくべき良いことだと考えます。教師あり学習モデルを構築している場合、反復速度がはるかに速く感じられるでしょう。</p>
+<p>実際に体験していなければ、手動で構築された極めて少数のサンプルだけで高効率な評価方法を生み出すことができることに驚かれるかもしれません。10個のサンプルだけでは統計的意味がないと思われるかもしれません。しかし、この方法を実際に運用すると、開発セットに複雑なサンプルをいくつか追加することで得られる効果向上に驚かれることでしょう。これは効果的なPromptと効果的なシステムを見つけるのに非常に役立ちます。</p>
+<p>この章では、出力が定量的に評価でき、期待される出力があるかのように、それが期待される出力を与えたかどうかを判断できました。次の章では、より曖昧な状況で出力を評価する方法を探ります。つまり、正解がそれほど明確でない状況です。</p>
+<h2 id="十英語版">十、英語版</h2>
+<p><strong>1. 製品とカテゴリー名の検索</strong></p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> utils_en</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>products_and_category <span class="op">=</span> utils_en.get_products_and_category()</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>products_and_category</span></code></pre></div>
+<pre><code>{&#39;Computers and Laptops&#39;: [&#39;TechPro Ultrabook&#39;,
+  &#39;BlueWave Gaming Laptop&#39;,
+  &#39;PowerLite Convertible&#39;,
+  &#39;TechPro Desktop&#39;,
+  &#39;BlueWave Chromebook&#39;],
+ &#39;Smartphones and Accessories&#39;: [&#39;SmartX ProPhone&#39;,
+  &#39;MobiTech PowerCase&#39;,
+  &#39;SmartX MiniPhone&#39;,
+  &#39;MobiTech Wireless Charger&#39;,
+  &#39;SmartX EarBuds&#39;],
+ &#39;Televisions and Home Theater Systems&#39;: [&#39;CineView 4K TV&#39;,
+  &#39;SoundMax Home Theater&#39;,
+  &#39;CineView 8K TV&#39;,
+  &#39;SoundMax Soundbar&#39;,
+  &#39;CineView OLED TV&#39;],
+ &#39;Gaming Consoles and Accessories&#39;: [&#39;GameSphere X&#39;,
+  &#39;ProGamer Controller&#39;,
+  &#39;GameSphere Y&#39;,
+  &#39;ProGamer Racing Wheel&#39;,
+  &#39;GameSphere VR Headset&#39;],
+ &#39;Audio Equipment&#39;: [&#39;AudioPhonic Noise-Canceling Headphones&#39;,
+  &#39;WaveSound Bluetooth Speaker&#39;,
+  &#39;AudioPhonic True Wireless Earbuds&#39;,
+  &#39;WaveSound Soundbar&#39;,
+  &#39;AudioPhonic Turntable&#39;],
+ &#39;Cameras and Camcorders&#39;: [&#39;FotoSnap DSLR Camera&#39;,
+  &#39;ActionCam 4K&#39;,
+  &#39;FotoSnap Mirrorless Camera&#39;,
+  &#39;ZoomMaster Camcorder&#39;,
+  &#39;FotoSnap Instant Camera&#39;]}</code></pre>
+<p>[Continue with the rest of the English section and then the remaining
+files…]</p>
+</body>
+</html>

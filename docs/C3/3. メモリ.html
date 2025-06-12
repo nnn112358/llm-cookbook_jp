@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>3. メモリ</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第三章-メモリ">第三章 メモリ</h1>
+<p>言語モデルとの対話時に、重要な問題に気づいたかもしれません：それらは以前の交流内容を記憶していないということです。これは、チャットボットなどのアプリケーションを構築する際に大きな課題をもたらし、対話に真の連続性が欠けているように見えます。そこで、本セクションではLangChainのメモリモジュール、つまり以前の対話を言語モデルに埋め込んで、連続対話の能力を持たせる方法を紹介します。</p>
+<p>LangChainのメモリ（Memory）モジュールを使用する場合、それは対話全体の履歴を保存、組織、追跡することを目的とし、ユーザーとモデル間の対話に連続したコンテキストを提供します。</p>
+<p>LangChainは様々なメモリタイプを提供しています。その中で、バッファメモリは最近のチャットメッセージを保持し、要約メモリは対話全体の要約を提供します。エンティティメモリは複数回の対話で特定のエンティティに関する情報を保持できます。これらのメモリコンポーネントはすべてモジュラー化されており、他のコンポーネントと組み合わせて使用でき、ロボットの対話管理能力を強化します。メモリモジュールは簡単なAPI呼び出しでアクセスや更新が可能で、開発者が対話履歴の管理と維持をより簡単に実装できます。</p>
+<p>今回のコースでは主に4種類のメモリモジュールを紹介します。その他のモジュールはドキュメントで学習できます。
+- 対話バッファメモリ (ConversationBufferMemory) -
+対話バッファウィンドウメモリ (ConversationBufferWindowMemory) -
+対話トークンバッファメモリ (ConversationTokenBufferMemory) -
+対話要約バッファメモリ (ConversationSummaryBufferMemory)</p>
+<p>在 LangChain
+中，储存指的是大语言模型（LLM）的短期记忆。为什么是短期记忆？那是因为LLM训练好之后
+(获得了一些长期记忆)，它的参数便不会因为用户的输入而发生改变。当用户与训练好的LLM进行对话时，LLM
+会暂时记住用户的输入和它已经生成的输出，以便预测之后的输出，而模型输出完毕后，它便会“遗忘”之前用户的输入和它的输出。因此，之前的这些信息只能称作为
+LLM 的短期记忆。</p>
+<p>LLMの短期記憶の保持時間を延長するために、外部メモリ方式を借りて記憶を行う必要があり、ユーザーとLLMの対話中に、LLMが可能な限りユーザーとの履歴対話情報を知ることができます。</p>
+<h2 id="一対話バッファメモリ">一、対話バッファメモリ</h2>
+<h3 id="対話モデルの初期化">1.1 対話モデルの初期化</h3>
+<p>まず対話モデルを初期化しましょう。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> ConversationChain</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationBufferMemory</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 这里我们将参数temperature设置为0.0，从而减少生成答案的随机性。</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 如果你想要每次得到不一样的有新意的答案，可以尝试增大该参数。</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.0</span>)  </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationBufferMemory()</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 新建一个 ConversationChain Class 实例</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># verbose参数设置为True时，程序会输出更详细的信息，以提供更多的调试或运行时信息。</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 相反，当将verbose参数设置为False时，程序会以更简洁的方式运行，只输出关键的信息。</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>conversation <span class="op">=</span> ConversationChain(llm<span class="op">=</span>llm, memory <span class="op">=</span> memory, verbose<span class="op">=</span><span class="va">True</span> )</span></code></pre></div>
+<h3 id="第一ラウンドの対話">1.2 第一ラウンドの対話</h3>
+<p>当我们运行预测(predict)时，生成了一些提示，如下所见，他说“以下是人类和
+AI 之间友好的对话，AI 健谈“等等，这实际上是 LangChain
+生成的提示，以使系统进行希望和友好的对话，并且必须保存对话，并提示了当前已完成的模型链。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;你好, 我叫皮皮鲁&quot;</span>)</span></code></pre></div>
+<pre><code>&gt; Entering new  chain...
+Prompt after formatting:
+The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+Current conversation:
+
+Human: 你好, 我叫皮皮鲁
+AI:
+
+&gt; Finished chain.
+
+
+
+
+
+&#39;你好，皮皮鲁！很高兴认识你。我是一个AI助手，可以回答你的问题和提供帮助。有什么我可以帮你的吗？&#39;</code></pre>
+<h3 id="第二ラウンドの対話">1.3 第二ラウンドの対話</h3>
+<p>当我们进行第二轮对话时，它会保留上面的提示</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;1+1等于多少？&quot;</span>)</span></code></pre></div>
+<pre><code>&gt; Entering new ConversationChain chain...
+Prompt after formatting:
+The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+Current conversation:
+Human: 你好, 我叫皮皮鲁
+AI: 你好，皮皮鲁！很高兴认识你。我是一个AI助手，可以回答你的问题和提供帮助。有什么我可以帮你的吗？
+Human: 1+1等于多少？
+AI:
+
+&gt; Finished chain.
+
+
+
+
+
+&#39;1+1等于2。&#39;</code></pre>
+<h3 id="第三ラウンドの対話">1.4 第三ラウンドの対話</h3>
+<p>为了验证他是否记忆了前面的对话内容，我们让他回答前面已经说过的内容（我的名字），可以看到他确实输出了正确的名字，因此这个对话链随着往下进行会越来越长。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;我叫什么名字？&quot;</span>)</span></code></pre></div>
+<pre><code>&gt; Entering new ConversationChain chain...
+Prompt after formatting:
+The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+Current conversation:
+Human: 你好, 我叫皮皮鲁
+AI: 你好，皮皮鲁！很高兴认识你。我是一个AI助手，可以回答你的问题和提供帮助。有什么我可以帮你的吗？
+Human: 1+1等于多少？
+AI: 1+1等于2。
+Human: 我叫什么名字？
+AI:
+
+&gt; Finished chain.
+
+
+
+
+
+&#39;你叫皮皮鲁。&#39;</code></pre>
+<h3 id="メモリバッファの確認">1.5 メモリバッファの確認</h3>
+<p>メモリバッファ（buffer）、つまり現在までのすべての対話情報を保存しています。</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.<span class="bu">buffer</span>) </span></code></pre></div>
+<pre><code>Human: 你好, 我叫皮皮鲁
+AI: 你好，皮皮鲁！很高兴认识你。我是一个AI助手，可以回答你的问题和提供帮助。有什么我可以帮你的吗？
+Human: 1+1等于多少？
+AI: 1+1等于2。
+Human: 我叫什么名字？
+AI: 你叫皮皮鲁。</code></pre>
+<p>也可以通过<code>load_memory_variables({})</code>打印缓存中的历史消息。这里的<code>{}</code>是一个空字典，有一些更高级的功能，使用户可以使用更复杂的输入，具体可以通过
+LangChain 的官方文档查询更高级的用法。</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.load_memory_variables({}))</span></code></pre></div>
+<pre><code>{&#39;history&#39;: &#39;Human: 你好, 我叫皮皮鲁\nAI: 你好，皮皮鲁！很高兴认识你。我是一个AI助手，可以回答你的问题和提供帮助。有什么我可以帮你的吗？\nHuman: 1+1等于多少？\nAI: 1+1等于2。\nHuman: 我叫什么名字？\nAI: 你叫皮皮鲁。&#39;}</code></pre>
+<h3 id="メモリバッファへの直接コンテンツ追加">1.6
+メモリバッファへの直接コンテンツ追加</h3>
+<p><code>save_context</code>を使用して直接<code>buffer</code>にコンテンツを追加できます。</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationBufferMemory()</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;你好，我叫皮皮鲁&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;你好啊，我叫鲁西西&quot;</span>})</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>memory.load_memory_variables({})</span></code></pre></div>
+<pre><code>{&#39;history&#39;: &#39;Human: 你好，我叫皮皮鲁\nAI: 你好啊，我叫鲁西西&#39;}</code></pre>
+<p>继续添加新的内容</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;很高兴和你成为朋友！&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;是的，让我们一起去冒险吧！&quot;</span>})</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>memory.load_memory_variables({})</span></code></pre></div>
+<pre><code>{&#39;history&#39;: &#39;Human: 你好，我叫皮皮鲁\nAI: 你好啊，我叫鲁西西\nHuman: 很高兴和你成为朋友！\nAI: 是的，让我们一起去冒险吧！&#39;}</code></pre>
+<p>可以看到对话历史都保存下来了！</p>
+<p>当我们在使用大型语言模型进行聊天对话时，<strong>大型语言模型本身实际上是无状态的。语言模型本身并不记得到目前为止的历史对话</strong>。每次调用API结点都是独立的。储存(Memory)可以储存到目前为止的所有术语或对话，并将其输入或附加上下文到LLM中用于生成输出。如此看起来就好像它在进行下一轮对话的时候，记得之前说过什么。</p>
+<h2
+id="二対話バッファウィンドウメモリ">二、対話バッファウィンドウメモリ</h2>
+<p>対話が長くなるにつれて、必要なメモリ量も非常に長くなります。大量のtokensをLLMに送信するコストもより高くなります。これがAPI呼び出し料金が通常、処理する必要があるtokens数に基づいて課金される理由です。</p>
+<p>针对以上问题，LangChain也提供了几种方便的储存方式来保存历史对话。其中，对话缓存窗口储存只保留一个窗口大小的对话。它只使用最近的n次交互。这可以用于保持最近交互的滑动窗口，以便缓冲区不会过大。</p>
+<h3 id="添加两轮对话到窗口储存">2.1 添加两轮对话到窗口储存</h3>
+<p>我们先来尝试一下使用<code>ConversationBufferWindowMemory</code>来实现交互的滑动窗口，并设置<code>k=1</code>，表示只保留一个对话记忆。接下来我们手动添加两轮对话到窗口储存中，然后查看储存的对话。</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationBufferWindowMemory</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co"># k=1表明只保留一个对话记忆</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationBufferWindowMemory(k<span class="op">=</span><span class="dv">1</span>)  </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;你好，我叫皮皮鲁&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;你好啊，我叫鲁西西&quot;</span>})</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;很高兴和你成为朋友！&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;是的，让我们一起去冒险吧！&quot;</span>})</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>memory.load_memory_variables({})</span></code></pre></div>
+<pre><code>{&#39;history&#39;: &#39;Human: 很高兴和你成为朋友！\nAI: 是的，让我们一起去冒险吧！&#39;}</code></pre>
+<p>通过结果，我们可以看到窗口储存中只有最后一轮的聊天记录。</p>
+<h3 id="在对话链中应用窗口储存">2.2 在对话链中应用窗口储存</h3>
+<p>接下来，让我们来看看如何在<code>ConversationChain</code>中运用<code>ConversationBufferWindowMemory</code>吧！</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationBufferWindowMemory(k<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>conversation <span class="op">=</span> ConversationChain(llm<span class="op">=</span>llm, memory<span class="op">=</span>memory, verbose<span class="op">=</span><span class="va">False</span>  )</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;第一轮对话：&quot;</span>)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;你好, 我叫皮皮鲁&quot;</span>))</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;第二轮对话：&quot;</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;1+1等于多少？&quot;</span>))</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;第三轮对话：&quot;</span>)</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;我叫什么名字？&quot;</span>))</span></code></pre></div>
+<pre><code>第一轮对话：
+你好，皮皮鲁！很高兴认识你。我是一个AI助手，可以回答你的问题和提供帮助。有什么我可以帮你的吗？
+第二轮对话：
+1+1等于2。
+第三轮对话：
+很抱歉，我无法知道您的名字。</code></pre>
+<p>注意此处！由于这里用的是一个窗口的记忆，因此只能保存一轮的历史消息，因此AI并不能知道你第一轮对话中提到的名字，他最多只能记住上一轮（第二轮）的对话信息</p>
+<h2 id="三対話文字バッファメモリ">三、対話文字バッファメモリ</h2>
+<p>対話文字バッファメモリを使用すると、メモリは保存するtokens数を制限します。文字数が指定数を超えると、この対話の初期部分を切り捨て、
+最近の交流に対応する文字数を保留しますが、文字制限を超えないようにします。</p>
+<p>添加对话到Token缓存储存,限制token数量，进行测试</p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.llms <span class="im">import</span> OpenAI</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationTokenBufferMemory</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationTokenBufferMemory(llm<span class="op">=</span>llm, max_token_limit<span class="op">=</span><span class="dv">30</span>)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;朝辞白帝彩云间，&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;千里江陵一日还。&quot;</span>})</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;两岸猿声啼不住，&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;轻舟已过万重山。&quot;</span>})</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>memory.load_memory_variables({})</span></code></pre></div>
+<pre><code>{&#39;history&#39;: &#39;AI: 轻舟已过万重山。&#39;}</code></pre>
+<p>ChatGPT 使用一种基于字节对编码（Byte Pair Encoding，BPE）的方法来进行
+tokenization （将输入文本拆分为token）。BPE 是一种常见的 tokenization
+技术，它将输入文本分割成较小的子词单元。 OpenAI 在其官方 GitHub
+上公开了一个最新的开源 Python 库 <a
+href="https://github.com/openai/tiktoken">tiktoken</a>(https://github.com/openai/tiktoken)，这个库主要是用来计算
+tokens 数量的。相比较 HuggingFace 的 tokenizer ，其速度提升了好几倍。
+具体 token 计算方式,特别是汉字和英文单词的 token 区别，具体可参考<a
+href="https://www.zhihu.com/question/594159910">知乎文章</a>(https://www.zhihu.com/question/594159910)。</p>
+<h2 id="四対話要約バッファメモリ">四、対話要約バッファメモリ</h2>
+<p>対話要約バッファメモリは、<strong>LLMを使用して現在までの履歴対話を自動的に要約</strong>し、それを保存します。</p>
+<h3 id="使用对话摘要缓存储存">4.1 使用对话摘要缓存储存</h3>
+<p>我们创建了一个长字符串，其中包含某人的日程安排。</p>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> ConversationChain</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationSummaryBufferMemory</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 创建一个长字符串</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>schedule <span class="op">=</span> <span class="st">&quot;在八点你和你的产品团队有一个会议。 </span><span class="ch">\</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="st">你需要做一个PPT。 </span><span class="ch">\</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="st">上午9点到12点你需要忙于LangChain。</span><span class="ch">\</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="st">Langchain是一个有用的工具，因此你的项目进展的非常快。</span><span class="ch">\</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="st">中午，在意大利餐厅与一位开车来的顾客共进午餐 </span><span class="ch">\</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="st">走了一个多小时的路程与你见面，只为了解最新的 AI。 </span><span class="ch">\</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="st">确保你带了笔记本电脑可以展示最新的 LLM 样例.&quot;</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationSummaryBufferMemory(llm<span class="op">=</span>llm, max_token_limit<span class="op">=</span><span class="dv">100</span>)</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;你好，我叫皮皮鲁&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;你好啊，我叫鲁西西&quot;</span>})</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;很高兴和你成为朋友！&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;是的，让我们一起去冒险吧！&quot;</span>})</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;今天的日程安排是什么？&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="ss">f&quot;</span><span class="sc">{</span>schedule<span class="sc">}</span><span class="ss">&quot;</span>})</span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.load_memory_variables({})[<span class="st">&#39;history&#39;</span>])</span></code></pre></div>
+<pre><code>System: The human introduces themselves as Pipilu and the AI introduces themselves as Luxixi. They express happiness at becoming friends and decide to go on an adventure together. The human asks about the schedule for the day. The AI informs them that they have a meeting with their product team at 8 o&#39;clock and need to prepare a PowerPoint presentation. From 9 am to 12 pm, they will be busy with LangChain, a useful tool that helps their project progress quickly. At noon, they will have lunch with a customer who has driven for over an hour just to learn about the latest AI. The AI advises the human to bring their laptop to showcase the latest LLM samples.</code></pre>
+<h3 id="基于对话摘要缓存储存的对话链">4.2
+基于对话摘要缓存储存的对话链</h3>
+<p>基于上面的对话摘要缓存储存，我们新建一个对话链。</p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>conversation <span class="op">=</span> ConversationChain(llm<span class="op">=</span>llm, memory<span class="op">=</span>memory, verbose<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;展示什么样的样例最好呢？&quot;</span>)</span></code></pre></div>
+<pre><code>&gt; Entering new ConversationChain chain...
+Prompt after formatting:
+The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+Current conversation:
+System: The human introduces themselves as Pipilu and the AI introduces themselves as Luxixi. They express happiness at becoming friends and decide to go on an adventure together. The human asks about the schedule for the day. The AI informs them that they have a meeting with their product team at 8 o&#39;clock and need to prepare a PowerPoint presentation. From 9 am to 12 pm, they will be busy with LangChain, a useful tool that helps their project progress quickly. At noon, they will have lunch with a customer who has driven for over an hour just to learn about the latest AI. The AI advises the human to bring their laptop to showcase the latest LLM samples.
+Human: 展示什么样的样例最好呢？
+AI:
+
+&gt; Finished chain.
+
+
+
+
+
+&#39;展示一些具有多样性和创新性的样例可能是最好的选择。你可以展示一些不同领域的应用，比如自然语言处理、图像识别、语音合成等。另外，你也可以展示一些具有实际应用价值的样例，比如智能客服、智能推荐等。总之，选择那些能够展示出我们AI技术的强大和多样性的样例会给客户留下深刻的印象。&#39;</code></pre>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.load_memory_variables({}))  <span class="co"># 摘要记录更新了</span></span></code></pre></div>
+<pre><code>{&#39;history&#39;: &quot;System: The human introduces themselves as Pipilu and the AI introduces themselves as Luxixi. They express happiness at becoming friends and decide to go on an adventure together. The human asks about the schedule for the day. The AI informs them that they have a meeting with their product team at 8 o&#39;clock and need to prepare a PowerPoint presentation. From 9 am to 12 pm, they will be busy with LangChain, a useful tool that helps their project progress quickly. At noon, they will have lunch with a customer who has driven for over an hour just to learn about the latest AI. The AI advises the human to bring their laptop to showcase the latest LLM samples. The human asks what kind of samples would be best to showcase. The AI suggests that showcasing diverse and innovative samples would be the best choice. They recommend demonstrating applications in different fields such as natural language processing, image recognition, and speech synthesis. Additionally, they suggest showcasing practical examples like intelligent customer service and personalized recommendations to impress the customer with the power and versatility of their AI technology.&quot;}</code></pre>
+<p>通过对比上一次输出，发现摘要记录更新了，添加了最新一次对话的内容总结。</p>
+<h2 id="英語版プロンプト">英語版プロンプト</h2>
+<p><strong>1.対話バッファメモリ</strong></p>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> ConversationChain</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationBufferMemory</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.0</span>)  </span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationBufferMemory()</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>conversation <span class="op">=</span> ConversationChain(llm<span class="op">=</span>llm, memory <span class="op">=</span> memory, verbose<span class="op">=</span><span class="va">True</span> )</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;第一轮对话：&quot;</span>)</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;Hi, my name is Andrew&quot;</span>)</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;第二轮对话：&quot;</span>)</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;What is 1+1?&quot;</span>)</span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;第三轮对话：&quot;</span>)</span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;What is my name?&quot;</span>)</span></code></pre></div>
+<pre><code>第一轮对话：
+
+
+&gt; Entering new  chain...
+Prompt after formatting:
+The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+Current conversation:
+
+Human: Hi, my name is Andrew
+AI:
+
+&gt; Finished chain.
+第二轮对话：
+
+
+&gt; Entering new  chain...
+Prompt after formatting:
+The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+Current conversation:
+Human: Hi, my name is Andrew
+AI: Hello Andrew! It&#39;s nice to meet you. How can I assist you today?
+Human: What is 1+1?
+AI:
+
+&gt; Finished chain.
+第三轮对话：
+
+
+&gt; Entering new  chain...
+Prompt after formatting:
+The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+Current conversation:
+Human: Hi, my name is Andrew
+AI: Hello Andrew! It&#39;s nice to meet you. How can I assist you today?
+Human: What is 1+1?
+AI: 1+1 is equal to 2.
+Human: What is my name?
+AI:
+
+&gt; Finished chain.
+
+
+
+
+
+&#39;Your name is Andrew.&#39;</code></pre>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;查看储存缓存方式一：&quot;</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.<span class="bu">buffer</span>) </span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;查看储存缓存方式二：&quot;</span>)</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.load_memory_variables({}))</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;向缓存区添加指定对话的输入输出, 并查看&quot;</span>)</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationBufferMemory()  <span class="co"># 新建一个空的对话缓存记忆</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;Hi&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;What&#39;s up&quot;</span>})  <span class="co"># 向缓存区添加指定对话的输入输出</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.<span class="bu">buffer</span>)  <span class="co"># 查看缓存区结果</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.load_memory_variables({}))<span class="co"># 再次加载记忆变量</span></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;继续向向缓存区添加指定对话的输入输出, 并查看&quot;</span>)</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;Not much, just hanging&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;Cool&quot;</span>})</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.<span class="bu">buffer</span>)  <span class="co"># 查看缓存区结果</span></span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.load_memory_variables({}))<span class="co"># 再次加载记忆变量</span></span></code></pre></div>
+<pre><code>查看储存缓存方式一：
+Human: Hi, my name is Andrew
+AI: Hello Andrew! It&#39;s nice to meet you. How can I assist you today?
+Human: What is 1+1?
+AI: 1+1 is equal to 2.
+Human: What is my name?
+AI: Your name is Andrew.
+查看储存缓存方式二：
+{&#39;history&#39;: &quot;Human: Hi, my name is Andrew\nAI: Hello Andrew! It&#39;s nice to meet you. How can I assist you today?\nHuman: What is 1+1?\nAI: 1+1 is equal to 2.\nHuman: What is my name?\nAI: Your name is Andrew.&quot;}
+向缓存区添加指定对话的输入输出, 并查看
+Human: Hi
+AI: What&#39;s up
+{&#39;history&#39;: &quot;Human: Hi\nAI: What&#39;s up&quot;}
+继续向向缓存区添加指定对话的输入输出, 并查看
+Human: Hi
+AI: What&#39;s up
+Human: Not much, just hanging
+AI: Cool
+{&#39;history&#39;: &quot;Human: Hi\nAI: What&#39;s up\nHuman: Not much, just hanging\nAI: Cool&quot;}</code></pre>
+<p><strong>2. 対話バッファウィンドウメモリ</strong></p>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationBufferWindowMemory</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="co"># k 为窗口参数，k=1表明只保留一个对话记忆</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationBufferWindowMemory(k<span class="op">=</span><span class="dv">1</span>)  </span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 向memory添加两轮对话</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;Hi&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;What&#39;s up&quot;</span>})</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;Not much, just hanging&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;Cool&quot;</span>})</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 并查看记忆变量当前的记录</span></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>memory.load_memory_variables({})</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationBufferWindowMemory(k<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>conversation <span class="op">=</span> ConversationChain(llm<span class="op">=</span>llm, memory<span class="op">=</span>memory, verbose<span class="op">=</span><span class="va">False</span>  )</span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;第一轮对话：&quot;</span>)</span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;Hi, my name is Andrew&quot;</span>))</span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;第二轮对话：&quot;</span>)</span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;What is 1+1?&quot;</span>))</span>
+<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;第三轮对话：&quot;</span>)</span>
+<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;What is my name?&quot;</span>))</span></code></pre></div>
+<pre><code>第一轮对话：
+Hello Andrew! It&#39;s nice to meet you. How can I assist you today?
+第二轮对话：
+1+1 is equal to 2.
+第三轮对话：
+I&#39;m sorry, but I don&#39;t have access to personal information.</code></pre>
+<p><strong>3. 対話文字バッファメモリ</strong></p>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.llms <span class="im">import</span> OpenAI</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationTokenBufferMemory</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationTokenBufferMemory(llm<span class="op">=</span>llm, max_token_limit<span class="op">=</span><span class="dv">30</span>)</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;AI is what?!&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;Amazing!&quot;</span>})</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;Backpropagation is what?&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;Beautiful!&quot;</span>})</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;Chatbots are what?&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;Charming!&quot;</span>})</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.load_memory_variables({}))</span></code></pre></div>
+<pre><code>{&#39;history&#39;: &#39;AI: Beautiful!\nHuman: Chatbots are what?\nAI: Charming!&#39;}</code></pre>
+<p><strong>4. 対話要約バッファメモリ</strong></p>
+<div class="sourceCode" id="cb36"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> ConversationChain</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationSummaryBufferMemory</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 创建一个长字符串</span></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>schedule <span class="op">=</span> <span class="st">&quot;There is a meeting at 8am with your product team. </span><span class="ch">\</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="st">You will need your powerpoint presentation prepared. </span><span class="ch">\</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a><span class="st">9am-12pm have time to work on your LangChain </span><span class="ch">\</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a><span class="st">project which will go quickly because Langchain is such a powerful tool. </span><span class="ch">\</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a><span class="st">At Noon, lunch at the italian resturant with a customer who is driving </span><span class="ch">\</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a><span class="st">from over an hour away to meet you to understand the latest in AI. </span><span class="ch">\</span></span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a><span class="st">Be sure to bring your laptop to show the latest LLM demo.&quot;</span></span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 使用对话摘要缓存</span></span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationSummaryBufferMemory(llm<span class="op">=</span>llm, max_token_limit<span class="op">=</span><span class="dv">100</span>) </span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;Hello&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;What&#39;s up&quot;</span>})</span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;Not much, just hanging&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="st">&quot;Cool&quot;</span>})</span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>memory.save_context({<span class="st">&quot;input&quot;</span>: <span class="st">&quot;What is on the schedule today?&quot;</span>}, {<span class="st">&quot;output&quot;</span>: <span class="ss">f&quot;</span><span class="sc">{</span>schedule<span class="sc">}</span><span class="ss">&quot;</span>})</span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;查看对话摘要缓存储存&quot;</span>)</span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.load_memory_variables({})[<span class="st">&#39;history&#39;</span>])</span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a>conversation <span class="op">=</span> ConversationChain(llm<span class="op">=</span>llm, memory<span class="op">=</span>memory, verbose<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;基于对话摘要缓存储存的对话链&quot;</span>)</span>
+<span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a>conversation.predict(<span class="bu">input</span><span class="op">=</span><span class="st">&quot;What would be a good demo to show?&quot;</span>)</span>
+<span id="cb36-28"><a href="#cb36-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-29"><a href="#cb36-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;再次查看对话摘要缓存储存&quot;</span>)</span>
+<span id="cb36-30"><a href="#cb36-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(memory.load_memory_variables({})[<span class="st">&#39;history&#39;</span>])</span></code></pre></div>
+<pre><code>查看对话摘要缓存储存
+System: The human and AI exchange greetings. The human asks about the schedule for the day. The AI provides a detailed schedule, including a meeting with the product team, work on the LangChain project, and a lunch meeting with a customer interested in AI. The AI emphasizes the importance of bringing a laptop to showcase the latest LLM demo during the lunch meeting.
+基于对话摘要缓存储存的对话链
+
+
+&gt; Entering new  chain...
+Prompt after formatting:
+The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+Current conversation:
+System: The human and AI exchange greetings. The human asks about the schedule for the day. The AI provides a detailed schedule, including a meeting with the product team, work on the LangChain project, and a lunch meeting with a customer interested in AI. The AI emphasizes the importance of bringing a laptop to showcase the latest LLM demo during the lunch meeting.
+Human: What would be a good demo to show?
+AI:
+
+&gt; Finished chain.
+再次查看对话摘要缓存储存
+System: The human and AI exchange greetings and discuss the schedule for the day. The AI provides a detailed schedule, including a meeting with the product team, work on the LangChain project, and a lunch meeting with a customer interested in AI. The AI emphasizes the importance of bringing a laptop to showcase the latest LLM demo during the lunch meeting. The human asks what would be a good demo to show, and the AI suggests showcasing the latest LLM (Language Model) demo. The LLM is a cutting-edge AI model that can generate human-like text based on a given prompt. It has been trained on a vast amount of data and can generate coherent and contextually relevant responses. By showcasing the LLM demo, the AI can demonstrate the capabilities of their AI technology and how it can be applied to various industries and use cases.</code></pre>
+</body>
+</html>

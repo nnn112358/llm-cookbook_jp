@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>5. ドキュメントベース質問応答</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第五章-文書に基づく質問応答">第五章 文書に基づく質問応答</h1>
+<p>大規模言語モデルを使用して、特定の文書や文書集合に関する質問に答えることができる質問応答システムを構築することは、非常に実用的で効果的なアプリケーションシナリオです。<strong>モデルの事前訓練知識のみに依存する方法とは異なり、この方法はユーザー独自のデータをさらに統合し、よりパーソナライズされた専門的な質問応答サービスを実現できます</strong>。例えば、ある企業の内部文書や製品説明書などのテキスト資料を収集し、質問応答システムに導入することができます。その後、ユーザーがこれらの文書について質問する際、システムは文書内で関連情報を検索し、それを言語モデルに提供して回答を生成します。</p>
+<p>このようにして、言語モデルは自身の一般的な知識を活用するだけでなく、外部から入力された文書の専門情報を十分に活用してユーザーの質問に回答し、答えの質と適用性を大幅に向上させます。このような外部文書に基づく質問応答システムを構築することで、言語モデルを一般的なレベルにとどまらず、具体的なシナリオにより良く対応させることができます。言語モデルのこのような柔軟な応用方法は、実際の使用において推奨されるべきです。</p>
+<p>文書に基づく質問応答のこのプロセスでは、LangChainの他のコンポーネント、例えば：埋め込みモデル（Embedding
+Models）とベクトルストレージ（Vector
+Stores）に関わることになります。本章では、これらの内容について一緒に学習していきましょう。</p>
+<h2
+id="一ベクトルストレージの直接的な使用による検索">一、ベクトルストレージの直接的な使用による検索</h2>
+<h3 id="データのインポート">1.1 データのインポート</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> RetrievalQA  <span class="co">#检索QA链，在文档上进行检索</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI  <span class="co">#openai模型</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> CSVLoader <span class="co">#文档加载器，采用csv格式存储</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.vectorstores <span class="im">import</span> DocArrayInMemorySearch  <span class="co">#向量存储</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display, Markdown <span class="co">#在jupyter显示信息的工具</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="bu">file</span> <span class="op">=</span> <span class="st">&#39;../data/OutdoorClothingCatalog_1000.csv&#39;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 使用langchain文档加载器对数据进行导入</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> CSVLoader(file_path<span class="op">=</span><span class="bu">file</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 使用pandas导入数据，用以查看</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pd.read_csv(<span class="bu">file</span>,usecols<span class="op">=</span>[<span class="dv">1</span>, <span class="dv">2</span>])</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>data.head()</span></code></pre></div>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th>
+</th>
+<th>
+name
+</th>
+<th>
+description
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>
+0
+</th>
+<td>
+Women’s Campside Oxfords
+</td>
+<td>
+This ultracomfortable lace-to-toe Oxford boast…
+</td>
+</tr>
+<tr>
+<th>
+1
+</th>
+<td>
+Recycled Waterhog Dog Mat, Chevron Weave
+</td>
+<td>
+Protect your floors from spills and splashing …
+</td>
+</tr>
+<tr>
+<th>
+2
+</th>
+<td>
+Infant and Toddler Girls’ Coastal Chill Swimsu…
+</td>
+<td>
+She’ll love the bright colors, ruffles and exc…
+</td>
+</tr>
+<tr>
+<th>
+3
+</th>
+<td>
+Refresh Swimwear, V-Neck Tankini Contrasts
+</td>
+<td>
+Whether you’re going for a swim or heading out…
+</td>
+</tr>
+<tr>
+<th>
+4
+</th>
+<td>
+EcoFlex 3L Storm Pants
+</td>
+<td>
+Our new TEK O2 technology makes our four-seaso…
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>データは <code>name</code> と <code>description</code>
+フィールドを持つテキストデータです：</p>
+<p>ご覧のように、インポートされたデータセットはアウトドア衣料のCSVファイルで、次に言語モデルでこれを使用します。</p>
+<h3 id="基本的な文書ローダーによるベクトルストレージの作成">1.2
+基本的な文書ローダーによるベクトルストレージの作成</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#导入向量存储索引创建器</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.indexes <span class="im">import</span> VectorstoreIndexCreator </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 创建指定向量存储类, 创建完成后，从加载器中调用, 通过文档加载器列表加载</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>index <span class="op">=</span> VectorstoreIndexCreator(vectorstore_cls<span class="op">=</span>DocArrayInMemorySearch).from_loaders([loader])</span></code></pre></div>
+<h3 id="作成されたベクトルストレージのクエリ">1.3
+作成されたベクトルストレージのクエリ</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span><span class="st">&quot;すべての日焼け防止機能を持つシャツをmarkdownテーブル形式でリストアップし、各シャツの説明を要約してください&quot;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#使用索引查询创建一个响应，并传入这个查询</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> index.query(query)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">#查看查询返回的内容</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>display(Markdown(response))</span></code></pre></div>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Men’s Tropical Plaid Short-Sleeve Shirt</td>
+<td>UPF 50+ rated sun protection, 100% polyester fabric,
+wrinkle-resistant, front and back cape venting, two front bellows
+pockets</td>
+</tr>
+<tr class="even">
+<td>Men’s Plaid Tropic Shirt, Short-Sleeve</td>
+<td>UPF 50+ rated sun protection, 52% polyester and 48% nylon fabric,
+wrinkle-free, quickly evaporates perspiration, front and back cape
+venting, two front bellows pockets</td>
+</tr>
+<tr class="odd">
+<td>Girls’ Ocean Breeze Long-Sleeve Stripe Shirt</td>
+<td>UPF 50+ rated sun protection, Nylon Lycra®-elastane blend fabric,
+quick-drying and fade-resistant, holds shape well, durable
+seawater-resistant fabric retains its color</td>
+</tr>
+</tbody>
+</table>
+<p>上記では、すべての日焼け防止機能付きシャツの <code>名前(Name)</code>
+と <code>説明(Description)</code>
+を含むMarkdownテーブルを取得しました。その説明は言語モデルによって要約された結果です。</p>
+<h2
+id="二表現モデルとベクトルストレージの組み合わせ">二、表現モデルとベクトルストレージの組み合わせ</h2>
+<p>言語モデルのコンテキスト長制限により、長い文書を直接処理することは困難です。長い文書に対する質問応答を実現するために、ベクトル埋め込み（Embeddings）とベクトルストレージ（Vector
+Store）などの技術を導入できます：</p>
+<p>まず、<strong>テキスト埋め込み（Embeddings）アルゴリズムを使用して文書をベクトル化</strong>し、意味的に類似したテキスト片が近いベクトル表現を持つようにします。次に、<strong>ベクトル化された文書を小さなチャンクに分割し、ベクトルデータベースに保存</strong>します。このプロセスがまさにインデックス（index）作成の過程です。ベクトルデータベースは各文書片にインデックスを付け、高速検索をサポートします。このようにして、ユーザーが質問を提出する際、まず質問をベクトルに変換し、データベース内で意味的に最も関連性の高い文書片を素早く見つけることができます。そして、これらの文書片と質問を一緒に言語モデルに渡し、回答を生成します。</p>
+<p>埋め込みベクトル化とインデックス技術により、長い文書のスライス検索と質問応答を実現しました。この手法は言語モデルのコンテキスト制限を克服し、大規模文書を処理する質問応答システムを構築できます。</p>
+<h3 id="データのインポート-1">2.1 データのインポート</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#创建一个文档加载器，通过csv格式加载</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">file</span> <span class="op">=</span> <span class="st">&#39;../data/OutdoorClothingCatalog_1000.csv&#39;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> CSVLoader(file_path<span class="op">=</span><span class="bu">file</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> loader.load()</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">#查看单个文档，每个文档对应于CSV中的一行数据</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>docs[<span class="dv">0</span>]</span></code></pre></div>
+<pre><code>Document(page_content=&quot;: 0\nname: Women&#39;s Campside Oxfords\ndescription: This ultracomfortable lace-to-toe Oxford boasts a super-soft canvas, thick cushioning, and quality construction for a broken-in feel from the first time you put them on. \n\nSize &amp; Fit: Order regular shoe size. For half sizes not offered, order up to next whole size. \n\nSpecs: Approx. weight: 1 lb.1 oz. per pair. \n\nConstruction: Soft canvas material for a broken-in feel and look. Comfortable EVA innersole with Cleansport NXT® antimicrobial odor control. Vintage hunt, fish and camping motif on innersole. Moderate arch contour of innersole. EVA foam midsole for cushioning and support. Chain-tread-inspired molded rubber outsole with modified chain-tread pattern. Imported. \n\nQuestions? Please contact us for any inquiries.&quot;, metadata={&#39;source&#39;: &#39;../data/OutdoorClothingCatalog_1000.csv&#39;, &#39;row&#39;: 0})</code></pre>
+<h3 id="テキストベクトル表現モデル">2.2 テキストベクトル表現モデル</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#使用OpenAIEmbedding类</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.embeddings <span class="im">import</span> OpenAIEmbeddings </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>embeddings <span class="op">=</span> OpenAIEmbeddings() </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">#因为文档比较短了，所以这里不需要进行任何分块,可以直接进行向量表征</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">#使用初始化OpenAIEmbedding实例上的查询方法embed_query为文本创建向量表征</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>embed <span class="op">=</span> embeddings.embed_query(<span class="st">&quot;你好呀，我的名字叫小可爱&quot;</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co">#查看得到向量表征的长度</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n\033</span><span class="st">[32m向量表征的长度: </span><span class="ch">\033</span><span class="st">[0m </span><span class="ch">\n</span><span class="st">&quot;</span>, <span class="bu">len</span>(embed))</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co">#每个元素都是不同的数字值，组合起来就是文本的向量表征</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n\033</span><span class="st">[32m向量表征前5个元素: </span><span class="ch">\033</span><span class="st">[0m </span><span class="ch">\n</span><span class="st">&quot;</span>, embed[:<span class="dv">5</span>])</span></code></pre></div>
+<pre><code>向量表征的长度:  
+ 1536
+
+向量表征前5个元素:  
+ [-0.019283676849006164, -0.006842594710511029, -0.007344046732916966, -0.024501312942119265, -0.026608679897592472]</code></pre>
+<h3 id="ベクトル表現に基づくベクトルストレージの作成とクエリ">2.3
+ベクトル表現に基づくベクトルストレージの作成とクエリ</h3>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 将刚才创建文本向量表征(embeddings)存储在向量存储(vector store)中</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 使用DocArrayInMemorySearch类的from_documents方法来实现</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 该方法接受文档列表以及向量表征模型作为输入</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>db <span class="op">=</span> DocArrayInMemorySearch.from_documents(docs, embeddings)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span> <span class="st">&quot;日焼け防止機能を持つシャツを推奨してください&quot;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co">#使用上面的向量存储来查找与传入查询类似的文本，得到一个相似文档列表</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> db.similarity_search(query)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n\033</span><span class="st">[32m返回文档的个数: </span><span class="ch">\033</span><span class="st">[0m </span><span class="ch">\n</span><span class="st">&quot;</span>, <span class="bu">len</span>(docs))</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n\033</span><span class="st">[32m第一个文档: </span><span class="ch">\033</span><span class="st">[0m </span><span class="ch">\n</span><span class="st">&quot;</span>, docs[<span class="dv">0</span>])</span></code></pre></div>
+<pre><code>返回文档的个数:  
+ 4
+
+第一个文档:  
+ page_content=&quot;: 535\nname: Men&#39;s TropicVibe Shirt, Short-Sleeve\ndescription: This Men’s sun-protection shirt with built-in UPF 50+ has the lightweight feel you want and the coverage you need when the air is hot and the UV rays are strong. Size &amp; Fit: Traditional Fit: Relaxed through the chest, sleeve and waist. Fabric &amp; Care: Shell: 71% Nylon, 29% Polyester. Lining: 100% Polyester knit mesh. UPF 50+ rated – the highest rated sun protection possible. Machine wash and dry. Additional Features: Wrinkle resistant. Front and back cape venting lets in cool breezes. Two front bellows pockets. Imported.\n\nSun Protection That Won&#39;t Wear Off: Our high-performance fabric provides SPF 50+ sun protection, blocking 98% of the sun&#39;s harmful rays.&quot; metadata={&#39;source&#39;: &#39;../data/OutdoorClothingCatalog_1000.csv&#39;, &#39;row&#39;: 535}</code></pre>
+<p>4つの結果が返されたことがわかります。最初の出力結果は日焼け防止に関するシャツで、私たちのクエリ要求を満たしています：<code>日焼け防止機能を持つシャツを推奨してください</code></p>
+<h3 id="クエリ結果を使用したプロンプト構築による質問回答">2.4
+クエリ結果を使用したプロンプト構築による質問回答</h3>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">#导入大语言模型, 这里使用默认模型gpt-3.5-turbo会出现504服务器超时，</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co">#因此使用gpt-3.5-turbo-0301</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(model_name<span class="op">=</span><span class="st">&quot;gpt-3.5-turbo-0301&quot;</span>,temperature <span class="op">=</span> <span class="fl">0.0</span>) </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co">#合并获得的相似文档内容</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>qdocs <span class="op">=</span> <span class="st">&quot;&quot;</span>.join([docs[i].page_content <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(docs))])  </span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">#マージされた類似文書の内容に質問（question）を加えて `llm.call_as_llm` に入力</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">#ここでの質問は：すべての日焼け防止機能付きシャツをMarkdownテーブル形式でリストアップし要約する</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> llm.call_as_llm(<span class="ss">f&quot;</span><span class="sc">{</span>qdocs<span class="sc">}</span><span class="ss">質問：すべての日焼け防止機能を持つシャツをmarkdownテーブル形式でリストアップし、各シャツの説明を要約してください&quot;</span>) </span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>display(Markdown(response))</span></code></pre></div>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>衣服名称</th>
+<th>描述总结</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Men’s TropicVibe Shirt, Short-Sleeve</td>
+<td>男士短袖衬衫，内置UPF
+50+防晒功能，轻盈舒适，前后通风口，两个前口袋，防皱，最高级别的防晒保护。</td>
+</tr>
+<tr class="even">
+<td>Men’s Tropical Plaid Short-Sleeve Shirt</td>
+<td>男士短袖衬衫，UPF
+50+防晒，100%聚酯纤维，防皱，前后通风口，两个前口袋，最高级别的防晒保护。</td>
+</tr>
+<tr class="odd">
+<td>Men’s Plaid Tropic Shirt, Short-Sleeve</td>
+<td>男士短袖衬衫，UPF
+50+防晒，52%聚酯纤维和48%尼龙，防皱，前后通风口，两个前口袋，最高级别的防晒保护。</td>
+</tr>
+<tr class="even">
+<td>Girls’ Ocean Breeze Long-Sleeve Stripe Shirt</td>
+<td>女孩长袖衬衫，UPF
+50+防晒，尼龙Lycra®-弹性纤维混纺，快干，耐褪色，防水，最高级别的防晒保护，适合与我们的泳衣系列搭配。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="検索質問応答チェーンを使用した質問回答">2.5
+検索質問応答チェーンを使用した質問回答</h3>
+<p>LangChainで検索質問応答チェーンを作成し、検索された文書に対して質問応答を行います。検索質問応答チェーンの入力には以下が含まれます
+- <code>llm</code>: 言語モデル、テキスト生成を実行 -
+<code>chain_type</code>:
+チェーンタイプを指定。ここではstuffを使用し、すべてのクエリで取得した文書を一つの文書に結合して次のステップに渡します。他の方法には以下があります：
+- Map Reduce：
+すべてのチャンクと質問を一緒に言語モデルに渡し、応答を取得し、別の言語モデル呼び出しですべての個別応答を結合して最終答えを作成します。任意の数の文書で実行できます。個別の質問を並行処理できますが、より多くの呼び出しが必要です。すべての文書を独立したものとして扱います
+- Refine：
+多くの文書をループ処理するために使用され、実際には反復で実装され、以前の文書の答えの上に構築されます。情報を結合し、時間とともに段階的に答えを構築するのに非常に適しています。以前の呼び出し結果に依存するため、通常より長い時間がかかり、Map
+Reduceと同じくらいの呼び出しが必要です - Map Re-rank：
+各文書に対して個別の言語モデル呼び出しを行い、スコアを返すよう求め、最高スコアを選択します。これは言語モデルがスコアが何であるべきかを知っていることに依存し、文書と関連性がある場合は高スコアであるべきだと伝え、そこで説明を細かく調整する必要があります。バッチ処理が可能で比較的高速ですが、より高価です</p>
+<img src="../figures/C3/3_additional%20methods.png" />
+<div data-align="center">
+图 3.5 检索问答链
+</div>
+<ul>
+<li><code>retriever</code>:リトリーバー</li>
+</ul>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">#基于向量储存，创建检索器</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>retriever <span class="op">=</span> db.as_retriever() </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>qa_stuff <span class="op">=</span> RetrievalQA.from_chain_type(</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    llm<span class="op">=</span>llm, </span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    chain_type<span class="op">=</span><span class="st">&quot;stuff&quot;</span>, </span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    retriever<span class="op">=</span>retriever, </span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    verbose<span class="op">=</span><span class="va">True</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="co">#クエリを作成し、このクエリでチェーンを実行</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span>  <span class="st">&quot;すべての日焼け防止機能を持つシャツをmarkdownテーブル形式でリストアップし、各シャツの説明を要約してください&quot;</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> qa_stuff.run(query)</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>display(Markdown(response)) </span></code></pre></div>
+<pre><code>&gt; Entering new RetrievalQA chain...
+
+&gt; Finished chain.</code></pre>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>编号</th>
+<th>名称</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>618</td>
+<td>Men’s Tropical Plaid Short-Sleeve Shirt</td>
+<td>100%聚酯纤维制成，轻便，防皱，前后背部有通风口，两个前面的褶皱口袋，UPF
+50+防晒等级，可阻挡98%的紫外线</td>
+</tr>
+<tr class="even">
+<td>374</td>
+<td>Men’s Plaid Tropic Shirt, Short-Sleeve</td>
+<td>52%聚酯纤维和48%尼龙制成，轻便，防皱，前后背部有通风口，两个前面的褶皱口袋，UPF
+50+防晒等级，可阻挡98%的紫外线</td>
+</tr>
+<tr class="odd">
+<td>535</td>
+<td>Men’s TropicVibe Shirt, Short-Sleeve</td>
+<td>71%尼龙和29%聚酯纤维制成，轻便，防皱，前后背部有通风口，两个前面的褶皱口袋，UPF
+50+防晒等级，可阻挡98%的紫外线</td>
+</tr>
+<tr class="even">
+<td>293</td>
+<td>Girls’ Ocean Breeze Long-Sleeve Stripe Shirt</td>
+<td>尼龙Lycra®-弹性纤维混纺，长袖，UPF
+50+防晒等级，可阻挡98%的紫外线，快干，耐褪色，可与我们的泳衣系列轻松搭配</td>
+</tr>
+</tbody>
+</table>
+<p>总结：这些衬衫都具有防晒功能，防晒等级为UPF
+50+，可阻挡98%的紫外线。它们都是轻便的，防皱的，有前后背部通风口和前面的褶皱口袋。其中女孩的长袖条纹衬衫是由尼龙Lycra®-弹性纤维混纺制成，快干，耐褪色，可与泳衣系列轻松搭配。</p>
+<p>2.5と2.6部分のこの2つの方法が同じ結果を返すことがわかります。</p>
+<h2 id="英語版プロンプト">英語版プロンプト</h2>
+<p><strong>1. ベクトルストレージの直接クエリ</strong></p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> CSVLoader </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.indexes <span class="im">import</span> VectorstoreIndexCreator</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="bu">file</span> <span class="op">=</span> <span class="st">&#39;../data/OutdoorClothingCatalog_1000.csv&#39;</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> CSVLoader(file_path<span class="op">=</span><span class="bu">file</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>index <span class="op">=</span> VectorstoreIndexCreator(vectorstore_cls<span class="op">=</span>DocArrayInMemorySearch).from_loaders([loader])</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span><span class="st">&quot;Please list all your shirts with sun protection </span><span class="ch">\</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="st">in a table in markdown and summarize each one.&quot;</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> index.query(query)</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>display(Markdown(response))</span></code></pre></div>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Men’s Tropical Plaid Short-Sleeve Shirt</td>
+<td>UPF 50+ rated, 100% polyester, wrinkle-resistant, front and back
+cape venting, two front bellows pockets</td>
+</tr>
+<tr class="even">
+<td>Men’s Plaid Tropic Shirt, Short-Sleeve</td>
+<td>UPF 50+ rated, 52% polyester and 48% nylon, machine washable and
+dryable, front and back cape venting, two front bellows pockets</td>
+</tr>
+<tr class="odd">
+<td>Men’s TropicVibe Shirt, Short-Sleeve</td>
+<td>UPF 50+ rated, 71% Nylon, 29% Polyester, 100% Polyester knit mesh,
+machine wash and dry, front and back cape venting, two front bellows
+pockets</td>
+</tr>
+<tr class="even">
+<td>Sun Shield Shirt by</td>
+<td>UPF 50+ rated, 78% nylon, 22% Lycra Xtra Life fiber, handwash, line
+dry, wicks moisture, fits comfortably over swimsuit, abrasion
+resistant</td>
+</tr>
+</tbody>
+</table>
+<p>All four shirts provide UPF 50+ sun protection, blocking 98% of the
+sun’s harmful rays. The Men’s Tropical Plaid Short-Sleeve Shirt is made
+of 100% polyester and is wrinkle-resistant</p>
+<p><strong>2. 表現モデルとベクトルストレージの組み合わせ</strong></p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> CSVLoader </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.embeddings <span class="im">import</span> OpenAIEmbeddings </span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.vectorstores <span class="im">import</span> DocArrayInMemorySearch  </span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>embeddings <span class="op">=</span> OpenAIEmbeddings() </span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>embed <span class="op">=</span> embeddings.embed_query(<span class="st">&quot;Hi my name is Harrison&quot;</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n\033</span><span class="st">[32m向量表征的长度: </span><span class="ch">\033</span><span class="st">[0m </span><span class="ch">\n</span><span class="st">&quot;</span>, <span class="bu">len</span>(embed))</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n\033</span><span class="st">[32m向量表征前5个元素: </span><span class="ch">\033</span><span class="st">[0m </span><span class="ch">\n</span><span class="st">&quot;</span>, embed[:<span class="dv">5</span>])</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="bu">file</span> <span class="op">=</span> <span class="st">&#39;../data/OutdoorClothingCatalog_1000.csv&#39;</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> CSVLoader(file_path<span class="op">=</span><span class="bu">file</span>)</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> loader.load()</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>embeddings <span class="op">=</span> OpenAIEmbeddings() </span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>db <span class="op">=</span> DocArrayInMemorySearch.from_documents(docs, embeddings)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span> <span class="st">&quot;Please suggest a shirt with sunblocking&quot;</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> db.similarity_search(query)</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n\033</span><span class="st">[32m返回文档的个数: </span><span class="ch">\033</span><span class="st">[0m </span><span class="ch">\n</span><span class="st">&quot;</span>, <span class="bu">len</span>(docs))</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n\033</span><span class="st">[32m第一个文档: </span><span class="ch">\033</span><span class="st">[0m </span><span class="ch">\n</span><span class="st">&quot;</span>, docs[<span class="dv">0</span>])</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a><span class="co"># クエリ結果を使用したプロンプト構築による質問回答</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(model_name<span class="op">=</span><span class="st">&quot;gpt-3.5-turbo-0301&quot;</span>,temperature <span class="op">=</span> <span class="fl">0.0</span>) </span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>qdocs <span class="op">=</span> <span class="st">&quot;&quot;</span>.join([docs[i].page_content <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(docs))])  </span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> llm.call_as_llm(<span class="ss">f&quot;</span><span class="sc">{</span>qdocs<span class="sc">}</span><span class="ss"> Question: Please list all your </span><span class="ch">\</span></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a><span class="ss">shirts with sun protection in a table in markdown and summarize each one.&quot;</span>) </span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n\033</span><span class="st">[32mクエリ結果を使用したプロンプト構築による質問回答: </span><span class="ch">\033</span><span class="st">[0m </span><span class="ch">\n</span><span class="st">&quot;</span>, docs[<span class="dv">0</span>])</span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>display(Markdown(response))</span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a><span class="co"># 検索質問応答チェーンを使用した質問回答</span></span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>retriever <span class="op">=</span> db.as_retriever() </span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>qa_stuff <span class="op">=</span> RetrievalQA.from_chain_type(</span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>    llm<span class="op">=</span>llm, </span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>    chain_type<span class="op">=</span><span class="st">&quot;stuff&quot;</span>, </span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>    retriever<span class="op">=</span>retriever, </span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>    verbose<span class="op">=</span><span class="va">True</span></span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-48"><a href="#cb14-48" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span>  <span class="st">&quot;Please list all your shirts with sun protection in a table </span><span class="ch">\</span></span>
+<span id="cb14-49"><a href="#cb14-49" aria-hidden="true" tabindex="-1"></a><span class="st">in markdown and summarize each one.&quot;</span></span>
+<span id="cb14-50"><a href="#cb14-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-51"><a href="#cb14-51" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> qa_stuff.run(query)</span>
+<span id="cb14-52"><a href="#cb14-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n\033</span><span class="st">[32m 検索質問応答チェーンを使用した質問回答： </span><span class="ch">\033</span><span class="st">[0m </span><span class="ch">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb14-54"><a href="#cb14-54" aria-hidden="true" tabindex="-1"></a>display(Markdown(response)) </span></code></pre></div>
+<pre><code>向量表征的长度:  
+ 1536
+
+向量表征前5个元素:  
+ [-0.021913960932078383, 0.006774206755842609, -0.018190348816400977, -0.039148249368104494, -0.014089343366938917]
+
+返回文档的个数:  
+ 4
+
+第一个文档:  
+ page_content=&#39;: 255\nname: Sun Shield Shirt by\ndescription: &quot;Block the sun, not the fun – our high-performance sun shirt is guaranteed to protect from harmful UV rays. \n\nSize &amp; Fit: Slightly Fitted: Softly shapes the body. Falls at hip.\n\nFabric &amp; Care: 78% nylon, 22% Lycra Xtra Life fiber. UPF 50+ rated – the highest rated sun protection possible. Handwash, line dry.\n\nAdditional Features: Wicks moisture for quick-drying comfort. Fits comfortably over your favorite swimsuit. Abrasion resistant for season after season of wear. Imported.\n\nSun Protection That Won\&#39;t Wear Off\nOur high-performance fabric provides SPF 50+ sun protection, blocking 98% of the sun\&#39;s harmful rays. This fabric is recommended by The Skin Cancer Foundation as an effective UV protectant.&#39; metadata={&#39;source&#39;: &#39;../data/OutdoorClothingCatalog_1000.csv&#39;, &#39;row&#39;: 255}
+
+使用查询结果构造提示来回答问题:  
+ page_content=&#39;: 255\nname: Sun Shield Shirt by\ndescription: &quot;Block the sun, not the fun – our high-performance sun shirt is guaranteed to protect from harmful UV rays. \n\nSize &amp; Fit: Slightly Fitted: Softly shapes the body. Falls at hip.\n\nFabric &amp; Care: 78% nylon, 22% Lycra Xtra Life fiber. UPF 50+ rated – the highest rated sun protection possible. Handwash, line dry.\n\nAdditional Features: Wicks moisture for quick-drying comfort. Fits comfortably over your favorite swimsuit. Abrasion resistant for season after season of wear. Imported.\n\nSun Protection That Won\&#39;t Wear Off\nOur high-performance fabric provides SPF 50+ sun protection, blocking 98% of the sun\&#39;s harmful rays. This fabric is recommended by The Skin Cancer Foundation as an effective UV protectant.&#39; metadata={&#39;source&#39;: &#39;../data/OutdoorClothingCatalog_1000.csv&#39;, &#39;row&#39;: 255}</code></pre>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sun Shield Shirt</td>
+<td>High-performance sun shirt with UPF 50+ sun protection,
+moisture-wicking, and abrasion-resistant fabric. Recommended by The Skin
+Cancer Foundation.</td>
+</tr>
+<tr class="even">
+<td>Men’s Plaid Tropic Shirt</td>
+<td>Ultracomfortable shirt with UPF 50+ sun protection, wrinkle-free
+fabric, and front/back cape venting. Made with 52% polyester and 48%
+nylon.</td>
+</tr>
+<tr class="odd">
+<td>Men’s TropicVibe Shirt</td>
+<td>Men’s sun-protection shirt with built-in UPF 50+ and front/back cape
+venting. Made with 71% nylon and 29% polyester.</td>
+</tr>
+<tr class="even">
+<td>Men’s Tropical Plaid Short-Sleeve Shirt</td>
+<td>Lightest hot-weather shirt with UPF 50+ sun protection, front/back
+cape venting, and two front bellows pockets. Made with 100%
+polyester.</td>
+</tr>
+</tbody>
+</table>
+<p>All of these shirts provide UPF 50+ sun protection, blocking 98% of
+the sun’s harmful rays. They also have additional features such as
+moisture-wicking, wrinkle-free fabric, and front/back cape venting for
+added comfort.</p>
+<pre><code>&gt; Entering new RetrievalQA chain...
+
+&gt; Finished chain.
+
+ 使用检索问答链来回答问题：  </code></pre>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Shirt Number</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>618</td>
+<td>Men’s Tropical Plaid Short-Sleeve Shirt</td>
+<td>Rated UPF 50+ for superior protection from the sun’s UV rays. Made
+of 100% polyester and is wrinkle-resistant. With front and back cape
+venting that lets in cool breezes and two front bellows pockets.</td>
+</tr>
+<tr class="even">
+<td>374</td>
+<td>Men’s Plaid Tropic Shirt, Short-Sleeve</td>
+<td>Rated to UPF 50+ and offers sun protection. Made with 52% polyester
+and 48% nylon, this shirt is machine washable and dryable. Additional
+features include front and back cape venting, two front bellows
+pockets.</td>
+</tr>
+<tr class="odd">
+<td>535</td>
+<td>Men’s TropicVibe Shirt, Short-Sleeve</td>
+<td>Built-in UPF 50+ has the lightweight feel you want and the coverage
+you need when the air is hot and the UV rays are strong. Made with 71%
+Nylon, 29% Polyester. Wrinkle resistant. Front and back cape venting
+lets in cool breezes. Two front bellows pockets.</td>
+</tr>
+<tr class="even">
+<td>255</td>
+<td>Sun Shield Shirt</td>
+<td>High-performance sun shirt is guaranteed to protect from harmful UV
+rays. Made with 78% nylon, 22% Lycra Xtra Life fiber. Wicks moisture for
+quick-drying comfort. Fits comfortably over your favorite swimsuit.
+Abrasion-resistant.</td>
+</tr>
+</tbody>
+</table>
+<p>All of the shirts listed above provide sun protection with a UPF
+rating of 50+ and block 98% of the sun’s harmful rays. The Men’s
+Tropical Plaid Short-Sleeve Shirt is made of 100% polyester and has
+front and back cape venting and two front bellows pockets. The Men’s
+Plaid Tropic Shirt, Short-Sleeve is made with 52% polyester and 48%
+nylon and has front and back cape venting and two front bellows pockets.
+The Men’s TropicVibe Shirt, Short-Sleeve is made with 71% Nylon, 29%
+Polyester and has front and back cape venting and two front bellows
+pockets. The Sun Shield Shirt is made with 78% nylon, 22% Lycra Xtra
+Life fiber and is abrasion-resistant. It fits comfortably over your
+favorite swimsuit.</p>
+</body>
+</html>

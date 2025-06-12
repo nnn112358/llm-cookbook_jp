@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>3. 反復最適化</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第3章-反復最適化">第3章 反復最適化</h1>
+<p>大規模言語モデルのアプリケーションを開発する際、最初の試行で完璧に適用できるPromptを得ることは困難です。しかし、重要なのは<strong>優れた反復最適化プロセス</strong>を持ち、Promptを継続的に改善することです。機械学習モデルの訓練と比較して、Promptの一回の成功率は高いかもしれませんが、それでもアプリケーションに最も適した形式を見つけるために複数回の反復が必要です。</p>
+<p>本章では、製品仕様書からマーケティング文案を生成する例を通じて、Prompt反復最適化の考え方を示します。これは、Andrew
+Ngが機械学習コースで実演した機械学習モデル開発の流れと似ています：アイデアを得た後、コードを書き、データを取得し、モデルを訓練し、結果を確認する。エラーを分析して適用領域を見つけ、方案を調整して再度訓練する。Prompt開発も同様の循環的反復方式を採用し、段階的に最適に近づきます。具体的には、タスクのアイデアを得た後、まず初版のPromptを書き、明確で簡潔にし、モデルに十分な思考時間を与えることに注意します。実行後に結果を確認し、理想的でない場合は、Promptが不明確であったり思考時間が不足していたりする原因を分析し、改善を行い、再度実行します。このように何度も循環することで、最終的にアプリケーションに適したPromptを見つけることができます。</p>
+<figure>
+<img src="../figures/C1/Iterative-Prompt-Develelopment.png" alt="1" />
+<figcaption aria-hidden="true">1</figcaption>
+</figure>
+<div data-align="center">
+図 1.3 Prompt反復最適化フロー
+</div>
+<p>つまり、すべてのものに適用できるいわゆる「最良のPrompt」は存在せず、効率的なPromptを開発する鍵は、最初から完璧を求めるのではなく、良い反復最適化プロセスを見つけることです。迅速な試行錯誤反復により、特定のアプリケーションに適した最良のPrompt形式を効果的に決定できます。</p>
+<h2
+id="一製品仕様書からマーケティング製品記述の生成">一、製品仕様書からマーケティング製品記述の生成</h2>
+<p>椅子の資料ページが与えられています。それは<em>中世紀インスピレーション</em>シリーズに属し、イタリア産で、材料、構造、寸法、オプションアクセサリなどのパラメータを紹介していると記載されています。この仕様書を使用してマーケティングチームがECプラットフォーム向けのマーケティング記述原稿を作成するのを支援したいと仮定します：</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 例：製品仕様書</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>fact_sheet_chair <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st">概要</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">    美しい中世紀スタイルのオフィス家具シリーズの一部で、ファイルキャビネット、デスク、本棚、会議テーブルなどが含まれます。</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st">    複数のシェルカラーとベース塗装オプションから選択可能。</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="st">    プラスチック前後背もたれ装飾（SWC-100）または10種類の生地と6種類の革の完全装飾（SWC-110）を選択可能。</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="st">    ベース塗装オプション：ステンレススチール、マットブラック、グロスホワイト、クロム。</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="st">    椅子は肘掛け付きまたは肘掛けなしで利用可能。</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="st">    家庭用または商業用途に適用。</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="st">    契約使用資格に適合。</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="st">構造</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="st">    5輪のプラスチックコーティングアルミニウムベース。</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="st">    空気圧椅子調整機能で昇降が簡単。</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="st">寸法</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="st">    幅53センチ|20.87インチ</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="st">    奥行き51センチ|20.08インチ</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="st">    高さ80センチ|31.50インチ</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="st">    座面高44センチ|17.32インチ</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="st">    座面奥行き41センチ|16.14インチ</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="st">オプション</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="st">    ソフトフロアまたはハードフロアキャスターオプション。</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="st">    2種類の座面フォーム密度から選択：中密度（1.8ポンド/立方フィート）または高密度（2.8ポンド/立方フィート）。</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="st">    肘掛けなしまたは8ポジションPU肘掛け。</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="st">材料</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="st">外装ベーススライダー</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="st">    改性ナイロンPA6/PA66コーティングの鋳造アルミニウム。</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="st">    シェル厚：10ミリ。</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="st">    座面</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="st">    HD36フォーム</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="st">原産国</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="st">    イタリア</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span></span></code></pre></div>
+<h3 id="初期プロンプト">1.1 初期プロンプト</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tool <span class="im">import</span> get_completion</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Prompt：仕様書に基づいてマーケティング記述を作成</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ss">あなたの任務は、マーケティングチームが技術仕様書に基づいて製品のマーケティング記述を作成するのを支援することです。</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="ss">```で囲まれた技術仕様書で提供された情報に基づいて、製品記述を書いてください。</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="ss">技術仕様: ```</span><span class="sc">{</span>fact_sheet_chair<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>製品記述：
+
+美しい中世紀スタイルのオフィス家具シリーズを誇らしく紹介します。このシリーズには、ファイルキャビネット、デスク、本棚、会議テーブルなどが含まれます。私たちの製品は、複数のシェルカラーとベース塗装を採用し、お客様の個性的なニーズに応えます。プラスチック前後背もたれ装飾（SWC-100）または10種類の生地と6種類の革の完全装飾（SWC-110）から選択でき、オフィスをより快適でスタイリッシュにします。
+
+私たちのベース塗装オプションには、ステンレススチール、マットブラック、グロスホワイト、クロムが含まれ、お客様の異なるニーズに応えます。椅子は肘掛け付きまたは肘掛けなしで、家庭用または商業用途に適用できます。私たちの製品は契約使用資格に適合し、より信頼性の高い保証を提供します。
+
+私たちの製品は5輪のプラスチックコーティングアルミニウムベースを採用し、空気圧椅子調整で昇降が簡単です。寸法は幅53センチ|20.87インチ、奥行き51センチ|20.08インチ、高さ80センチ|31.50インチ、座面高44センチ|17.32インチ、座面奥行き41センチ|16.14インチで、快適な使用体験を提供します。
+
+私たちの製品は、ソフトフロアまたはハードフロアキャスターオプション、2種類の座面フォーム密度から選択：中密度（1.8ポンド/立方フィート）または高密度（2.8ポンド/立方フィート）、肘掛けなしまたは8ポジションPU肘掛けなど、お客様の異なるニーズに応えます。
+
+私たちの製品は、改性ナイロンPA6/PA66コーティングの鋳造アルミニウム外装ベーススライダーを採用し、シェル厚は10ミリ、座面はHD36フォームを使用し、より快適な使用体験を提供します。私たちの製品の原産国はイタリアで、より優れた品質保証を提供します。</code></pre>
+<h3 id="プロンプト最適化1-生成テキストが長すぎる問題の解決">1.2
+プロンプト最適化1: 生成テキストが長すぎる問題の解決</h3>
+<p>要求をよく満たしているようで、つまり技術仕様書から始めて製品記述を書き、洗練された中世紀スタイルのオフィス椅子を紹介しています。しかし、この生成された内容を見ると、<strong>長すぎる</strong>と感じます。</p>
+<p>言語モデルが製品仕様に基づいて生成した最初のバージョンのマーケティング文案を見た後、テキストの長さが長すぎて、簡潔なECの広告文としては適さないことに気づきました。そこで、この時点でPromptを最適化改善する必要があります。具体的には、最初のバージョンの結果は技術仕様からマーケティング文案への変換要求を満たし、中世紀スタイルのオフィス椅子の詳細を記述しました。しかし、冗長すぎるテキストはECシナリオには適さない。この時、<strong>Promptに長さ制限を追加</strong>し、より簡潔な文案を生成するよう要求できます。</p>
+<p>抽出した回答を空白で分割すると、日本語の回答は97文字で、設計要求を良く満たしています。</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 最適化されたPrompt、50語以下の記述生成を要求</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ss">あなたの任務は、マーケティングチームが技術仕様書に基づいて製品の小売ウェブサイト記述を作成するのを支援することです。</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ss">```で囲まれた技術仕様書で提供された情報に基づいて、製品記述を書いてください。</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="ss">最大50語を使用してください。</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="ss">技術仕様：```</span><span class="sc">{</span>fact_sheet_chair<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>中世紀スタイルのオフィス家具シリーズで、ファイルキャビネット、デスク、本棚、会議テーブルなどが含まれます。複数のカラーと塗装から選択可能で、肘掛け付きまたは肘掛けなしで利用できます。ベース塗装オプション：ステンレススチール、マットブラック、グロスホワイト、クロム。家庭用または商業用途に適用し、契約使用資格に適合。イタリア製。</code></pre>
+<p>出力の長さを計算してみましょう。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語は分かち書きが必要なため、ここでは全体の長さを直接計算</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(response)</span></code></pre></div>
+<pre><code>97</code></pre>
+<p>Promptで長さ制限要求を設定した時、言語モデルが生成する出力の長さは常に要求に正確に合致するわけではありませんが、基本的に許容できる誤差範囲内で制御できます。たとえば50語のテキスト生成を要求しても、言語モデルは時々60語程度の出力を生成しますが、全体的には予定長さに近くなります。</p>
+<p>これは、<strong>言語モデルがテキストの長さを計算・判断する際にトークナイザーに依存している</strong>ためで、トークナイザーは文字数統計において完璧な精度を持っていないからです。現在、言語モデルの生成出力の長さを制御する方法はいくつかあり、文数、語数、漢字数などを指定することができます。</p>
+<p>言語モデルの長さ制約への遵守は100%正確ではありませんが、反復テストにより最良の長さプロンプト表現を見つけることで、生成テキストを基本的に長さ要求に合致させることができます。これには開発者が言語モデルの長さ判断メカニズムを一定程度理解し、最適な長さ設定方法を決定するために複数回の実験を行う意欲が必要です。</p>
+<h3 id="プロンプト最適化2-詳細テキストの処理">1.3 プロンプト最適化2:
+詳細テキストの処理</h3>
+<p>Promptの反復最適化プロセスでは、言語モデルが生成するテキストの詳細が期待に符合するかどうかに注意する必要があります。</p>
+<p>たとえばこのケースでは、さらに分析すると、この椅子が向けられているのは実際には家具小売業者であり、終端消費者ではないことがわかります。そのため、生成された文案でスタイルや雰囲気などの側面を過度に強調し、製品の技術的詳細についてはあまり触れていないため、目標受け手の関心点とあまり一致しません。この時、私たちは引き続きPromptを調整し、言語モデルに家具小売業者向けの記述を生成するよう明確に要求し、材質、工芸、構造などの技術的側面の表現により注目するようにできます。</p>
+<p>反復的に結果を分析し、正確な詳細を捉えているかを確認することで、私たちは段階的にPromptを最適化し、言語モデルが生成するテキストを期待されるスタイルと内容要求により符合させることができます。詳細の正確な制御は言語生成タスクにおいて非常に重要な点です。私たちは言語モデルを訓練し、<strong>異なる目標受け手に応じて異なる側面に注目し、スタイルと内容の両方で適したテキストを出力する</strong>必要があります。</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 最適化されたPrompt、対象者を説明し、どのような性質を持ち、どの側面に重点を置くべきかを示す</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="ss">あなたの任務は、マーケティングチームが技術仕様書に基づいて製品の小売ウェブサイト記述を作成するのを支援することです。</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="ss">```で囲まれた技術仕様書で提供された情報に基づいて、製品記述を書いてください。</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="ss">この記述は家具小売業者向けであるため、技術的性質を持ち、製品の材料構造に重点を置くべきです。</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="ss">最大50語を使用してください。</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="ss">技術仕様： ```</span><span class="sc">{</span>fact_sheet_chair<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>この中世紀スタイルのオフィス家具シリーズには、ファイルキャビネット、デスク、本棚、会議テーブルなどが含まれ、家庭用または商業用途に適用できます。複数のシェルカラーとベース塗装から選択可能で、ベース塗装オプション：ステンレススチール、マットブラック、グロスホワイト、クロム。椅子は肘掛け付きまたは肘掛けなしで利用でき、ソフトフロアまたはハードフロアキャスター、2種類の座面フォーム密度から選択可能。外装ベーススライダーは改性ナイロンPA6/PA66コーティングの鋳造アルミニウムを採用し、座面はHD36フォームを使用。原産国はイタリア。</code></pre>
+<p>Promptを修正することで、モデルの注目点が具体的特徴と技術的詳細に傾いたことがわかります。</p>
+<p>記述の最後に製品IDを表示したいと思うかもしれません。そこで、このPromptをさらに改善し、記述の最後に仕様書の7桁の製品IDを表示するよう要求できます。</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># さらなる改善</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ss">あなたの任務は、マーケティングチームが技術仕様書に基づいて製品の小売ウェブサイト記述を作成するのを支援することです。</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ss">```で囲まれた技術仕様書で提供された情報に基づいて、製品記述を書いてください。</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="ss">この記述は家具小売業者向けであるため、技術的性質を持ち、製品の材料構造に重点を置くべきです。</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="ss">記述の最後に、技術仕様の各7文字の製品IDを含めてください。</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="ss">最大50語を使用してください。</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="ss">技術仕様： ```</span><span class="sc">{</span>fact_sheet_chair<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>この中世紀スタイルのオフィス家具シリーズには、ファイルキャビネット、デスク、本棚、会議テーブルなどが含まれ、家庭用または商業用途に適用できます。複数のシェルカラーとベース塗装から選択可能で、ベース塗装オプション：ステンレススチール、マットブラック、グロスホワイト、クロム。椅子は肘掛け付きまたは肘掛けなしで利用でき、プラスチック前後背もたれ装飾または10種類の生地と6種類の革の完全装飾から選択可能。座面はHD36フォームを使用し、中密度または高密度から選択可能、座面高44センチ、奥行き41センチ。外装ベーススライダーは改性ナイロンPA6/PA66コーティングの鋳造アルミニウム、シェル厚10ミリ。原産国はイタリア。製品ID：SWC-100/SWC-110。</code></pre>
+<p>上記の例を通じて、Prompt反復最適化の一般的なプロセスを見ることができます。機械学習モデルの訓練と同様に、効率的なPromptの設計にも複数バージョンの試行錯誤調整が必要です。</p>
+<p>具体的には、最初のバージョンのPromptは明確であることとモデルに思考時間を与えるという2つの原則を満たすべきです。この基礎の上で、一般的な反復フローは：まず初期バージョンを試し、結果を分析し、その後Promptを継続的に改善し、段階的に最適に近づくことです。多くの成功したPromptはこのような多ラウンド調整によって得られています。</p>
+<p>後ほど、より複雑なPromptケースを紹介し、皆さんが言語モデルの強力な能力をより深く理解できるようにします。しかしその前に、Prompt設計は段階的なプロセスであることを強調したいと思います。開発者は複数回の試行と失敗を心理的に準備し、継続的な調整と最適化を通じて、具体的なシナリオのニーズに最も符合するPrompt形式を見つける必要があります。これには知恵と忍耐力が必要ですが、結果は往々にして価値があります。</p>
+<p>Prompt工学の奥秘を探求し続け、驚くべき大規模言語モデルアプリケーションを開発しましょう!</p>
+<h3 id="プロンプト最適化3-テーブル記述の追加">1.4 プロンプト最適化3:
+テーブル記述の追加</h3>
+<p>引き続きガイダンスを追加し、製品寸法情報を抽出してテーブルに整理し、テーブルの列、テーブル名、フォーマットを指定するよう要求し、すべての内容をウェブページで使用可能なHTMLフォーマットにします。</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 情報を抽出してテーブルに整理し、テーブルの列、テーブル名、フォーマットを指定するよう要求</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="ss">あなたの任務は、マーケティングチームが技術仕様書に基づいて製品の小売ウェブサイト記述を作成するのを支援することです。</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="ss">```で囲まれた技術仕様書で提供された情報に基づいて、製品記述を書いてください。</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="ss">この記述は家具小売業者向けであるため、技術的性質を持ち、製品の材料構造に重点を置くべきです。</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="ss">記述の最後に、技術仕様の各7文字の製品IDを含めてください。</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="ss">記述の後に、製品の寸法を提供するテーブルを含めてください。テーブルは2列にする必要があります。最初の列には寸法の名前を含めてください。2番目の列にはインチでの測定値のみを含めてください。</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="ss">テーブルに「製品寸法」という名前をつけてください。</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="ss">すべての内容をウェブサイトで使用可能なHTMLフォーマットでフォーマットしてください。記述を&lt;div&gt;要素に入れてください。</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="ss">技術仕様：```</span><span class="sc">{</span>fact_sheet_chair<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>&lt;div&gt;
+&lt;h2&gt;中世紀スタイルのオフィス家具シリーズ椅子&lt;/h2&gt;
+&lt;p&gt;この椅子は中世紀スタイルのオフィス家具シリーズの一部で、家庭用または商業用途に適用できます。複数のシェルカラーとベース塗装から選択可能で、ステンレススチール、マットブラック、グロスホワイト、クロムが含まれます。肘掛け付きまたは肘掛けなしの椅子、ソフトフロアまたはハードフロアキャスターオプションから選択できます。さらに、2種類の座面フォーム密度：中密度（1.8ポンド/立方フィート）または高密度（2.8ポンド/立方フィート）から選択できます。&lt;/p&gt;
+&lt;p&gt;椅子の外装ベーススライダーは改性ナイロンPA6/PA66コーティングの鋳造アルミニウムで、シェル厚は10ミリです。座面はHD36フォームを採用し、ベースは5輪のプラスチックコーティングアルミニウムベースで、空気圧椅子調整機能で昇降が簡単です。さらに、椅子は契約使用資格に適合し、理想的な選択です。&lt;/p&gt;
+&lt;p&gt;製品ID：SWC-100&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;table&gt;
+  &lt;caption&gt;製品寸法&lt;/caption&gt;
+  &lt;tr&gt;
+    &lt;th&gt;幅&lt;/th&gt;
+    &lt;td&gt;20.87インチ&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;th&gt;奥行き&lt;/th&gt;
+    &lt;td&gt;20.08インチ&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;th&gt;高さ&lt;/th&gt;
+    &lt;td&gt;31.50インチ&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;th&gt;座面高&lt;/th&gt;
+    &lt;td&gt;17.32インチ&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;th&gt;座面奥行き&lt;/th&gt;
+    &lt;td&gt;16.14インチ&lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;</code></pre>
+<p>上記の出力はHTMLコードです。PythonのIPythonライブラリを使用してHTMLコードをロードできます。</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># テーブルはHTML形式で表示されているため、ロードして表示</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display, HTML</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>display(HTML(response))</span></code></pre></div>
+<div>
+<h2>
+中世紀スタイルのオフィス家具シリーズ椅子
+</h2>
+<p>
+この椅子は中世紀スタイルのオフィス家具シリーズの一部で、家庭用または商業用途に適用できます。複数のシェルカラーとベース塗装から選択可能で、ステンレススチール、マットブラック、グロスホワイト、クロムが含まれます。肘掛け付きまたは肘掛けなしの椅子、ソフトフロアまたはハードフロアキャスターオプションから選択できます。さらに、2種類の座面フォーム密度：中密度（1.8ポンド/立方フィート）または高密度（2.8ポンド/立方フィート）から選択できます。
+</p>
+<p>
+椅子の外装ベーススライダーは改性ナイロンPA6/PA66コーティングの鋳造アルミニウムで、シェル厚は10ミリです。座面はHD36フォームを採用し、ベースは5輪のプラスチックコーティングアルミニウムベースで、空気圧椅子調整機能で昇降が簡単です。さらに、椅子は契約使用資格に適合し、理想的な選択です。
+</p>
+<p>
+製品ID：SWC-100
+</p>
+</div>
+<table>
+<caption>
+製品寸法
+</caption>
+<tr>
+<th>
+幅
+</th>
+<td>
+20.87インチ
+</td>
+</tr>
+<tr>
+<th>
+奥行き
+</th>
+<td>
+20.08インチ
+</td>
+</tr>
+<tr>
+<th>
+高さ
+</th>
+<td>
+31.50インチ
+</td>
+</tr>
+<tr>
+<th>
+座面高
+</th>
+<td>
+17.32インチ
+</td>
+</tr>
+<tr>
+<th>
+座面奥行き
+</th>
+<td>
+16.14インチ
+</td>
+</tr>
+</table>
+<h2 id="二まとめ">二、まとめ</h2>
+<p>本章では、大規模言語モデルアプリケーションを開発する際に、反復方式でPromptを継続的に最適化するプロセスを重点的に説明しました。Promptエンジニアとして、重要なのは最初から完璧なPromptを要求することではなく、効果的なPrompt開発フローを習得することです。</p>
+<p>具体的には、まず初版のPromptを書き、その後複数ラウンドの調整を通じて段階的に改善し、満足のいく結果を生成するまで続けます。より複雑なアプリケーションの場合、複数のサンプルで反復訓練を行い、Promptの平均パフォーマンスを評価できます。アプリケーションが比較的成熟した後に、複数のサンプルセットでPromptのパフォーマンスを評価する方式を採用して詳細な最適化を行う必要があります。これには高い計算リソースが必要だからです。</p>
+<p>つまり、Promptエンジニアの核心は、Promptの反復開発と最適化技術を習得することであり、最初から100%完璧を要求することではありません。継続的な調整試行錯誤を通じて、最終的に信頼できて適用可能なPrompt形式を見つけることが、Promptを設計する正しい方法です。</p>
+<p>読者は Jupyter Notebook
+で、本章で示した例を実践し、Promptを修正して異なる出力を観察することで、Prompt反復最適化のプロセスを深く理解できます。これは、さらに複雑な言語モデルアプリケーションを開発するための優れた実践準備を提供します。</p>
+<h2 id="三英語版">三、英語版</h2>
+<p><strong>製品仕様書</strong></p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>fact_sheet_chair <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="st">OVERVIEW</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="st">- Part of a beautiful family of mid-century inspired office furniture, </span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="st">including filing cabinets, desks, bookcases, meeting tables, and more.</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="st">- Several options of shell color and base finishes.</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="st">- Available with plastic back and front upholstery (SWC-100) </span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="st">or full upholstery (SWC-110) in 10 fabric and 6 leather options.</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="st">- Base finish options are: stainless steel, matte black, </span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="st">gloss white, or chrome.</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="st">- Chair is available with or without armrests.</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="st">- Suitable for home or business settings.</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="st">- Qualified for contract use.</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="st">CONSTRUCTION</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="st">- 5-wheel plastic coated aluminum base.</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="st">- Pneumatic chair adjust for easy raise/lower action.</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="st">DIMENSIONS</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="st">- WIDTH 53 CM | 20.87&quot;</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="st">- DEPTH 51 CM | 20.08&quot;</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="st">- HEIGHT 80 CM | 31.50&quot;</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="st">- SEAT HEIGHT 44 CM | 17.32&quot;</span></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a><span class="st">- SEAT DEPTH 41 CM | 16.14&quot;</span></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a><span class="st">OPTIONS</span></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a><span class="st">- Soft or hard-floor caster options.</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a><span class="st">- Two choices of seat foam densities: </span></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a><span class="st">medium (1.8 lb/ft3) or high (2.8 lb/ft3)</span></span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a><span class="st">- Armless or 8 position PU armrests </span></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a><span class="st">MATERIALS</span></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a><span class="st">SHELL BASE GLIDER</span></span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a><span class="st">- Cast Aluminum with modified nylon PA6/PA66 coating.</span></span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a><span class="st">- Shell thickness: 10 mm.</span></span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a><span class="st">SEAT</span></span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a><span class="st">- HD36 foam</span></span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a><span class="st">COUNTRY OF ORIGIN</span></span>
+<span id="cb15-39"><a href="#cb15-39" aria-hidden="true" tabindex="-1"></a><span class="st">- Italy</span></span>
+<span id="cb15-40"><a href="#cb15-40" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span></span></code></pre></div>
+<p><strong>1.1 英語初期プロンプト</strong></p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">#   Prompt：仕様書に基づいてマーケティング記述を生成</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ss">Your task is to help a marketing team create a </span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="ss">description for a retail website of a product based </span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="ss">on a technical fact sheet.</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="ss">Write a product description based on the information </span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="ss">provided in the technical specifications delimited by </span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="ss">triple backticks.</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="ss">Technical specifications: ```</span><span class="sc">{</span>fact_sheet_chair<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Introducing our stunning mid-century inspired office chair, the perfect addition to any home or business setting. This chair is part of a beautiful family of office furniture, including filing cabinets, desks, bookcases, meeting tables, and more, all designed with a timeless mid-century aesthetic.
+
+One of the standout features of this chair is the variety of customization options available. You can choose from several shell colors and base finishes to perfectly match your existing decor. The chair is available with either plastic back and front upholstery or full upholstery in a range of 10 fabric and 6 leather options, allowing you to create a look that is uniquely yours.
+
+The chair is also available with or without armrests, giving you the flexibility to choose the option that best suits your needs. The base finish options include stainless steel, matte black, gloss white, or chrome, ensuring that you can find the perfect match for your space.
+
+In terms of construction, this chair is built to last. It features a 5-wheel plastic coated aluminum base, providing stability and mobility. The pneumatic chair adjust allows for easy raise and lower action, ensuring optimal comfort throughout the day.
+
+When it comes to dimensions, this chair is designed with both style and comfort in mind. With a width of 53 cm (20.87&quot;), depth of 51 cm (20.08&quot;), and height of 80 cm (31.50&quot;), it offers ample space without overwhelming your space. The seat height is 44 cm (17.32&quot;) and the seat depth is 41 cm (16.14&quot;), providing a comfortable seating experience for extended periods.
+
+We understand that every space is unique, which is why we offer a range of options to further customize your chair. You can choose between soft or hard-floor caster options, ensuring that your chair glides smoothly on any surface. Additionally, you have the choice between two seat foam densities: medium (1.8 lb/ft3) or high (2.8 lb/ft3), allowing you to select the level of support that suits your preferences. The chair is also available with armless design or 8 position PU armrests, providing additional comfort and versatility.
+
+When it comes to materials, this chair is crafted with the utmost attention to quality. The shell base glider is made of cast aluminum with a modified nylon PA6/PA66 coating, ensuring durability and longevity. The shell thickness is 10 mm, providing a sturdy and reliable structure. The seat is made of HD36 foam, offering a comfortable and supportive seating experience.
+
+Finally, this chair is proudly made in Italy, known for its exceptional craftsmanship and attention to detail. With its timeless design and superior construction, this chair is not only a stylish addition to any space but also a reliable and functional piece of furniture.
+
+Upgrade your office or home with our mid-century inspired office chair and experience the perfect blend of style, comfort, and functionality.</code></pre>
+<p><strong>1.2生成長さの制限</strong></p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 最適化されたPrompt、50語以下の記述生成を要求</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="ss">Your task is to help a marketing team create a </span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="ss">description for a retail website of a product based </span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="ss">on a technical fact sheet.</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="ss">Write a product description based on the information </span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="ss">provided in the technical specifications delimited by </span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="ss">triple backticks.</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="ss">Use at most 50 words.</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="ss">Technical specifications: ```</span><span class="sc">{</span>fact_sheet_chair<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Introducing our mid-century inspired office chair, part of a beautiful furniture collection. With various color and finish options, it can be customized to suit any space. Choose between plastic or full upholstery in a range of fabrics and leathers. The chair features a durable aluminum base and easy height adjustment. Suitable for both home and business use. Made in Italy.</code></pre>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>lst <span class="op">=</span> response.split()</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">len</span>(lst))</span></code></pre></div>
+<pre><code>60</code></pre>
+<p><strong>1.3誤ったテキスト詳細の処理</strong></p>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 最適化されたPrompt、対象者を説明し、どのような性質を持ち、どの側面に重点を置くべきかを示す</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="ss">Your task is to help a marketing team create a </span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="ss">description for a retail website of a product based </span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="ss">on a technical fact sheet.</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="ss">Write a product description based on the information </span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="ss">provided in the technical specifications delimited by </span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="ss">triple backticks.</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="ss">The description is intended for furniture retailers, </span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="ss">so should be technical in nature and focus on the </span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a><span class="ss">materials the product is constructed from.</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="ss">Use at most 50 words.</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a><span class="ss">Technical specifications: ```</span><span class="sc">{</span>fact_sheet_chair<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Introducing our mid-century inspired office chair, part of a beautiful furniture collection. With various shell colors and base finishes, it offers versatility for any setting. Choose between plastic or full upholstery in a range of fabric and leather options. The chair features a durable aluminum base with 5-wheel design and pneumatic chair adjustment. Made in Italy.</code></pre>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># さらなる改善、記述の最後に7文字の製品IDを含めるよう要求</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="ss">Your task is to help a marketing team create a </span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="ss">description for a retail website of a product based </span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="ss">on a technical fact sheet.</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="ss">Write a product description based on the information </span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="ss">provided in the technical specifications delimited by </span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="ss">triple backticks.</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="ss">The description is intended for furniture retailers, </span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="ss">so should be technical in nature and focus on the </span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="ss">materials the product is constructed from.</span></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="ss">At the end of the description, include every 7-character </span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a><span class="ss">Product ID in the technical specification.</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a><span class="ss">Use at most 50 words.</span></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a><span class="ss">Technical specifications: ```</span><span class="sc">{</span>fact_sheet_chair<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Introducing our mid-century inspired office chair, part of a beautiful family of furniture. This chair offers a range of options, including different shell colors and base finishes. Choose between plastic or full upholstery in various fabric and leather options. The chair is constructed with a 5-wheel plastic coated aluminum base and features a pneumatic chair adjust for easy raise/lower action. With its sleek design and multiple customization options, this chair is suitable for both home and business settings. Made in Italy.
+
+Product IDs: SWC-100, SWC-110</code></pre>
+<p><strong>1.4英語テーブル記述の追加</strong></p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 情報を抽出してテーブルに整理し、テーブルの列、テーブル名、フォーマットを指定するよう要求</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="ss">Your task is to help a marketing team create a </span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="ss">description for a retail website of a product based </span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="ss">on a technical fact sheet.</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="ss">Write a product description based on the information </span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="ss">provided in the technical specifications delimited by </span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="ss">triple backticks.</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="ss">The description is intended for furniture retailers, </span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="ss">so should be technical in nature and focus on the </span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="ss">materials the product is constructed from.</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="ss">At the end of the description, include every 7-character </span></span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="ss">Product ID in the technical specification.</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="ss">After the description, include a table that gives the </span></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a><span class="ss">product&#39;s dimensions. The table should have two columns.</span></span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a><span class="ss">In the first column include the name of the dimension. </span></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a><span class="ss">In the second column include the measurements in inches only.</span></span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a><span class="ss">Give the table the title &#39;Product Dimensions&#39;.</span></span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a><span class="ss">Format everything as HTML that can be used in a website. </span></span>
+<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a><span class="ss">Place the description in a &lt;div&gt; element.</span></span>
+<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a><span class="ss">Technical specifications: ```</span><span class="sc">{</span>fact_sheet_chair<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb26-29"><a href="#cb26-29" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb26-30"><a href="#cb26-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-31"><a href="#cb26-31" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb26-32"><a href="#cb26-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span>
+<span id="cb26-33"><a href="#cb26-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-34"><a href="#cb26-34" aria-hidden="true" tabindex="-1"></a><span class="co"># テーブルはHTML形式で表示されているため、ロードして表示</span></span>
+<span id="cb26-35"><a href="#cb26-35" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display, HTML</span>
+<span id="cb26-36"><a href="#cb26-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-37"><a href="#cb26-37" aria-hidden="true" tabindex="-1"></a>display(HTML(response))</span></code></pre></div>
+<pre><code>&lt;div&gt;
+  &lt;h2&gt;Product Description&lt;/h2&gt;
+  &lt;p&gt;
+    Introducing our latest addition to our mid-century inspired office furniture collection, the SWC-100 Chair. This chair is part of a beautiful family of furniture that includes filing cabinets, desks, bookcases, meeting tables, and more. With its sleek design and customizable options, it is perfect for both home and business settings.
+  &lt;/p&gt;
+  &lt;p&gt;
+    The SWC-100 Chair is available in several options of shell color and base finishes, allowing you to choose the perfect combination to match your space. You can opt for plastic back and front upholstery or full upholstery in a variety of fabric and leather options. The base finish options include stainless steel, matte black, gloss white, or chrome. Additionally, you have the choice of having armrests or going armless.
+  &lt;/p&gt;
+  &lt;p&gt;
+    Constructed with durability and comfort in mind, the SWC-100 Chair features a 5-wheel plastic coated aluminum base for stability and mobility. The chair also has a pneumatic adjuster, allowing for easy raise and lower action to find the perfect height for your needs.
+  &lt;/p&gt;
+  &lt;p&gt;
+    The SWC-100 Chair is designed to provide maximum comfort and support. The seat is made with HD36 foam, ensuring a plush and comfortable seating experience. You also have the option to choose between soft or hard-floor casters, depending on your flooring needs. Additionally, you can select from two choices of seat foam densities: medium (1.8 lb/ft3) or high (2.8 lb/ft3). The chair is also available with 8 position PU armrests for added convenience.
+  &lt;/p&gt;
+  &lt;p&gt;
+    Made with high-quality materials, the SWC-100 Chair is built to last. The shell base glider is constructed with cast aluminum and modified nylon PA6/PA66 coating, providing durability and stability. The shell has a thickness of 10 mm, ensuring strength and longevity. The chair is proudly made in Italy, known for its craftsmanship and attention to detail.
+  &lt;/p&gt;
+  &lt;p&gt;
+    Whether you need a chair for your home office or a professional workspace, the SWC-100 Chair is the perfect choice. Its stylish design, customizable options, and high-quality construction make it a standout piece of furniture that will enhance any space.
+  &lt;/p&gt;
+  &lt;h2&gt;Product Dimensions&lt;/h2&gt;
+  &lt;table&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Dimension&lt;/th&gt;
+      &lt;th&gt;Measurement (inches)&lt;/th&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Width&lt;/td&gt;
+      &lt;td&gt;20.87&quot;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Depth&lt;/td&gt;
+      &lt;td&gt;20.08&quot;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Height&lt;/td&gt;
+      &lt;td&gt;31.50&quot;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Seat Height&lt;/td&gt;
+      &lt;td&gt;17.32&quot;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Seat Depth&lt;/td&gt;
+      &lt;td&gt;16.14&quot;&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/table&gt;
+&lt;/div&gt;
+
+Product IDs: SWC-100, SWC-110</code></pre>
+<div>
+<h2>
+Product Description
+</h2>
+<p>
+Introducing our latest addition to our mid-century inspired office
+furniture collection, the SWC-100 Chair. This chair is part of a
+beautiful family of furniture that includes filing cabinets, desks,
+bookcases, meeting tables, and more. With its sleek design and
+customizable options, it is perfect for both home and business settings.
+</p>
+<p>
+The SWC-100 Chair is available in several options of shell color and
+base finishes, allowing you to choose the perfect combination to match
+your space. You can opt for plastic back and front upholstery or full
+upholstery in a variety of fabric and leather options. The base finish
+options include stainless steel, matte black, gloss white, or chrome.
+Additionally, you have the choice of having armrests or going armless.
+</p>
+<p>
+Constructed with durability and comfort in mind, the SWC-100 Chair
+features a 5-wheel plastic coated aluminum base for stability and
+mobility. The chair also has a pneumatic adjuster, allowing for easy
+raise and lower action to find the perfect height for your needs.
+</p>
+<p>
+The SWC-100 Chair is designed to provide maximum comfort and support.
+The seat is made with HD36 foam, ensuring a plush and comfortable
+seating experience. You also have the option to choose between soft or
+hard-floor casters, depending on your flooring needs. Additionally, you
+can select from two choices of seat foam densities: medium (1.8 lb/ft3)
+or high (2.8 lb/ft3). The chair is also available with 8 position PU
+armrests for added convenience.
+</p>
+<p>
+Made with high-quality materials, the SWC-100 Chair is built to last.
+The shell base glider is constructed with cast aluminum and modified
+nylon PA6/PA66 coating, providing durability and stability. The shell
+has a thickness of 10 mm, ensuring strength and longevity. The chair is
+proudly made in Italy, known for its craftsmanship and attention to
+detail.
+</p>
+<p>
+Whether you need a chair for your home office or a professional
+workspace, the SWC-100 Chair is the perfect choice. Its stylish design,
+customizable options, and high-quality construction make it a standout
+piece of furniture that will enhance any space.
+</p>
+<h2>
+Product Dimensions
+</h2>
+<table>
+<tr>
+<th>
+Dimension
+</th>
+<th>
+Measurement (inches)
+</th>
+</tr>
+<tr>
+<td>
+Width
+</td>
+<td>
+20.87”
+</td>
+</tr>
+<tr>
+<td>
+Depth
+</td>
+<td>
+20.08”
+</td>
+</tr>
+<tr>
+<td>
+Height
+</td>
+<td>
+31.50”
+</td>
+</tr>
+<tr>
+<td>
+Seat Height
+</td>
+<td>
+17.32”
+</td>
+</tr>
+<tr>
+<td>
+Seat Depth
+</td>
+<td>
+16.14”
+</td>
+</tr>
+</table>
+</div>
+<p>Product IDs: SWC-100, SWC-110</p>
+</body>
+</html>

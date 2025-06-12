@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>2. 言語モデル、チャット形式とトークン</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第二章-言語モデル質問パラダイムとトークン">第二章
+言語モデル、質問パラダイムとトークン</h1>
+<p>本章では、大規模言語モデル（LLM）の動作原理、訓練方法、トークナイザー（tokenizer）などの詳細がLLM出力に与える影響を皆さんと共有します。また、LLMの質問パラダイム（chat
+format）も紹介します。これは、システムメッセージ（system
+message）とユーザーメッセージ（user
+message）を指定する方法で、この能力を活用する方法を理解していただきます。</p>
+<h2 id="一言語モデル">一、言語モデル</h2>
+<p>大規模言語モデル（LLM）は、次の単語を予測する教師ありの学習方法で訓練されています。具体的には、まず数千億またはそれ以上の単語を含む大規模テキストデータセットを準備します。次に、これらのテキストから文や文の断片をモデル入力として抽出できます。モデルは現在の入力コンテキストに基づいて次の単語の確率分布を予測します。モデル予測と実際の次の単語を継続的に比較し、モデルパラメータを更新して両者の差異を最小化することで、言語モデルは徐々に言語の規則を習得し、次の単語を予測することを学習しました。</p>
+<p>訓練過程では、研究者が大量の文や文の断片を訓練サンプルとして準備し、モデルに次の単語を予測するよう繰り返し要求し、反復訓練を通じてモデルパラメータの収束を促し、その予測能力を継続的に向上させます。海量のテキストデータセットでの訓練を経て、言語モデルは極めて正確に次の単語を予測する効果を達成できます。この<strong>次の単語を予測することを訓練目標とする方法により、言語モデルは強力な言語生成能力を獲得しました</strong>。</p>
+<p>大規模言語モデルは主に二つの類型に分けることができます：基礎言語モデルと指示調整言語モデルです。</p>
+<p><strong>基礎言語モデル</strong>（Base
+LLM）は次の単語を繰り返し予測する訓練方法で訓練され、明確な目標志向性がありません。そのため、開放的なプロンプトを与えると、自由連想によって劇的な内容を生成する可能性があります。具体的な問題に対して、基礎言語モデルも問題とは無関係な回答を与える可能性があります。例えば、「中国の首都はどこですか？」というプロンプトを与えると、そのデータ中にインターネット上の中国に関するテスト問題リストの一部があった可能性があります。この時、「中国最大の都市は何ですか？中国の人口はどれくらいですか？」などで回答する可能性があります。しかし実際には、あなたは中国の首都が何かを知りたいだけで、これらすべての問題を列挙してほしいわけではありません。</p>
+<p>対照的に、<strong>指示ファインチューニング言語モデル</strong>（Instruction
+Tuned
+LLM）は専門的な訓練を受けており、問題をより良く理解し、指示に符合する回答を与えることができます。例えば、「中国の首都はどこですか？」という問題に対して、ファインチューニング後の言語モデルは「中国の首都は北京です」と直接回答する可能性が高く、機械的に一連の関連問題を列挙することはありません。<strong>指示ファインチューニングは言語モデルをよりタスク指向の対話アプリケーションに適したものにします</strong>。指示に従う意味的に正確な返答を生成でき、自由連想ではありません。そのため、多くの実際のアプリケーションではすでに指示調整言語モデルが採用されています。指示ファインチューニングの動作メカニズムに熟練することは、開発者が言語モデルアプリケーションを実現する重要な一歩です。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tool <span class="im">import</span> get_completion</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(<span class="st">&quot;中国の首都はどこですか？&quot;</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>中国の首都は北京です。</code></pre>
+<p>それでは、基礎言語モデルを指示ファインチューニング言語モデルに変換するにはどうすればよいでしょうか？</p>
+<p>これも指示ファインチューニング言語モデル（例えばChatGPT）を訓練するプロセスです。
+まず、大規模テキストデータセットで<strong>教師なし事前訓練</strong>を行い、基礎言語モデルを取得します。
+この段階では数千億語またはそれ以上のデータを使用し、大型スーパーコンピューターシステムで数か月かかる可能性があります。
+その後、指示とそれに対応する返答例を含む小データセットを使用して基礎モデルの<strong>教師ありファインチューン</strong>を行い、モデルが指示に従って出力を生成することを徐々に学習させます。これは契約者を雇用して適切な訓練例を構築することで実現できます。
+次に、言語モデル出力の品質を向上させるために、一般的な方法は人間に多くの異なる出力を評価してもらうことです。例えば有用性、真実性、無害性などです。
+その後、高評価出力を生成する確率を増加させるように言語モデルをさらに調整できます。これは通常<strong>人間フィードバックからの強化学習</strong>（RLHF）技術を使用して実現されます。
+基礎言語モデルの訓練に数か月必要な可能性があるのに対し、基礎言語モデルから指示ファインチューニング言語モデルへの変換プロセスは数日しかかからず、より小規模なデータセットと計算リソースを使用します。</p>
+<h2 id="二トークン">二、トークン</h2>
+<p>ここまでのLLMの説明では、一度に一つの単語を予測すると説明しましたが、実際にはさらに重要な技術的詳細があります。すなわち<strong><code>LLMは実際には次の単語を繰り返し予測するのではなく、次のトークンを繰り返し予測します</code></strong>。文に対して、言語モデルはまずトークナイザーを使用してそれを個々のトークンに分割し、元の単語ではありません。珍しい単語については、複数のトークンに分割される可能性があります。これにより辞書サイズを大幅に削減し、モデル訓練と推論の効率を向上させることができます。例えば、「Learning
+new things is
+fun!」という文について、各単語は一つのトークンに変換されますが、「Prompting
+as powerful developer
+tool」のような使用頻度の低い単語については、「prompting」という単語は三つのトークン、すなわち「prom」、「pt」、「ing」に分割されます。</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># より良い効果を示すために、ここでは日本語のプロンプトに翻訳していません</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ここの文字反転でエラーが発生していることに注意してください。アンドリュー・ング先生はまさにこの例を通してトークンの計算方法を説明しています</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(<span class="st">&quot;Take the letters in lollipop </span><span class="ch">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st">and reverse them&quot;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>The reversed letters of &quot;lollipop&quot; are &quot;pillipol&quot;.</code></pre>
+<p>しかし、「lollipop」を逆にすると「popillol」になるはずです。</p>
+<p>しかし<code>トークン化方法も言語モデルの理解能力に影響を与えます</code>。ChatGPTに「lollipop」の文字を逆転させるよう要求する時、トークナイザー（tokenizer）が「lollipop」を三つのトークン、すなわち「l」、「oll」、「ipop」に分解するため、ChatGPTは文字の順序を正確に出力することが困難になります。この時、文字間に区切りを追加して各文字を一つのトークンにすることで、モデルが語中の文字順序を正確に理解するのを助けることができます。</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(<span class="st">&quot;&quot;&quot;Take the letters in </span><span class="ch">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="st">l-o-l-l-i-p-o-p and reverse them&quot;&quot;&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>p-o-p-i-l-l-o-l</code></pre>
+<p>したがって、言語モデルは原語ではなくトークンを単位としてモデリングを行います。この重要な詳細はトークナイザーの選択と処理に重大な影響を与えます。開発者はトークン化方法が言語理解に与える影響に注意し、言語モデルの最大潜在力を発揮する必要があります。</p>
+<p>❗❗❗
+英語入力については、一つのトークンは一般的に4文字または4分の3単語に対応します；日本語入力については、一つのトークンは一般的に一つまたは半分の語に対応します。異なるモデルには異なるトークン制限があります。注意すべきは、ここでのトークン制限は<strong>入力プロンプトと出力completionのトークン数の合計</strong>であるため、入力プロンプトが長いほど、出力できるcompletionの上限は低くなります。ChatGPT3.5-turboのトークン上限は4096です。</p>
+<figure>
+<img src="../figures/C2/tokens.png" alt="Tokens.png" />
+<figcaption aria-hidden="true">Tokens.png</figcaption>
+</figure>
+<div data-align="center">
+図 2.2.1 トークン例
+</div>
+<h2 id="三ヘルパー関数-補助関数質問パラダイム">三、ヘルパー関数
+補助関数（質問パラダイム）</h2>
+<p>言語モデルには専門的な「質問形式」が提供されており、その理解と質問回答能力をより良く発揮できます。本章では、この形式の使用方法を詳しく紹介します。</p>
+<figure>
+<img src="../figures/C2/chat-format.png" alt="Chat-format.png" />
+<figcaption aria-hidden="true">Chat-format.png</figcaption>
+</figure>
+<div data-align="center">
+図 2.2.2 チャット形式
+</div>
+<p>この質問形式は「システムメッセージ」と「ユーザーメッセージ」の二つの部分を区別します。システムメッセージは言語モデルに情報を伝達する文、ユーザーメッセージはユーザーの質問をシミュレートします。例えば：</p>
+<pre><code>システムメッセージ：あなたは各種質問に答えることができるアシスタントです。
+
+ユーザーメッセージ：太陽系にはどの惑星がありますか？</code></pre>
+<p>この質問形式を通じて、役割演技を明確にでき、言語モデルに自分がアシスタントという役割であり、質問に答える必要があることを理解させることができます。これにより無効な出力を減らし、針対性の強い返答を生成するのに役立ちます。本章ではOpenAIが提供する補助関数を通じて、この質問形式を正しく使用して言語モデルと相互作用する方法を実演します。この技法を習得することで、言語モデルとの対話効果を大幅に向上させ、より良い質問応答システムを構築できます。</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> openai</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_completion_from_messages(messages, </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                                 model<span class="op">=</span><span class="st">&quot;gpt-3.5-turbo&quot;</span>, </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                                 temperature<span class="op">=</span><span class="dv">0</span>, </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                                 max_tokens<span class="op">=</span><span class="dv">500</span>):</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">&#39;&#39;&#39;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co">    より多くのパラメータをサポートするカスタムOpenAI GPT3.5アクセス関数を封装</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co">    パラメータ: </span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co">    messages: これはメッセージリストで、各メッセージは role（役割）と content（内容）を含む辞書です。役割は&#39;system&#39;、&#39;user&#39;または&#39;assistant&#39;で、内容は役割のメッセージです。</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co">    model: 呼び出すモデル、デフォルトは gpt-3.5-turbo（ChatGPT）、内部テスト資格のあるユーザーは gpt-4 を選択可能</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co">    temperature: モデル出力のランダム性を決定、デフォルトは0で、出力が非常に確定的であることを示します。温度を上げると出力がよりランダムになります。</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co">    max_tokens: モデル出力の最大トークン数を決定。</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co">    &#39;&#39;&#39;</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> openai.ChatCompletion.create(</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span>model,</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        messages<span class="op">=</span>messages,</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span>temperature, <span class="co"># モデル出力のランダム性を決定</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span>max_tokens, <span class="co"># モデル出力の最大トークン数を決定</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response.choices[<span class="dv">0</span>].message[<span class="st">&quot;content&quot;</span>]</span></code></pre></div>
+<p>上記で、より多くのパラメータをサポートするカスタムOpenAI
+GPT3.5アクセス関数 get_completion_from_messages
+を封装しました。今後の章では、この関数をtoolパッケージに封装します。</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&#39;あなたはアシスタントで、スース博士のスタイルで回答してください。&#39;</span>},    </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&#39;幸せな小さなクジラをテーマにした短い詩を書いてください&#39;</span>},  </span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>大海の広い深いところで、
+小さなクジラが喜び自由に；
+その体には光り輝く美しい服を着て、
+波打ち際で跳躍し踊っている。
+
+悩みを知らず、ただ楽しく踊り、
+太陽の下で輝き、活力無限；
+その微笑みは輝く星のように、
+大海に美しい光を添えている。
+
+大海がその天地、自由がその伴侶、
+幸せがその永遠の干し草の山；
+広大無辺な水中を自由に泳ぎ、
+小クジラの喜びが心を温める。
+
+だから、その幸せなクジラを感じよう、
+思い切り踊り、幸せを自由に流そう；
+いつでもどこでも、微笑みを保ち、
+クジラのように、自分の光を放とう。</code></pre>
+<p>上記で、質問パラダイムを使用して言語モデルと対話しました：</p>
+<pre><code>システムメッセージ：あなたはアシスタントで、スース博士のスタイルで回答してください。
+
+ユーザーメッセージ：幸せな小さなクジラをテーマにした短い詩を書いてください</code></pre>
+<p>下記でもう一つの例を見てみましょう：</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 長さ制御</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&#39;あなたのすべての回答は一文だけにしてください&#39;</span>},    </span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&#39;幸せな小さなクジラの物語を書いてください&#39;</span>},  </span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature <span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>小さなクジラの幸せな笑い声から、私たちはどんな困難に遭遇しても、幸せが常に最良の解決策であることを学びました。</code></pre>
+<p>上記の二つの例を組み合わせてみましょう：</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 上記を組み合わせ</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&#39;あなたはアシスタントで、スース博士のスタイルで回答し、一文だけで回答してください&#39;</span>},    </span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&#39;幸せな小さなクジラの物語を書いてください&#39;</span>},</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature <span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>海の深いところに住む小さなクジラは、いつも笑顔で水中を泳ぎ、幸せな時は華麗な踊りを踊ります。</code></pre>
+<p>下記で get_completion_and_token_count
+関数を定義しました。これはOpenAIのモデルを呼び出してチャット返答を生成し、生成された返答内容と使用されたトークン数を返す機能を実現します。</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_completion_and_token_count(messages, </span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>                                   model<span class="op">=</span><span class="st">&quot;gpt-3.5-turbo&quot;</span>, </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>                                   temperature<span class="op">=</span><span class="dv">0</span>, </span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>                                   max_tokens<span class="op">=</span><span class="dv">500</span>):</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="co">    OpenAIのGPT-3モデルを使用してチャット返答を生成し、生成された返答内容と使用されたトークン数を返します。</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co">    パラメータ:</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="co">    messages: チャットメッセージリスト。</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co">    model: 使用するモデル名。デフォルトは&quot;gpt-3.5-turbo&quot;。</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co">    temperature: 生成返答のランダム性を制御。値が大きいほど、生成される返答がよりランダムになります。デフォルトは0。</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="co">    max_tokens: 生成返答の最大トークン数。デフォルトは500。</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="co">    戻り値:</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="co">    content: 生成された返答内容。</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="co">    token_dict: &#39;prompt_tokens&#39;、&#39;completion_tokens&#39;、&#39;total_tokens&#39;を含む辞書で、それぞれプロンプトのトークン数、生成された返答のトークン数、総トークン数を表します。</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> openai.ChatCompletion.create(</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span>model,</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>        messages<span class="op">=</span>messages,</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span>temperature, </span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span>max_tokens,</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>    content <span class="op">=</span> response.choices[<span class="dv">0</span>].message[<span class="st">&quot;content&quot;</span>]</span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    token_dict <span class="op">=</span> {</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;prompt_tokens&#39;</span>:response[<span class="st">&#39;usage&#39;</span>][<span class="st">&#39;prompt_tokens&#39;</span>],</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;completion_tokens&#39;</span>:response[<span class="st">&#39;usage&#39;</span>][<span class="st">&#39;completion_tokens&#39;</span>],</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;total_tokens&#39;</span>:response[<span class="st">&#39;usage&#39;</span>][<span class="st">&#39;total_tokens&#39;</span>],</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> content, token_dict</span></code></pre></div>
+<p>下記で、作成したばかりの get_completion_and_token_count
+関数を呼び出し、質問パラダイムを使用して対話を行います：</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&#39;あなたはアシスタントで、スース博士のスタイルで回答してください。&#39;</span>},    </span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, </span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&#39;幸せな小さなクジラをテーマにした短い詩を書いてください&#39;</span>},  </span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>response, token_dict <span class="op">=</span> get_completion_and_token_count(messages)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>大海の深いところに、小さなクジラがいて、
+幸せに泳ぎ回り、小さな魚のように。
+その肌は滑らかで濃い青、空の雲のように、
+その目は明るく優しく、夜空の星のように。
+
+海と共に跳躍し戯れ、
+魚たちと一緒に、幸せに泳ぎ回る。
+歌と踊りが好きで、みんなに喜びを届け、
+その声は甘く美しく、音楽のリズムのように。
+
+小クジラは幸せの使者、世界に笑い声を届け、
+その幸せは無限で、決して止まることはない。
+小クジラについて行こう、一緒に幸せに泳ぎ回り、
+大海の広さの中で、私たちの幸せの場所を見つけよう。</code></pre>
+<p>トークン辞書を印刷して使用されたトークン数を見てみましょう。プロンプトが67トークン、生成された返答が293トークン、総使用トークン数が360であることがわかります。</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(token_dict)</span></code></pre></div>
+<pre><code>{&#39;prompt_tokens&#39;: 67, &#39;completion_tokens&#39;: 293, &#39;total_tokens&#39;: 360}</code></pre>
+<p>AI応用開発分野において、プロンプト技術の出現は間違いなく革命的な変革です。しかし、この変革の重要性は広く認知され重視されているわけではありません。従来の教師あり機械学習ワークフローでは、レストランレビューを肯定的または否定的に分類する分類器を構築するのに、大量の時間とリソースが必要でした。</p>
+<p>まず、大量のラベル付きデータを収集し注釈付けする必要があります。これには数週間から数か月かかる可能性があります。次に、適切なオープンソースモデルを選択し、モデルの調整と評価を行います。このプロセスには数日、数週間、さらには数か月かかる可能性があります。最後に、モデルをクラウドにデプロイして実行させ、最終的にモデルを呼び出せるようにする必要があります。全プロセスは通常チームが数か月かけて完成させます。</p>
+<p>対照的に、プロンプトベースの機械学習方法はこのプロセスを大幅に簡略化しました。テキストアプリケーションがある時、簡単なプロンプトを提供するだけで、このプロセスは数分しかかからず、有効なプロンプトを得るために複数回の反復が必要な場合でも、最大で数時間で完成できます。数日以内（実際の状況では通常数時間）で、API呼び出しを通じてモデルを実行し、使用を開始できます。この段階に達すると、数分または数時間でモデルを呼び出して推論を開始できます。そのため、以前は6か月または1年かけて構築していたアプリケーションが、今ではプロンプトを使用して数分または数時間、最大でも数日で構築できます。この方法はAIアプリケーションの迅速な構築方式を大きく変えています。</p>
+<p>注意すべきは、この方法は多くの非構造化データアプリケーション、特にテキストアプリケーション、そして発展中の視覚アプリケーションに適用できますが、現在の視覚技術はまだ発展中です。しかし、構造化データアプリケーション、つまりExcelスプレッドシートの大量の数値を処理する機械学習アプリケーションには適用できません。しかし、この方法に適用されるアプリケーションについては、AIコンポーネントを迅速に構築でき、システム全体の構築ワークフローを変えています。システム全体の構築には依然として数日、数週間またはそれ以上かかる可能性がありますが、少なくともこの部分はより迅速に完成できます。</p>
+<p>全体的に、プロンプト技術の出現はAIアプリケーション開発のパラダイムを変えており、開発者がより迅速で効率的にアプリケーションを構築・デプロイできるようになっています。しかし、この技術の限界も認識し、AI応用の発展を推進するためにより良く活用する必要があります。</p>
+<p>次の章では、これらのコンポーネントを活用してカスタマーサービスアシスタントの入力を評価する方法を示します。
+これは本コースでオンライン小売業者のカスタマーサービスアシスタントを構築するより完全な例の一部となります。</p>
+<h2 id="四英語版">四、英語版</h2>
+<p><strong>1.1 言語モデル</strong></p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(<span class="st">&quot;What is the capital of China?&quot;</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>The capital of China is Beijing.</code></pre>
+<p><strong>2.1 トークン</strong></p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(<span class="st">&quot;Take the letters in lollipop and reverse them&quot;</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>The reversed letters of &quot;lollipop&quot; are &quot;pillipol&quot;.</code></pre>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(<span class="st">&quot;&quot;&quot;Take the letters in </span><span class="ch">\</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="st">l-o-l-l-i-p-o-p and reverse them&quot;&quot;&quot;</span>)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>p-o-p-i-l-l-o-l</code></pre>
+<p><strong>3.1 質問パラダイム</strong></p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_completion_from_messages(messages, </span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>                                 model<span class="op">=</span><span class="st">&quot;gpt-3.5-turbo&quot;</span>, </span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>                                 temperature<span class="op">=</span><span class="dv">0</span>, </span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>                                 max_tokens<span class="op">=</span><span class="dv">500</span>):</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">&#39;&#39;&#39;</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="co">    より多くのパラメータをサポートするカスタムOpenAI GPT3.5アクセス関数を封装</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="co">    パラメータ: </span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="co">    messages: これはメッセージリストで、各メッセージは role（役割）と content（内容）を含む辞書です。役割は&#39;system&#39;、&#39;user&#39;または&#39;assistant&#39;で、内容は役割のメッセージです。</span></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a><span class="co">    model: 呼び出すモデル、デフォルトは gpt-3.5-turbo（ChatGPT）、内部テスト資格のあるユーザーは gpt-4 を選択可能</span></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="co">    temperature: モデル出力のランダム性を決定、デフォルトは0で、出力が非常に確定的であることを示します。温度を上げると出力がよりランダムになります。</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a><span class="co">    max_tokens: モデル出力の最大トークン数を決定。</span></span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a><span class="co">    &#39;&#39;&#39;</span></span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> openai.ChatCompletion.create(</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span>model,</span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>        messages<span class="op">=</span>messages,</span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span>temperature, <span class="co"># モデル出力のランダム性を決定</span></span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span>max_tokens, <span class="co"># モデル出力の最大トークン数を決定</span></span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response.choices[<span class="dv">0</span>].message[<span class="st">&quot;content&quot;</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, </span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&quot;&quot;&quot;You are an assistant who</span><span class="ch">\</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="st"> responds in the style of Dr Seuss.&quot;&quot;&quot;</span>},    </span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, </span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&quot;&quot;&quot;write me a very short poem</span><span class="ch">\</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="st"> about a happy carrot&quot;&quot;&quot;</span>},  </span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Oh, a carrot so happy and bright,
+With a vibrant orange hue, oh what a sight!
+It grows in the garden, so full of delight,
+A veggie so cheery, it shines in the light.
+
+Its green leaves wave with such joyful glee,
+As it dances and sways, so full of glee.
+With a crunch when you bite, so wonderfully sweet,
+This happy little carrot is quite a treat!
+
+From the soil, it sprouts, reaching up to the sky,
+With a joyous spirit, it can&#39;t help but try.
+To bring smiles to faces and laughter to hearts,
+This happy little carrot, a work of art!</code></pre>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># length</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>,</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&#39;All your responses must be </span><span class="ch">\</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="st">one sentence long.&#39;</span>},    </span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>,</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&#39;write me a story about a happy carrot&#39;</span>},  </span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature <span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Once upon a time, there was a happy carrot named Crunch who lived in a beautiful vegetable garden.</code></pre>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># combined</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>,</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&quot;&quot;&quot;You are an assistant who </span><span class="ch">\</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="st">responds in the style of Dr Seuss. </span><span class="ch">\</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="st">All your responses must be one sentence long.&quot;&quot;&quot;</span>},    </span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>,</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&quot;&quot;&quot;write me a story about a happy carrot&quot;&quot;&quot;</span>},</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, </span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>                                        temperature <span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Once there was a carrot named Larry, he was jolly and bright orange, never wary.</code></pre>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_completion_and_token_count(messages, </span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>                                   model<span class="op">=</span><span class="st">&quot;gpt-3.5-turbo&quot;</span>, </span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>                                   temperature<span class="op">=</span><span class="dv">0</span>, </span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>                                   max_tokens<span class="op">=</span><span class="dv">500</span>):</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="co">    OpenAIのGPT-3モデルを使用してチャット返答を生成し、生成された返答内容と使用されたトークン数を返します。</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a><span class="co">    パラメータ:</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a><span class="co">    messages: チャットメッセージリスト。</span></span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a><span class="co">    model: 使用するモデル名。デフォルトは&quot;gpt-3.5-turbo&quot;。</span></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a><span class="co">    temperature: 生成返答のランダム性を制御。値が大きいほど、生成される返答がよりランダムになります。デフォルトは0。</span></span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a><span class="co">    max_tokens: 生成返答の最大トークン数。デフォルトは500。</span></span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a><span class="co">    戻り値:</span></span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a><span class="co">    content: 生成された返答内容。</span></span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a><span class="co">    token_dict: &#39;prompt_tokens&#39;、&#39;completion_tokens&#39;、&#39;total_tokens&#39;を含む辞書で、それぞれプロンプトのトークン数、生成された返答のトークン数、総トークン数を表します。</span></span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> openai.ChatCompletion.create(</span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span>model,</span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a>        messages<span class="op">=</span>messages,</span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span>temperature, </span>
+<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span>max_tokens,</span>
+<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a>    content <span class="op">=</span> response.choices[<span class="dv">0</span>].message[<span class="st">&quot;content&quot;</span>]</span>
+<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a>    token_dict <span class="op">=</span> {</span>
+<span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;prompt_tokens&#39;</span>:response[<span class="st">&#39;usage&#39;</span>][<span class="st">&#39;prompt_tokens&#39;</span>],</span>
+<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;completion_tokens&#39;</span>:response[<span class="st">&#39;usage&#39;</span>][<span class="st">&#39;completion_tokens&#39;</span>],</span>
+<span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;total_tokens&#39;</span>:response[<span class="st">&#39;usage&#39;</span>][<span class="st">&#39;total_tokens&#39;</span>],</span>
+<span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb34-32"><a href="#cb34-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-33"><a href="#cb34-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> content, token_dict</span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span> [</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, </span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&quot;&quot;&quot;You are an assistant who responds</span><span class="ch">\</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="st"> in the style of Dr Seuss.&quot;&quot;&quot;</span>},    </span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>,</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>:<span class="st">&quot;&quot;&quot;write me a very short poem \ </span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="st"> about a happy carrot&quot;&quot;&quot;</span>},  </span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>response, token_dict <span class="op">=</span> get_completion_and_token_count(messages)</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Oh, the happy carrot, so bright and orange,
+Grown in the garden, a joyful forage.
+With a smile so wide, from top to bottom,
+It brings happiness, oh how it blossoms!
+
+In the soil it grew, with love and care,
+Nourished by sunshine, fresh air to share.
+Its leaves so green, reaching up so high,
+A happy carrot, oh my, oh my!
+
+With a crunch and a munch, it&#39;s oh so tasty,
+Filled with vitamins, oh so hasty.
+A happy carrot, a delight to eat,
+Bringing joy and health, oh what a treat!
+
+So let&#39;s celebrate this veggie so grand,
+With a happy carrot in each hand.
+For in its presence, we surely find,
+A taste of happiness, one of a kind!</code></pre>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(token_dict)</span></code></pre></div>
+<pre><code>{&#39;prompt_tokens&#39;: 37, &#39;completion_tokens&#39;: 164, &#39;total_tokens&#39;: 201}</code></pre>
+</body>
+</html>

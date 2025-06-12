@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>6. テキスト変換</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第6章-テキスト変換">第6章 テキスト変換</h1>
+<p>大規模言語モデルは強力なテキスト変換能力を持ち、多言語翻訳、スペル修正、文法調整、フォーマット変換など、異なるタイプのテキスト変換タスクを実現できます。言語モデルを利用して各種変換を行うことは、その典型的な応用の一つです。</p>
+<p>本章では、プログラミングでAPIインターフェースを呼び出し、言語モデルを使用してテキスト変換機能を実現する方法を紹介します。コード例により、読者は入力テキストを必要な出力フォーマットに変換する具体的な方法を学習できます。</p>
+<p>大規模言語モデルインターフェースを呼び出してテキスト変換を行う技能を習得することは、様々な言語アプリケーションを開発する重要な一歩です。テキスト変換機能の応用シナリオも非常に広範です。読者は本章を基礎として、大規模言語モデルを利用して変換機能の強力なプログラムを簡単に開発できると信じています。</p>
+<h2 id="一テキスト翻訳">一、テキスト翻訳</h2>
+<p>テキスト翻訳は大規模言語モデルの典型的な応用シナリオの一つです。従来の統計機械翻訳システムと比較して、大規模言語モデル翻訳はより流暢で自然、復元度も高いです。大規模高品質平行コーパスでのFine-Tuneを通じて、大規模言語モデルは異なる言語間の語彙、文法、意味などのレベルでの対応関係を深く学習し、バイリンガルの変換思考をシミュレートし、意味伝達の精確な変換を行い、単純な逐語置換ではありません。</p>
+<p>英日翻訳を例に取ると、従来の統計機械翻訳は多くの場合英語語彙を直接置換し、語順を英語構造に保持する傾向があり、日本語語彙の使用が自然でない、語順が流暢でない現象が生じやすいです。一方、大規模言語モデルは英日両言語の文法の違いを学習し、動的な構造変換を行うことができます。同時に、文脈を通じて原文の意図を理解し、適切な日本語語彙を選択して変換を行い、硬直した逐語翻訳ではありません。</p>
+<p>大規模言語モデル翻訳のこれらの利点により、生成される日本語テキストはより自然で流暢になり、正確な意味表現を兼ね備えています。大規模言語モデル翻訳を利用することで、多言語間の壁を打ち破り、より高品質な言語間交流を行うことができます。</p>
+<h3 id="スペイン語への翻訳">1.1 スペイン語への翻訳</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tool <span class="im">import</span> get_completion</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ss">以下の日本語をスペイン語に翻訳してください: \ </span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ss">```こんにちは、ミキサーを注文したいのですが。```</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Hola, me gustaría ordenar una batidora.</code></pre>
+<h3 id="言語識別">1.2 言語識別</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ss">以下のテキストが何語か教えてください: </span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ss">```Combien coûte le lampadaire?```</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>このテキストはフランス語です。</code></pre>
+<h3 id="多言語翻訳">1.3 多言語翻訳</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ss">以下のテキストをそれぞれ日本語、英語、フランス語、スペイン語に翻訳してください: </span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ss">```I want to order a basketball.```</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>日本語：私はバスケットボールを注文したいです。
+英語：I want to order a basketball.
+フランス語：Je veux commander un ballon de basket.
+スペイン語：Quiero pedir una pelota de baloncesto.</code></pre>
+<h3 id="語調変換も同時に実行">1.4 語調変換も同時に実行</h3>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ss">以下のテキストを日本語に翻訳し、正式と非正式の2つの語調で表示してください: </span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ss">```Would you like to order a pillow?```</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>正式な語調：枕をご注文になりますでしょうか？
+非正式な語調：枕を注文しますか？</code></pre>
+<h3 id="汎用翻訳ツール">1.5 汎用翻訳ツール</h3>
+<p>今日のグローバル化環境では、異なる国のユーザーが頻繁に言語間コミュニケーションを行う必要があります。しかし、言語の違いによりコミュニケーションが困難になることがよくあります。言語の壁を打ち破り、より便利な国際ビジネス協力と交流を実現するために、私たちは知能的な<strong>汎用翻訳ツール</strong>が必要です。この翻訳ツールは、異なる言語テキストの言語種を自動識別でき、人工指定を必要としません。その後、これらの異なる言語のテキストを目標ユーザーの母語に翻訳できます。この方式により、世界各地のユーザーは皆、自分の母語で書かれた内容を簡単に取得できます。</p>
+<p>言語種を識別し多言語翻訳を行うツールを開発することで、言語障害によるコミュニケーションコストを大幅に削減できます。これは言語に関係のないグローバル化世界の構築に役立ち、世界をより密接に結びつけることができます。</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>user_messages <span class="op">=</span> [</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;La performance du système est plus lente que d&#39;habitude.&quot;</span>,  <span class="co"># System performance is slower than normal         </span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Mi monitor tiene píxeles que no se iluminan.&quot;</span>,              <span class="co"># My monitor has pixels that are not lighting</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Il mio mouse non funziona&quot;</span>,                                 <span class="co"># My mouse is not working</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Mój klawisz Ctrl jest zepsuty&quot;</span>,                             <span class="co"># My keyboard has a broken control key</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;我的屏幕在闪烁&quot;</span>                                             <span class="co"># My screen is flashing</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>]</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> issue <span class="kw">in</span> user_messages:</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    time.sleep(<span class="dv">20</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> <span class="ss">f&quot;以下のテキストが何語か教えてください。言語名のみを出力し、句読点は不要です: ```</span><span class="sc">{</span>issue<span class="sc">}</span><span class="ss">```&quot;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    lang <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;元のメッセージ (</span><span class="sc">{</span>lang<span class="sc">}</span><span class="ss">): </span><span class="sc">{</span>issue<span class="sc">}</span><span class="ch">\n</span><span class="ss">&quot;</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="ss">    以下のメッセージをそれぞれ英語と日本語に翻訳し、</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="ss">    日本語翻訳：xxx</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="ss">    英語翻訳：yyy</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="ss">    の形式で書いてください：</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="ss">    ```</span><span class="sc">{</span>issue<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="ss">    &quot;&quot;&quot;</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(response, <span class="st">&quot;</span><span class="ch">\n</span><span class="st">=========================================&quot;</span>)</span></code></pre></div>
+<pre><code>元のメッセージ (フランス語): La performance du système est plus lente que d&#39;habitude.
+
+日本語翻訳：システムのパフォーマンスが普段より遅い。
+英語翻訳：The system performance is slower than usual. 
+=========================================
+元のメッセージ (スペイン語): Mi monitor tiene píxeles que no se iluminan.
+
+日本語翻訳：私のモニターには点灯しないピクセルがある。
+英語翻訳：My monitor has pixels that do not light up. 
+=========================================
+元のメッセージ (イタリア語): Il mio mouse non funziona
+
+日本語翻訳：私のマウスが動作しない
+英語翻訳：My mouse is not working 
+=========================================
+元のメッセージ (ポーランド語): Mój klawisz Ctrl jest zepsuty
+
+日本語翻訳：私のCtrlキーが壊れています
+英語翻訳：My Ctrl key is broken 
+=========================================
+元のメッセージ (中国語): 我的屏幕在闪烁
+
+日本語翻訳：私の画面が点滅している
+英語翻訳：My screen is flickering. 
+=========================================</code></pre>
+<h2 id="二語調と文体調整">二、語調と文体調整</h2>
+<p>文章において、言語語調の選択は受け手と密接に関係します。例えば、業務メールでは正式で丁寧な語調と書面語彙を使用する必要があり、友人とのチャットではより軽やかで口語的な語調を使用できます。</p>
+<p>適切な言語スタイルを選択し、内容を特定の受け手グループにより受け入れられ理解されやすくすることは、熟練した文章家に必要な能力です。受け手グループの変化に応じて語調を調整することも、大規模言語モデルが異なるシナリオで知能を示す重要な側面です。</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ss">以下のテキストをビジネスレターの形式に翻訳してください: </span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="ss">```兄ちゃん、俺、この前お前が言ってた、うちの部署で調達する予定のモニターって何インチだっけ？```</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>拝啓
+
+いつもお世話になっております。
+
+先日お話いただきました、弊部署で調達予定のモニターの画面サイズについて、改めてご確認させていただきたく存じます。
+
+お忙しい中恐縮ですが、ご回答のほどよろしくお願いいたします。
+
+敬具</code></pre>
+<h2 id="三ファイル形式変換">三、ファイル形式変換</h2>
+<p>ChatGPTのような大規模言語モデルは、異なるデータ形式間の変換において優れた性能を示しています。JSONからHTML、XML、Markdownなどの形式への相互変換を簡単に実現できます。以下は例で、大規模言語モデルを使用して<strong>JSONデータをHTML形式に変換</strong>する方法を示しています：</p>
+<p>レストランスタッフの氏名とメールアドレス情報を含むJSONデータがあると仮定します。このJSONをHTMLテーブル形式に変換して、ウェブページで表示する必要があります。このケースでは、大規模言語モデルを使用し、JSONデータを直接入力し、HTMLテーブルに変換する要求を出すことができます。言語モデルは自動的にJSON構造を解析し、HTMLテーブル形式で出力し、形式変換タスクを完了します。</p>
+<p>大規模言語モデルの強力な形式変換能力を利用することで、様々な構造化データ間の相互変換を迅速に実現でき、開発フローを大幅に簡素化できます。この変換技術を習得することで、読者は<strong>構造化データをより効率的に処理</strong>できるようになります。</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>data_json <span class="op">=</span> { <span class="st">&quot;resturant employees&quot;</span> :[ </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&quot;name&quot;</span>:<span class="st">&quot;Shyam&quot;</span>, <span class="st">&quot;email&quot;</span>:<span class="st">&quot;shyamjaiswal@gmail.com&quot;</span>},</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&quot;name&quot;</span>:<span class="st">&quot;Bob&quot;</span>, <span class="st">&quot;email&quot;</span>:<span class="st">&quot;bob32@gmail.com&quot;</span>},</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&quot;name&quot;</span>:<span class="st">&quot;Jai&quot;</span>, <span class="st">&quot;email&quot;</span>:<span class="st">&quot;jai87@gmail.com&quot;</span>}</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>]}</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ss">以下のPython辞書をJSONからHTMLテーブルに変換し、テーブルのタイトルと列名を保持してください：</span><span class="sc">{</span>data_json<span class="sc">}</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>&lt;table&gt;
+  &lt;caption&gt;resturant employees&lt;/caption&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;name&lt;/th&gt;
+      &lt;th&gt;email&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Shyam&lt;/td&gt;
+      &lt;td&gt;shyamjaiswal@gmail.com&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Bob&lt;/td&gt;
+      &lt;td&gt;bob32@gmail.com&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Jai&lt;/td&gt;
+      &lt;td&gt;jai87@gmail.com&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+<p>上記のHTMLコードを表示すると以下のようになります：</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display, Markdown, Latex, HTML, JSON</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>display(HTML(response))</span></code></pre></div>
+<table>
+<caption>
+resturant employees
+</caption>
+<thead>
+<tr>
+<th>
+name
+</th>
+<th>
+email
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Shyam
+</td>
+<td>
+shyamjaiswal@gmail.com
+</td>
+</tr>
+<tr>
+<td>
+Bob
+</td>
+<td>
+bob32@gmail.com
+</td>
+</tr>
+<tr>
+<td>
+Jai
+</td>
+<td>
+jai87@gmail.com
+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="四スペルと文法修正">四、スペルと文法修正</h2>
+<p>非母語で執筆する際、スペルと文法エラーが比較的よく発生し、校正が特に重要になります。例えば、フォーラムへの投稿や英語論文の執筆時に、テキストを校正することで内容の品質を大幅に向上させることができます。</p>
+<p><strong>大規模言語モデルを利用した自動校正は、人工校正の作業量を極めて削減できます</strong>。以下は例で、大規模言語モデルを使用して文のスペルと文法エラーをチェックする方法を示しています。</p>
+<p>一連の英語文があり、その中の一部の文にエラーがあると仮定します。各文を巡回し、言語モデルにチェックを要求し、文が正しければ「エラーが見つかりませんでした」を出力し、エラーがあれば修正後の正しいバージョンを出力するようにできます。</p>
+<p>この方式により、大規模言語モデルは大量のテキスト内容を迅速に自動校正し、スペルと文法問題を特定できます。これは人工校正の負担を極めて軽減すると同時に、テキスト品質も確保します。言語モデルの校正機能を利用して執筆効率を向上させることは、すべての非母語執筆者が採用できる効果的な方法です。</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> [ </span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;The girl with the black and white puppies have a ball.&quot;</span>,  <span class="co"># The girl has a ball.</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Yolanda has her notebook.&quot;</span>, <span class="co"># ok</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Its going to be a long day. Does the car need it&#39;s oil changed?&quot;</span>,  <span class="co"># Homonyms</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Their goes my freedom. There going to bring they&#39;re suitcases.&quot;</span>,  <span class="co"># Homonyms</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Your going to need you&#39;re notebook.&quot;</span>,  <span class="co"># Homonyms</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;That medicine effects my ability to sleep. Have you heard of the butterfly affect?&quot;</span>, <span class="co"># Homonyms</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;This phrase is to cherck chatGPT for spelling abilitty&quot;</span>  <span class="co"># spelling</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>]</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(text)):</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    time.sleep(<span class="dv">20</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;以下のテキストを校正・修正してください。修正したテキストは元の言語を保持し、元のテキストは出力しないでください。</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="ss">    エラーが見つからない場合は「エラーが見つかりませんでした」と言ってください。</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="ss">    </span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="ss">    例：</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="ss">    入力：I are happy.</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="ss">    出力：I am happy.</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="ss">    ```</span><span class="sc">{</span>text[i]<span class="sc">}</span><span class="ss">```&quot;&quot;&quot;</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(i, response)</span></code></pre></div>
+<pre><code>0 The girl with the black and white puppies has a ball.
+1 エラーが見つかりませんでした。
+2 It&#39;s going to be a long day. Does the car need its oil changed?
+3 There goes my freedom. They&#39;re going to bring their suitcases.
+4 You&#39;re going to need your notebook.
+5 That medicine affects my ability to sleep. Have you heard of the butterfly effect?
+6 This phrase is to check chatGPT for spelling ability.</code></pre>
+<p>以下は大規模言語モデルを使用した文法修正の簡単な例で、Grammarly（文法修正と校正のツール）の機能に似ています。</p>
+<p>パンダぬいぐるみの評価文章を入力すると、言語モデルは自動的にテキストの文法エラーを校正し、修正後の正しいバージョンを出力します。ここで使用するPromptは比較的シンプルで直接的で、文法修正のみを要求しています。Promptを拡張することで、言語モデルにテキストの語調や文体なども同時に調整してもらうこともできます。</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Got this for my daughter for her birthday cuz she keeps taking </span><span class="ch">\</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="ss">mine from my room.  Yes, adults also like pandas too.  She takes </span><span class="ch">\</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="ss">it everywhere with her, and it&#39;s super soft and cute.  One of the </span><span class="ch">\</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="ss">ears is a bit lower than the other, and I don&#39;t think that was </span><span class="ch">\</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="ss">designed to be asymmetrical. It&#39;s a bit small for what I paid for it </span><span class="ch">\</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="ss">though. I think there might be other options that are bigger for </span><span class="ch">\</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="ss">the same price.  It arrived a day earlier than expected, so I got </span><span class="ch">\</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="ss">to play with it myself before I gave it to my daughter.</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;以下の商品レビューを校正・修正してください：```</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">```&quot;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>I got this for my daughter&#39;s birthday because she keeps taking mine from my room. Yes, adults also like pandas too. She takes it everywhere with her, and it&#39;s super soft and cute. However, one of the ears is a bit lower than the other, and I don&#39;t think that was designed to be asymmetrical. It&#39;s also a bit smaller than I expected for the price. I think there might be other options that are bigger for the same price. On the bright side, it arrived a day earlier than expected, so I got to play with it myself before giving it to my daughter.</code></pre>
+<p><code>Redlines</code>パッケージを導入して、修正プロセスを詳細に表示・比較します：</p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># redlinesがインストールされていない場合は、まずインストールが必要</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip3<span class="fl">.8</span> install redlines</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> redlines <span class="im">import</span> Redlines</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display, Markdown</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>diff <span class="op">=</span> Redlines(text,response)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>display(Markdown(diff.output_markdown))</span></code></pre></div>
+<p><span
+style="color:red;font-weight:700;text-decoration:line-through;">Got
+</span><span style="color:red;font-weight:700;">I got </span>this for my
+<span
+style="color:red;font-weight:700;text-decoration:line-through;">daughter
+for her </span><span style="color:red;font-weight:700;">daughter’s
+</span>birthday <span
+style="color:red;font-weight:700;text-decoration:line-through;">cuz
+</span><span style="color:red;font-weight:700;">because </span>she keeps
+taking mine from my <span
+style="color:red;font-weight:700;text-decoration:line-through;">room.
+</span><span style="color:red;font-weight:700;">room. </span>Yes, adults
+also like pandas <span
+style="color:red;font-weight:700;text-decoration:line-through;">too.
+</span><span style="color:red;font-weight:700;">too. </span>She takes it
+everywhere with her, and it’s super soft and <span
+style="color:red;font-weight:700;text-decoration:line-through;">cute.
+One </span><span style="color:red;font-weight:700;">cute. However, one
+</span>of the ears is a bit lower than the other, and I don’t think that
+was designed to be asymmetrical. It’s <span
+style="color:red;font-weight:700;">also </span>a bit <span
+style="color:red;font-weight:700;text-decoration:line-through;">small
+</span><span style="color:red;font-weight:700;">smaller than I expected
+</span>for <span
+style="color:red;font-weight:700;text-decoration:line-through;">what I
+paid for it though. </span><span style="color:red;font-weight:700;">the
+price. </span>I think there might be other options that are bigger for
+the same <span
+style="color:red;font-weight:700;text-decoration:line-through;">price.
+It </span><span style="color:red;font-weight:700;">price. On the bright
+side, it </span>arrived a day earlier than expected, so I got to play
+with it myself before <span
+style="color:red;font-weight:700;text-decoration:line-through;">I gave
+</span><span style="color:red;font-weight:700;">giving </span>it to my
+daughter.</p>
+<p>この例は、言語モデルの強力な言語処理能力を利用して自動化された文法修正を実現する方法を示しています。同様の方法は各種テキスト内容の校正に運用でき、人工校正の作業量を大幅に削減すると同時に、テキスト文法の正確性を確保できます。言語モデルを運用した文法修正の技術を習得することで、私たちの執筆はより効率的で正確になります。</p>
+<h2 id="五総合例">五、総合例</h2>
+<p>言語モデルは強力な組み合わせ変換能力を持ち、一つのPromptで複数の変換を同時に実現でき、ワークフローを大幅に簡素化できます。</p>
+<p>以下は例で、一つのPromptを使用して、一段のテキストに対して翻訳、スペル修正、語調調整、フォーマット変換などの操作を同時に行う方法を示しています。</p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="ss">以下の三つのバッククォートで囲まれた英語レビューテキストに対して、</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="ss">まずスペルと文法の修正を行い、</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="ss">次にそれを日本語に変換し、</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="ss">さらに優良な楽天レビューのスタイルに変換し、様々な角度から製品の利点と欠点を説明し、まとめを行ってください。</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="ss">記述を磨いて、レビューをより魅力的にしてください。</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="ss">出力結果の形式：</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="ss">【利点】xxx</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="ss">【欠点】xxx</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="ss">【まとめ】xxx</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="ss">注意：xxx部分のみを記入し、段落分けして出力してください。</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="ss">結果をMarkdown形式で出力してください。</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="ss">```</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>display(Markdown(response))</span></code></pre></div>
+<p>【利点】 -
+超柔らかくて可愛い、娘の誕生日プレゼントとして大変喜ばれました。 -
+大人も気に入るパンダで、私も気に入っています。 -
+予定より1日早く到着し、遊ぶ時間がありました。</p>
+<p>【欠点】 -
+片方の耳がもう片方より低く、非対称なデザインが気になります。 -
+価格の割には少し小さく、同じ価格でより大きな選択肢があるかもしれません。</p>
+<p>【まとめ】
+このパンダのぬいぐるみは誕生日プレゼントとして最適で、柔らかくて可愛く、子供に深く愛されています。価格が少し高く、サイズが小さめで、非対称なデザインも少し残念ですが、より大きな同価格帯の選択肢を検討する必要があるかもしれません。全体的には、これは良いパンダのぬいぐるみで、購入する価値があります。</p>
+<p>この例を通じて、大規模言語モデルが複数の変換要求を流暢に処理し、日本語翻訳、スペル修正、語調向上、フォーマット変換などの機能を実現できることがわかります。</p>
+<p>大規模言語モデルの強力な組み合わせ変換能力を利用することで、異なる変換のためにモデルを複数回呼び出すことを避け、ワークフローを極めて簡素化できます。この一回で複数の変換を実現する方法は、テキスト処理と変換のシナリオで広く応用できます。</p>
+<h2 id="六英語版">六、英語版</h2>
+<p><strong>1.1 スペイン語への翻訳</strong></p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Translate the following English text to Spanish: \ </span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="ss">```Hi, I would like to order a blender```</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Hola, me gustaría ordenar una licuadora.</code></pre>
+<p><strong>1.2 言語識別</strong></p>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Tell me which language this is: </span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="ss">```Combien coûte le lampadaire?```</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>This language is French.</code></pre>
+<p><strong>1.3 多言語翻訳</strong></p>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Translate the following  text to French and Spanish</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="ss">and English pirate: </span><span class="ch">\</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="ss">```I want to order a basketball```</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>French: ```Je veux commander un ballon de basket```
+Spanish: ```Quiero ordenar una pelota de baloncesto```
+English: ```I want to order a basketball```</code></pre>
+<p><strong>1.4 語調変換も同時に実行</strong></p>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Translate the following text to Spanish in both the </span><span class="ch">\</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="ss">formal and informal forms: </span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&#39;Would you like to order a pillow?&#39;</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Formal: ¿Le gustaría ordenar una almohada?
+Informal: ¿Te gustaría ordenar una almohada?</code></pre>
+<p><strong>1.5 汎用翻訳ツール</strong></p>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>user_messages <span class="op">=</span> [</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;La performance du système est plus lente que d&#39;habitude.&quot;</span>,  <span class="co"># System performance is slower than normal         </span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Mi monitor tiene píxeles que no se iluminan.&quot;</span>,              <span class="co"># My monitor has pixels that are not lighting</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Il mio mouse non funziona&quot;</span>,                                 <span class="co"># My mouse is not working</span></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Mój klawisz Ctrl jest zepsuty&quot;</span>,                             <span class="co"># My keyboard has a broken control key</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;我的屏幕在闪烁&quot;</span>                                             <span class="co"># My screen is flashing</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>]</span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> issue <span class="kw">in</span> user_messages:</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> <span class="ss">f&quot;Tell me what language this is: ```</span><span class="sc">{</span>issue<span class="sc">}</span><span class="ss">```&quot;</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    lang <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;Original message (</span><span class="sc">{</span>lang<span class="sc">}</span><span class="ss">): </span><span class="sc">{</span>issue<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="ss">    Translate the following  text to English </span><span class="ch">\</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a><span class="ss">    and Korean: ```</span><span class="sc">{</span>issue<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a><span class="ss">    &quot;&quot;&quot;</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(response, <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>Original message (The language is French.): La performance du système est plus lente que d&#39;habitude.
+The performance of the system is slower than usual.
+
+시스템의 성능이 평소보다 느립니다. 
+
+Original message (The language is Spanish.): Mi monitor tiene píxeles que no se iluminan.
+English: &quot;My monitor has pixels that do not light up.&quot;
+
+Korean: &quot;내 모니터에는 밝아지지 않는 픽셀이 있습니다.&quot; 
+
+Original message (The language is Italian.): Il mio mouse non funziona
+English: &quot;My mouse is not working.&quot;
+Korean: &quot;내 마우스가 작동하지 않습니다.&quot; 
+
+Original message (The language is Polish.): Mój klawisz Ctrl jest zepsuty
+English: &quot;My Ctrl key is broken&quot;
+Korean: &quot;내 Ctrl 키가 고장 났어요&quot; 
+
+Original message (The language is Chinese.): 我的屏幕在闪烁
+English: My screen is flickering.
+Korean: 내 화면이 깜박거립니다. </code></pre>
+<p><strong>2.1 語調スタイル調整</strong></p>
+<div class="sourceCode" id="cb38"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Translate the following from slang to a business letter: </span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="ss">&#39;Dude, This is Joe, check out this spec on this standing lamp.&#39;</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Dear Sir/Madam,
+
+I hope this letter finds you well. My name is Joe, and I am writing to bring your attention to a specification document regarding a standing lamp. 
+
+I kindly request that you take a moment to review the attached document, as it provides detailed information about the features and specifications of the aforementioned standing lamp. 
+
+Thank you for your time and consideration. I look forward to discussing this further with you.
+
+Yours sincerely,
+Joe</code></pre>
+<p><strong>3.1 ファイル形式変換</strong></p>
+<div class="sourceCode" id="cb40"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>data_json <span class="op">=</span> { <span class="st">&quot;resturant employees&quot;</span> :[ </span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&quot;name&quot;</span>:<span class="st">&quot;Shyam&quot;</span>, <span class="st">&quot;email&quot;</span>:<span class="st">&quot;shyamjaiswal@gmail.com&quot;</span>},</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&quot;name&quot;</span>:<span class="st">&quot;Bob&quot;</span>, <span class="st">&quot;email&quot;</span>:<span class="st">&quot;bob32@gmail.com&quot;</span>},</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&quot;name&quot;</span>:<span class="st">&quot;Jai&quot;</span>, <span class="st">&quot;email&quot;</span>:<span class="st">&quot;jai87@gmail.com&quot;</span>}</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>]}</span></code></pre></div>
+<div class="sourceCode" id="cb41"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Translate the following python dictionary from JSON to an HTML </span><span class="ch">\</span></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="ss">table with column headers and title: </span><span class="sc">{</span>data_json<span class="sc">}</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;style&gt;
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;h2&gt;Restaurant Employees&lt;/h2&gt;
+
+&lt;table&gt;
+  &lt;tr&gt;
+    &lt;th&gt;Name&lt;/th&gt;
+    &lt;th&gt;Email&lt;/th&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;Shyam&lt;/td&gt;
+    &lt;td&gt;shyamjaiswal@gmail.com&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;Bob&lt;/td&gt;
+    &lt;td&gt;bob32@gmail.com&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;Jai&lt;/td&gt;
+    &lt;td&gt;jai87@gmail.com&lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<div class="sourceCode" id="cb43"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display, Markdown, Latex, HTML, JSON</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>display(HTML(response))</span></code></pre></div>
+&lt;!DOCTYPE html&gt;
+<html>
+<head>
+<style>
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+</style>
+</head>
+<body>
+<h2>
+Restaurant Employees
+</h2>
+<table>
+<tr>
+<th>
+Name
+</th>
+<th>
+Email
+</th>
+</tr>
+<tr>
+<td>
+Shyam
+</td>
+<td>
+shyamjaiswal@gmail.com
+</td>
+</tr>
+<tr>
+<td>
+Bob
+</td>
+<td>
+bob32@gmail.com
+</td>
+</tr>
+<tr>
+<td>
+Jai
+</td>
+<td>
+jai87@gmail.com
+</td>
+</tr>
+</table>
+</body>
+</html>
+<p><strong>4.1 スペルと文法修正</strong></p>
+<div class="sourceCode" id="cb44"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> [ </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;The girl with the black and white puppies have a ball.&quot;</span>,  <span class="co"># The girl has a ball.</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Yolanda has her notebook.&quot;</span>, <span class="co"># ok</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Its going to be a long day. Does the car need it&#39;s oil changed?&quot;</span>,  <span class="co"># Homonyms</span></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Their goes my freedom. There going to bring they&#39;re suitcases.&quot;</span>,  <span class="co"># Homonyms</span></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Your going to need you&#39;re notebook.&quot;</span>,  <span class="co"># Homonyms</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;That medicine effects my ability to sleep. Have you heard of the butterfly affect?&quot;</span>, <span class="co"># Homonyms</span></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;This phrase is to cherck chatGPT for spelling abilitty&quot;</span>  <span class="co"># spelling</span></span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>]</span></code></pre></div>
+<div class="sourceCode" id="cb45"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t <span class="kw">in</span> text:</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;Proofread and correct the following text</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a><span class="ss">    and rewrite the corrected version. If you don&#39;t find</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="ss">    and errors, just say &quot;No errors found&quot;. Don&#39;t use </span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="ss">    any punctuation around the text:</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="ss">    ```</span><span class="sc">{</span>t<span class="sc">}</span><span class="ss">```&quot;&quot;&quot;</span></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>The girl with the black and white puppies has a ball.
+No errors found.
+It&#39;s going to be a long day. Does the car need its oil changed?
+There goes my freedom. They&#39;re going to bring their suitcases.
+You&#39;re going to need your notebook.
+That medicine affects my ability to sleep. Have you heard of the butterfly effect?
+This phrase is to check chatGPT for spelling ability.</code></pre>
+<div class="sourceCode" id="cb47"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Got this for my daughter for her birthday cuz she keeps taking </span><span class="ch">\</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="ss">mine from my room.  Yes, adults also like pandas too.  She takes </span><span class="ch">\</span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="ss">it everywhere with her, and it&#39;s super soft and cute.  One of the </span><span class="ch">\</span></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a><span class="ss">ears is a bit lower than the other, and I don&#39;t think that was </span><span class="ch">\</span></span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a><span class="ss">designed to be asymmetrical. It&#39;s a bit small for what I paid for it </span><span class="ch">\</span></span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a><span class="ss">though. I think there might be other options that are bigger for </span><span class="ch">\</span></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a><span class="ss">the same price.  It arrived a day earlier than expected, so I got </span><span class="ch">\</span></span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a><span class="ss">to play with it myself before I gave it to my daughter.</span></span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb48"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;proofread and correct this review: ```</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">```&quot;</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Got this for my daughter for her birthday because she keeps taking mine from my room. Yes, adults also like pandas too. She takes it everywhere with her, and it&#39;s super soft and cute. However, one of the ears is a bit lower than the other, and I don&#39;t think that was designed to be asymmetrical. Additionally, it&#39;s a bit small for what I paid for it. I believe there might be other options that are bigger for the same price. On the positive side, it arrived a day earlier than expected, so I got to play with it myself before I gave it to my daughter.</code></pre>
+<div class="sourceCode" id="cb50"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> redlines <span class="im">import</span> Redlines</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> display, Markdown</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>diff <span class="op">=</span> Redlines(text,response)</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>display(Markdown(diff.output_markdown))</span></code></pre></div>
+<p>Got this for my daughter for her birthday <span
+style="color:red;font-weight:700;text-decoration:line-through;">cuz
+</span><span style="color:red;font-weight:700;">because </span>she keeps
+taking mine from my <span
+style="color:red;font-weight:700;text-decoration:line-through;">room.
+</span><span style="color:red;font-weight:700;">room. </span>Yes, adults
+also like pandas <span
+style="color:red;font-weight:700;text-decoration:line-through;">too.
+</span><span style="color:red;font-weight:700;">too. </span>She takes it
+everywhere with her, and it’s super soft and <span
+style="color:red;font-weight:700;text-decoration:line-through;">cute.
+One </span><span style="color:red;font-weight:700;">cute. However, one
+</span>of the ears is a bit lower than the other, and I don’t think that
+was designed to be asymmetrical. <span
+style="color:red;font-weight:700;text-decoration:line-through;">It’s
+</span><span style="color:red;font-weight:700;">Additionally, it’s
+</span>a bit small for what I paid for <span
+style="color:red;font-weight:700;text-decoration:line-through;">it
+though. </span><span style="color:red;font-weight:700;">it. </span>I
+<span
+style="color:red;font-weight:700;text-decoration:line-through;">think
+</span><span style="color:red;font-weight:700;">believe </span>there
+might be other options that are bigger for the same <span
+style="color:red;font-weight:700;text-decoration:line-through;">price.
+It </span><span style="color:red;font-weight:700;">price. On the
+positive side, it </span>arrived a day earlier than expected, so I got
+to play with it myself before I gave it to my <span
+style="color:red;font-weight:700;text-decoration:line-through;">daughter.
+</span><span style="color:red;font-weight:700;">daughter.</span></p>
+<p><strong>5.1 総合例</strong></p>
+<div class="sourceCode" id="cb51"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Got this for my daughter for her birthday cuz she keeps taking </span><span class="ch">\</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a><span class="ss">mine from my room.  Yes, adults also like pandas too.  She takes </span><span class="ch">\</span></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a><span class="ss">it everywhere with her, and it&#39;s super soft and cute.  One of the </span><span class="ch">\</span></span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a><span class="ss">ears is a bit lower than the other, and I don&#39;t think that was </span><span class="ch">\</span></span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a><span class="ss">designed to be asymmetrical. It&#39;s a bit small for what I paid for it </span><span class="ch">\</span></span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a><span class="ss">though. I think there might be other options that are bigger for </span><span class="ch">\</span></span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a><span class="ss">the same price.  It arrived a day earlier than expected, so I got </span><span class="ch">\</span></span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a><span class="ss">to play with it myself before I gave it to my daughter.</span></span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb52"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="ss">proofread and correct this review. Make it more compelling. </span></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a><span class="ss">Ensure it follows APA style guide and targets an advanced reader. </span></span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a><span class="ss">Output in markdown format.</span></span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a><span class="ss">Text: ```</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 校正注：APA style guideはAPA Style Guideで、心理学と関連分野の研究論文執筆とフォーマット化のルールです。</span></span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a><span class="co"># テキストの略版を含み、迅速な読書を目的とし、引用、解釈、参考リストが含まれます。</span></span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 詳細内容は参照：https://apastyle.apa.org/about-apa-style</span></span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 次のセル内の日本語化prompt内容は翻訳者による現地化処理で、参考用のみです</span></span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a>display(Markdown(response))</span></code></pre></div>
+<p><strong>Title: A Delightful Gift for Panda Enthusiasts: A Review of
+the Soft and Adorable Panda Plush Toy</strong></p>
+<p><em>Reviewer: [Your Name]</em></p>
+<hr />
+<p>I recently purchased this charming panda plush toy as a birthday gift
+for my daughter, who has a penchant for “borrowing” my belongings from
+time to time. As an adult, I must admit that I too have fallen under the
+spell of these lovable creatures. This review aims to provide an
+in-depth analysis of the product, catering to advanced readers who
+appreciate a comprehensive evaluation.</p>
+<p>First and foremost, the softness and cuteness of this panda plush toy
+are simply unparalleled. Its irresistibly plush exterior makes it a joy
+to touch and hold, ensuring a delightful sensory experience for both
+children and adults alike. The attention to detail is evident, with its
+endearing features capturing the essence of a real panda. However, it is
+worth noting that one of the ears appears to be slightly asymmetrical,
+which may not have been an intentional design choice.</p>
+<p>While the overall quality of the product is commendable, I must
+express my slight disappointment regarding its size in relation to its
+price. Considering the investment made, I expected a larger plush toy.
+It is worth exploring alternative options that offer a more substantial
+size for the same price point. Nevertheless, this minor setback does not
+overshadow the toy’s undeniable appeal and charm.</p>
+<p>In terms of delivery, I was pleasantly surprised to receive the panda
+plush toy a day earlier than anticipated. This unexpected early arrival
+allowed me to indulge in some personal playtime with the toy before
+presenting it to my daughter. Such promptness in delivery is a testament
+to the seller’s efficiency and commitment to customer satisfaction.</p>
+<p>In conclusion, this panda plush toy is a delightful gift for both
+children and adults who appreciate the enchanting allure of these
+beloved creatures. Its softness, cuteness, and attention to detail make
+it a truly captivating addition to any collection. While the size may
+not fully justify the price, the overall quality and prompt delivery
+make it a worthwhile purchase. I highly recommend this panda plush toy
+to anyone seeking a charming and endearing companion.</p>
+<hr />
+<p><strong>Word Count: 305 words</strong></p>
+</body>
+</html>

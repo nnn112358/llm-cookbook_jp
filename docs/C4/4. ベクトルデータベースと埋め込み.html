@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>4. ベクトルデータベースと埋め込み</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1
+id="第4章-ベクターデータベースと単語ベクターvectorstores-and-embeddings">第4章
+ベクターデータベースと単語ベクター(Vectorstores and Embeddings)</h1>
+<p>検索拡張生成（RAG）の全体的なワークフローを一緒に振り返ってみましょう：</p>
+<figure>
+<img src="../figures/C4/overview.png" alt="overview.jpeg" />
+<figcaption aria-hidden="true">overview.jpeg</figcaption>
+</figure>
+<div data-align="center">
+図 4.4 検索拡張生成全体フロー
+</div>
+<p>前の2節では<code>Document Loading</code>（文書読み込み）と<code>Splitting</code>（分割）について説明しました。</p>
+<p>以下では、前の2節の知識を使用して文書の読み込みと分割を行います。</p>
+<h2 id="一文書の読み取り">一、文書の読み取り</h2>
+<p>以下の文書はdatawhale公式のオープンソースmatplotlibチュートリアルリンク
+https://datawhalechina.github.io/fantastic-matplotlib/index.html
+であり、このウェブサイトで対応するチュートリアルをダウンロードできます。</p>
+<p>注意：本章ではサードパーティライブラリ<code>pypdf</code>、<code>chromadb</code>のインストールが必要です</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> PyPDFLoader</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 加载 PDF</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>loaders_chinese <span class="op">=</span> [</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 故意添加重复文档，使数据混乱</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    PyPDFLoader(<span class="st">&quot;docs/matplotlib/第一回：Matplotlib初相识.pdf&quot;</span>),</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    PyPDFLoader(<span class="st">&quot;docs/matplotlib/第一回：Matplotlib初相识.pdf&quot;</span>),</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    PyPDFLoader(<span class="st">&quot;docs/matplotlib/第二回：艺术画笔见乾坤.pdf&quot;</span>),</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    PyPDFLoader(<span class="st">&quot;docs/matplotlib/第三回：布局格式定方圆.pdf&quot;</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> []</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> loader <span class="kw">in</span> loaders_chinese:</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    docs.extend(loader.load())</span></code></pre></div>
+<p>在文档加载后，我们可以使用<code>RecursiveCharacterTextSplitter</code>(递归字符文本拆分器)来创建块。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 分割文本</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.text_splitter <span class="im">import</span> RecursiveCharacterTextSplitter</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>text_splitter <span class="op">=</span> RecursiveCharacterTextSplitter(</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    chunk_size <span class="op">=</span> <span class="dv">1500</span>,  <span class="co"># 每个文本块的大小。这意味着每次切分文本时，会尽量使每个块包含 1500 个字符。</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    chunk_overlap <span class="op">=</span> <span class="dv">150</span>  <span class="co"># 每个文本块之间的重叠部分。</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>splits <span class="op">=</span> text_splitter.split_documents(docs)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">len</span>(splits))</span></code></pre></div>
+<pre><code>27</code></pre>
+<h2 id="二embeddings">二、Embeddings</h2>
+<p><code>Embeddings</code>とは何でしょうか？</p>
+<p>機械学習や自然言語処理（NLP）において、<code>Embeddings</code>（埋め込み）は、単語、文、または文書全体などのカテゴリカルデータを実数ベクターに変換する技術です。これらの実数ベクターはコンピューターがよりよく理解し、処理できます。埋め込みの背後にある主なアイデアは、類似したや関連するオブジェクトは埋め込み空間での距離が近いはずだということです。</p>
+<p>举个例子，我们可以使用词嵌入（word
+embeddings）来表示文本数据。在词嵌入中，每个单词被转换为一个向量，这个向量捕获了这个单词的语义信息。例如，“king”
+和 “queen”
+这两个单词在嵌入空间中的位置将会非常接近，因为它们的含义相似。而 “apple”
+和 “orange” 也会很接近，因为它们都是水果。而 “king” 和 “apple”
+这两个单词在嵌入空间中的距离就会比较远，因为它们的含义不同。</p>
+<p>让我们取出我们的切分部分并对它们进行<code>Embedding</code>处理。</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.embeddings.openai <span class="im">import</span> OpenAIEmbeddings</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>embedding <span class="op">=</span> OpenAIEmbeddings()</span></code></pre></div>
+<p>在使用真实文档数据的例子之前，让我们用几个测试案例的句子来试试，以便了解<code>embedding</code>。</p>
+<p>下面有几个示例句子，其中前两个非常相似，第三个与之无关。然后我们可以使用<code>embedding</code>类为每个句子创建一个<code>embedding</code>。</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>sentence1_chinese <span class="op">=</span> <span class="st">&quot;我喜欢狗&quot;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>sentence2_chinese <span class="op">=</span> <span class="st">&quot;我喜欢犬科动物&quot;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>sentence3_chinese <span class="op">=</span> <span class="st">&quot;外面的天气很糟糕&quot;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>embedding1_chinese <span class="op">=</span> embedding.embed_query(sentence1_chinese)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>embedding2_chinese <span class="op">=</span> embedding.embed_query(sentence2_chinese)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>embedding3_chinese <span class="op">=</span> embedding.embed_query(sentence3_chinese)</span></code></pre></div>
+<p>然后我们可以使用<code>numpy</code>来比较它们，看看哪些最相似。</p>
+<p>我们期望前两个句子应该非常相似。</p>
+<p>然后，第一和第二个与第三个相比应该相差很大。</p>
+<p>我们将使用点积来比较两个嵌入。</p>
+<p>如果你不知道什么是点积，没关系。你只需要知道的重要一点是，分数越高句子越相似。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>np.dot(embedding1_chinese, embedding2_chinese)</span></code></pre></div>
+<pre><code>0.9440614936689298</code></pre>
+<p>我们可以看到前两个<code>embedding</code>的分数相当高，为0.94。</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>np.dot(embedding1_chinese, embedding3_chinese)</span></code></pre></div>
+<pre><code>0.792186975021313</code></pre>
+<p>如果我们将第一个<code>embedding</code>与第三个<code>embedding</code>进行比较，我们可以看到它明显较低，约为0.79。</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>np.dot(embedding2_chinese, embedding3_chinese)</span></code></pre></div>
+<pre><code>0.7804109942586283</code></pre>
+<p>我们将第二个<code>embedding</code>和第三个<code>embedding</code>进行比较，我们可以看到它的分数大约为0.78。</p>
+<h2 id="三vectorstores">三、Vectorstores</h2>
+<h3 id="初始化chroma">3.1 初始化Chroma</h3>
+<p>Langchain集成了超过30个不同的向量存储库。我们选择Chroma是因为它轻量级且数据存储在内存中，这使得它非常容易启动和开始使用。</p>
+<p>首先我们指定一个持久化路径：</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.vectorstores <span class="im">import</span> Chroma</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>persist_directory_chinese <span class="op">=</span> <span class="st">&#39;docs/chroma/matplotlib/&#39;</span></span></code></pre></div>
+<p>如果该路径存在旧的数据库文件，可以通过以下命令删除：</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>rm <span class="op">-</span>rf <span class="st">&#39;./docs/chroma/matplotlib&#39;</span>  <span class="co"># 删除旧的数据库文件（如果文件夹中有文件的话）</span></span></code></pre></div>
+<p>接着从已加载的文档中创建一个向量数据库：</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>vectordb_chinese <span class="op">=</span> Chroma.from_documents(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    documents<span class="op">=</span>splits,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    embedding<span class="op">=</span>embedding,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    persist_directory<span class="op">=</span>persist_directory_chinese  <span class="co"># 允许我们将persist_directory目录保存到磁盘上</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<pre><code>100%|██████████| 1/1 [00:01&lt;00:00,  1.64s/it]</code></pre>
+<p>可以看到数据库长度也是30，这与我们之前的切分数量是一样的。现在让我们开始使用它。</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(vectordb_chinese._collection.count())</span></code></pre></div>
+<pre><code>27</code></pre>
+<h3 id="相似性搜索similarity-search">3.2 相似性搜索(Similarity
+Search)</h3>
+<p>首先我们定义一个需要检索答案的问题：</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>question_chinese <span class="op">=</span> <span class="st">&quot;Matplotlib是什么？&quot;</span> </span></code></pre></div>
+<p>接着调用已加载的向量数据库根据相似性检索答案：</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>docs_chinese <span class="op">=</span> vectordb_chinese.similarity_search(question_chinese,k<span class="op">=</span><span class="dv">3</span>)</span></code></pre></div>
+<p>查看检索答案数量：</p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(docs_chinese)</span></code></pre></div>
+<pre><code>3</code></pre>
+<p>打印其 page_content 属性可以看到检索答案的文本：</p>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(docs_chinese[<span class="dv">0</span>].page_content)</span></code></pre></div>
+<pre><code>第⼀回：Matplotlib 初相识
+⼀、认识matplotlib
+Matplotlib 是⼀个 Python 2D 绘图库，能够以多种硬拷⻉格式和跨平台的交互式环境⽣成出版物质量的图形，⽤来绘制各种静态，动态，
+交互式的图表。
+Matplotlib 可⽤于 Python 脚本， Python 和 IPython Shell 、 Jupyter notebook ， Web 应⽤程序服务器和各种图形⽤户界⾯⼯具包等。
+Matplotlib 是 Python 数据可视化库中的泰⽃，它已经成为 python 中公认的数据可视化⼯具，我们所熟知的 pandas 和 seaborn 的绘图接⼝
+其实也是基于 matplotlib 所作的⾼级封装。
+为了对matplotlib 有更好的理解，让我们从⼀些最基本的概念开始认识它，再逐渐过渡到⼀些⾼级技巧中。
+⼆、⼀个最简单的绘图例⼦
+Matplotlib 的图像是画在 figure （如 windows ， jupyter 窗体）上的，每⼀个 figure ⼜包含了⼀个或多个 axes （⼀个可以指定坐标系的⼦区
+域）。最简单的创建 figure 以及 axes 的⽅式是通过 pyplot.subplots命令，创建 axes 以后，可以使⽤ Axes.plot绘制最简易的折线图。
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import numpy as np
+fig, ax = plt.subplots()  # 创建⼀个包含⼀个 axes 的 figure
+ax.plot([1, 2, 3, 4], [1, 4, 2, 3]);  # 绘制图像
+Trick： 在jupyter notebook 中使⽤ matplotlib 时会发现，代码运⾏后⾃动打印出类似 &lt;matplotlib.lines.Line2D at 0x23155916dc0&gt;
+这样⼀段话，这是因为 matplotlib 的绘图代码默认打印出最后⼀个对象。如果不想显示这句话，有以下三种⽅法，在本章节的代码示例
+中你能找到这三种⽅法的使⽤。
+ . 在代码块最后加⼀个分号 ;
+ . 在代码块最后加⼀句 plt.show()
+ . 在绘图时将绘图对象显式赋值给⼀个变量，如将 plt.plot([1, 2, 3, 4]) 改成 line =plt.plot([1, 2, 3, 4])
+和MATLAB 命令类似，你还可以通过⼀种更简单的⽅式绘制图像， matplotlib.pyplot⽅法能够直接在当前 axes 上绘制图像，如果⽤户
+未指定axes ， matplotlib 会帮你⾃动创建⼀个。所以上⾯的例⼦也可以简化为以下这⼀⾏代码。
+line =plt.plot([1, 2, 3, 4], [1, 4, 2, 3]) 
+三、Figure 的组成
+现在我们来深⼊看⼀下 figure 的组成。通过⼀张 figure 解剖图，我们可以看到⼀个完整的 matplotlib 图像通常会包括以下四个层级，这些
+层级也被称为容器（ container ），下⼀节会详细介绍。在 matplotlib 的世界中，我们将通过各种命令⽅法来操纵图像中的每⼀个部分，
+从⽽达到数据可视化的最终效果，⼀副完整的图像实际上是各类⼦元素的集合。
+Figure：顶层级，⽤来容纳所有绘图元素</code></pre>
+<p>在此之后，我们要确保通过运行vectordb.persist来持久化向量数据库，以便我们在未来的课程中使用。</p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>vectordb_chinese.persist()</span></code></pre></div>
+<h2 id="四失败的情况failure-modes">四、失败的情况(Failure modes)</h2>
+<p>这看起来很好，基本的相似性搜索很容易就能让你完成80%的工作。但是，可能会出现一些相似性搜索失败的情况。这里有一些可能出现的边缘情况————我们将在下一章节中修复它们。</p>
+<h3 id="重复块">4.1 重复块</h3>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>question_chinese <span class="op">=</span> <span class="st">&quot;Matplotlib是什么？&quot;</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>docs_chinese <span class="op">=</span> vectordb_chinese.similarity_search(question_chinese,k<span class="op">=</span><span class="dv">5</span>)</span></code></pre></div>
+<p>请注意，我们得到了重复的块（因为索引中有重复的
+<code>第一回：Matplotlib初相识.pdf</code>）。</p>
+<p>语义搜索获取所有相似的文档，但不强制多样性。</p>
+<p><code>docs[0]</code> 和 <code>docs[1]</code> 是完全相同的。</p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;docs[0]&quot;</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(docs_chinese[<span class="dv">0</span>])</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;docs[1]&quot;</span>)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(docs_chinese[<span class="dv">1</span>])</span></code></pre></div>
+<pre><code>docs[0]
+page_content=&#39;第⼀回：Matplotlib 初相识\n⼀、认识matplotlib\nMatplotlib 是⼀个 Python 2D 绘图库，能够以多种硬拷⻉格式和跨平台的交互式环境⽣成出版物质量的图形，⽤来绘制各种静态，动态，\n交互式的图表。\nMatplotlib 可⽤于 Python 脚本， Python 和 IPython Shell 、 Jupyter notebook ， Web 应⽤程序服务器和各种图形⽤户界⾯⼯具包等。\nMatplotlib 是 Python 数据可视化库中的泰⽃，它已经成为 python 中公认的数据可视化⼯具，我们所熟知的 pandas 和 seaborn 的绘图接⼝\n其实也是基于 matplotlib 所作的⾼级封装。\n为了对matplotlib 有更好的理解，让我们从⼀些最基本的概念开始认识它，再逐渐过渡到⼀些⾼级技巧中。\n⼆、⼀个最简单的绘图例⼦\nMatplotlib 的图像是画在 figure （如 windows ， jupyter 窗体）上的，每⼀个 figure ⼜包含了⼀个或多个 axes （⼀个可以指定坐标系的⼦区\n域）。最简单的创建 figure 以及 axes 的⽅式是通过 pyplot.subplots命令，创建 axes 以后，可以使⽤ Axes.plot绘制最简易的折线图。\nimport matplotlib.pyplot as plt\nimport matplotlib as mpl\nimport numpy as np\nfig, ax = plt.subplots()  # 创建⼀个包含⼀个 axes 的 figure\nax.plot([1, 2, 3, 4], [1, 4, 2, 3]);  # 绘制图像\nTrick： 在jupyter notebook 中使⽤ matplotlib 时会发现，代码运⾏后⾃动打印出类似 &lt;matplotlib.lines.Line2D at 0x23155916dc0&gt;\n这样⼀段话，这是因为 matplotlib 的绘图代码默认打印出最后⼀个对象。如果不想显示这句话，有以下三种⽅法，在本章节的代码示例\n中你能找到这三种⽅法的使⽤。\n\x00. 在代码块最后加⼀个分号 ;\n\x00. 在代码块最后加⼀句 plt.show()\n\x00. 在绘图时将绘图对象显式赋值给⼀个变量，如将 plt.plot([1, 2, 3, 4]) 改成 line =plt.plot([1, 2, 3, 4])\n和MATLAB 命令类似，你还可以通过⼀种更简单的⽅式绘制图像， matplotlib.pyplot⽅法能够直接在当前 axes 上绘制图像，如果⽤户\n未指定axes ， matplotlib 会帮你⾃动创建⼀个。所以上⾯的例⼦也可以简化为以下这⼀⾏代码。\nline =plt.plot([1, 2, 3, 4], [1, 4, 2, 3]) \n三、Figure 的组成\n现在我们来深⼊看⼀下 figure 的组成。通过⼀张 figure 解剖图，我们可以看到⼀个完整的 matplotlib 图像通常会包括以下四个层级，这些\n层级也被称为容器（ container ），下⼀节会详细介绍。在 matplotlib 的世界中，我们将通过各种命令⽅法来操纵图像中的每⼀个部分，\n从⽽达到数据可视化的最终效果，⼀副完整的图像实际上是各类⼦元素的集合。\nFigure：顶层级，⽤来容纳所有绘图元素&#39; metadata={&#39;source&#39;: &#39;docs/matplotlib/第一回：Matplotlib初相识.pdf&#39;, &#39;page&#39;: 0}
+docs[1]
+page_content=&#39;第⼀回：Matplotlib 初相识\n⼀、认识matplotlib\nMatplotlib 是⼀个 Python 2D 绘图库，能够以多种硬拷⻉格式和跨平台的交互式环境⽣成出版物质量的图形，⽤来绘制各种静态，动态，\n交互式的图表。\nMatplotlib 可⽤于 Python 脚本， Python 和 IPython Shell 、 Jupyter notebook ， Web 应⽤程序服务器和各种图形⽤户界⾯⼯具包等。\nMatplotlib 是 Python 数据可视化库中的泰⽃，它已经成为 python 中公认的数据可视化⼯具，我们所熟知的 pandas 和 seaborn 的绘图接⼝\n其实也是基于 matplotlib 所作的⾼级封装。\n为了对matplotlib 有更好的理解，让我们从⼀些最基本的概念开始认识它，再逐渐过渡到⼀些⾼级技巧中。\n⼆、⼀个最简单的绘图例⼦\nMatplotlib 的图像是画在 figure （如 windows ， jupyter 窗体）上的，每⼀个 figure ⼜包含了⼀个或多个 axes （⼀个可以指定坐标系的⼦区\n域）。最简单的创建 figure 以及 axes 的⽅式是通过 pyplot.subplots命令，创建 axes 以后，可以使⽤ Axes.plot绘制最简易的折线图。\nimport matplotlib.pyplot as plt\nimport matplotlib as mpl\nimport numpy as np\nfig, ax = plt.subplots()  # 创建⼀个包含⼀个 axes 的 figure\nax.plot([1, 2, 3, 4], [1, 4, 2, 3]);  # 绘制图像\nTrick： 在jupyter notebook 中使⽤ matplotlib 时会发现，代码运⾏后⾃动打印出类似 &lt;matplotlib.lines.Line2D at 0x23155916dc0&gt;\n这样⼀段话，这是因为 matplotlib 的绘图代码默认打印出最后⼀个对象。如果不想显示这句话，有以下三种⽅法，在本章节的代码示例\n中你能找到这三种⽅法的使⽤。\n\x00. 在代码块最后加⼀个分号 ;\n\x00. 在代码块最后加⼀句 plt.show()\n\x00. 在绘图时将绘图对象显式赋值给⼀个变量，如将 plt.plot([1, 2, 3, 4]) 改成 line =plt.plot([1, 2, 3, 4])\n和MATLAB 命令类似，你还可以通过⼀种更简单的⽅式绘制图像， matplotlib.pyplot⽅法能够直接在当前 axes 上绘制图像，如果⽤户\n未指定axes ， matplotlib 会帮你⾃动创建⼀个。所以上⾯的例⼦也可以简化为以下这⼀⾏代码。\nline =plt.plot([1, 2, 3, 4], [1, 4, 2, 3]) \n三、Figure 的组成\n现在我们来深⼊看⼀下 figure 的组成。通过⼀张 figure 解剖图，我们可以看到⼀个完整的 matplotlib 图像通常会包括以下四个层级，这些\n层级也被称为容器（ container ），下⼀节会详细介绍。在 matplotlib 的世界中，我们将通过各种命令⽅法来操纵图像中的每⼀个部分，\n从⽽达到数据可视化的最终效果，⼀副完整的图像实际上是各类⼦元素的集合。\nFigure：顶层级，⽤来容纳所有绘图元素&#39; metadata={&#39;source&#39;: &#39;docs/matplotlib/第一回：Matplotlib初相识.pdf&#39;, &#39;page&#39;: 0}</code></pre>
+<h3 id="检索错误答案">4.2 检索错误答案</h3>
+<p>我们可以看到一种新的失败的情况。</p>
+<p>下面的问题询问了关于第二讲的问题，但也包括了来自其他讲的结果。</p>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>question_chinese <span class="op">=</span> <span class="st">&quot;他们在第二讲中对Figure说了些什么？&quot;</span>  </span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>docs_chinese <span class="op">=</span> vectordb_chinese.similarity_search(question_chinese,k<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> doc_chinese <span class="kw">in</span> docs_chinese:</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(doc_chinese.metadata)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    </span></code></pre></div>
+<pre><code>{&#39;source&#39;: &#39;docs/matplotlib/第一回：Matplotlib初相识.pdf&#39;, &#39;page&#39;: 0}
+{&#39;source&#39;: &#39;docs/matplotlib/第一回：Matplotlib初相识.pdf&#39;, &#39;page&#39;: 0}
+{&#39;source&#39;: &#39;docs/matplotlib/第二回：艺术画笔见乾坤.pdf&#39;, &#39;page&#39;: 9}
+{&#39;source&#39;: &#39;docs/matplotlib/第二回：艺术画笔见乾坤.pdf&#39;, &#39;page&#39;: 10}
+{&#39;source&#39;: &#39;docs/matplotlib/第一回：Matplotlib初相识.pdf&#39;, &#39;page&#39;: 1}</code></pre>
+<p>可见，虽然我们询问的问题是第二讲，但第一个出现的答案却是第一讲的内容。而第三个答案才是我们想要的正确回答。</p>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(docs_chinese[<span class="dv">2</span>].page_content)</span></code></pre></div>
+<pre><code>三、对象容器  - Object container
+容器会包含⼀些 primitives，并且容器还有它⾃身的属性。
+⽐如Axes Artist，它是⼀种容器，它包含了很多 primitives，⽐如Line2D，Text；同时，它也有⾃身的属性，⽐如 xscal，⽤来控制
+X轴是linear还是log的。
+1. Figure容器
+matplotlib.figure.Figure是Artist最顶层的 container对象容器，它包含了图表中的所有元素。⼀张图表的背景就是在
+Figure.patch的⼀个矩形 Rectangle。
+当我们向图表添加 Figure.add_subplot()或者Figure.add_axes()元素时，这些都会被添加到 Figure.axes列表中。
+fig = plt.figure()
+ax1 = fig.add_subplot(211) # 作⼀幅2*1 的图，选择第 1 个⼦图
+ax2 = fig.add_axes([0.1, 0.1, 0.7, 0.3]) # 位置参数，四个数分别代表了
+(left,bottom,width,height)
+print(ax1) 
+print(fig.axes) # fig.axes 中包含了 subplot 和 axes 两个实例 , 刚刚添加的
+AxesSubplot(0.125,0.536818;0.775x0.343182)
+[&lt;AxesSubplot:&gt;, &lt;Axes:&gt;]
+由于Figure维持了current axes，因此你不应该⼿动的从 Figure.axes列表中添加删除元素，⽽是要通过 Figure.add_subplot()、
+Figure.add_axes()来添加元素，通过 Figure.delaxes()来删除元素。但是你可以迭代或者访问 Figure.axes中的Axes，然后修改这个
+Axes的属性。
+⽐如下⾯的遍历 axes ⾥的内容，并且添加⽹格线：
+fig = plt.figure()
+ax1 = fig.add_subplot(211)
+for ax in fig.axes:
+    ax.grid(True)
+Figure也有它⾃⼰的 text、line 、 patch 、 image。你可以直接通过 add primitive语句直接添加。但是注意 Figure默认的坐标系是以像
+素为单位，你可能需要转换成 figure 坐标系： (0,0) 表示左下点， (1,1) 表示右上点。
+Figure容器的常⻅属性：
+Figure.patch属性：Figure 的背景矩形
+Figure.axes属性：⼀个 Axes 实例的列表（包括 Subplot)
+Figure.images属性：⼀个 FigureImages patch 列表
+Figure.lines属性：⼀个 Line2D 实例的列表（很少使⽤）
+Figure.legends属性：⼀个 Figure Legend 实例列表（不同于 Axes.legends)
+Figure.texts属性：⼀个 Figure Text 实例列表</code></pre>
+<p>在接下来的章节中，我们将探讨的方法能够有效地解答这两个问题！</p>
+<h2 id="五英文版">五、英文版</h2>
+<p><strong>1.1 读取文档</strong></p>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> PyPDFLoader</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 加载 PDF</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>loaders <span class="op">=</span> [</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 故意添加重复文档，使数据混乱</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>    PyPDFLoader(<span class="st">&quot;docs/cs229_lectures/MachineLearning-Lecture01.pdf&quot;</span>),</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>    PyPDFLoader(<span class="st">&quot;docs/cs229_lectures/MachineLearning-Lecture01.pdf&quot;</span>),</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    PyPDFLoader(<span class="st">&quot;docs/cs229_lectures/MachineLearning-Lecture02.pdf&quot;</span>),</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>    PyPDFLoader(<span class="st">&quot;docs/cs229_lectures/MachineLearning-Lecture03.pdf&quot;</span>)</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> []</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> loader <span class="kw">in</span> loaders:</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>    docs.extend(loader.load())</span></code></pre></div>
+<p>进行分割</p>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 分割文本</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.text_splitter <span class="im">import</span> RecursiveCharacterTextSplitter</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>text_splitter <span class="op">=</span> RecursiveCharacterTextSplitter(</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    chunk_size <span class="op">=</span> <span class="dv">1500</span>,  <span class="co"># 每个文本块的大小。这意味着每次切分文本时，会尽量使每个块包含 1500 个字符。</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    chunk_overlap <span class="op">=</span> <span class="dv">150</span>  <span class="co"># 每个文本块之间的重叠部分。</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>splits <span class="op">=</span> text_splitter.split_documents(docs)</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">len</span>(splits))</span></code></pre></div>
+<pre><code>209</code></pre>
+<p><strong>2.1 Embedding</strong></p>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.embeddings.openai <span class="im">import</span> OpenAIEmbeddings</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>embedding <span class="op">=</span> OpenAIEmbeddings()</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>sentence1 <span class="op">=</span> <span class="st">&quot;i like dogs&quot;</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>sentence2 <span class="op">=</span> <span class="st">&quot;i like canines&quot;</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>sentence3 <span class="op">=</span> <span class="st">&quot;the weather is ugly outside&quot;</span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>embedding1 <span class="op">=</span> embedding.embed_query(sentence1)</span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>embedding2 <span class="op">=</span> embedding.embed_query(sentence2)</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>embedding3 <span class="op">=</span> embedding.embed_query(sentence3)</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Sentence 1 VS setence 2&quot;</span>)</span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.dot(embedding1, embedding2))</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Sentence 1 VS setence 3&quot;</span>)</span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.dot(embedding1, embedding3))</span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Sentence 2 VS sentence 3&quot;</span>)</span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.dot(embedding2, embedding3))</span></code></pre></div>
+<pre><code>Sentence 1 VS setence 2
+0.9632026347895142
+Sentence 1 VS setence 3
+0.7711302839662464
+Sentence 2 VS sentence 3
+0.759699788340627</code></pre>
+<p><strong>3.1 初始化 Chroma</strong></p>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.vectorstores <span class="im">import</span> Chroma</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>persist_directory <span class="op">=</span> <span class="st">&#39;docs/chroma/cs229_lectures/&#39;</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>vectordb <span class="op">=</span> Chroma.from_documents(</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>    documents<span class="op">=</span>splits,</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>    embedding<span class="op">=</span>embedding,</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>    persist_directory<span class="op">=</span>persist_directory  <span class="co"># 允许我们将persist_directory目录保存到磁盘上</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(vectordb._collection.count())</span></code></pre></div>
+<pre><code>100%|██████████| 1/1 [00:02&lt;00:00,  2.62s/it]
+
+
+209</code></pre>
+<p><strong>3.2 相似性检索</strong></p>
+<div class="sourceCode" id="cb39"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="st">&quot;is there an email i can ask for help&quot;</span>  <span class="co"># &quot;有我可以寻求帮助的电子邮件吗&quot;</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> vectordb.similarity_search(question,k<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Length of docs: &quot;</span>, <span class="bu">len</span>(docs))</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Page content:&quot;</span>)</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(docs[<span class="dv">0</span>].page_content)</span></code></pre></div>
+<pre><code>Length of docs:  3
+Page content:
+cs229-qa@cs.stanford.edu. This goes to an acc ount that&#39;s read by all the TAs and me. So 
+rather than sending us email individually, if you send email to this account, it will 
+actually let us get back to you maximally quickly with answers to your questions.  
+If you&#39;re asking questions about homework probl ems, please say in the subject line which 
+assignment and which question the email refers to, since that will also help us to route 
+your question to the appropriate TA or to me  appropriately and get the response back to 
+you quickly.  
+Let&#39;s see. Skipping ahead — let&#39;s see — for homework, one midterm, one open and term 
+project. Notice on the honor code. So one thi ng that I think will help you to succeed and 
+do well in this class and even help you to enjoy this cla ss more is if you form a study 
+group.  
+So start looking around where you&#39; re sitting now or at the end of class today, mingle a 
+little bit and get to know your classmates. I strongly encourage you to form study groups 
+and sort of have a group of people to study with and have a group of your fellow students 
+to talk over these concepts with. You can also  post on the class news group if you want to 
+use that to try to form a study group.  
+But some of the problems sets in this cla ss are reasonably difficult.  People that have 
+taken the class before may tell you they were very difficult. And just I bet it would be 
+more fun for you, and you&#39;d probably have a be tter learning experience if you form a</code></pre>
+<p>持久化数据库</p>
+<div class="sourceCode" id="cb41"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>vectordb.persist()</span></code></pre></div>
+<p><strong>4.1 重复块</strong></p>
+<div class="sourceCode" id="cb42"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="st">&quot;what did they say about matlab?&quot;</span>  <span class="co"># &quot;他们对 matlab 有何评价？&quot;</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> vectordb.similarity_search(question,k<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;docs[0]&quot;</span>)</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(docs[<span class="dv">0</span>])</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;docs[1]&quot;</span>)</span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(docs[<span class="dv">1</span>])</span></code></pre></div>
+<pre><code>docs[0]
+page_content=&#39;those homeworks will be done in either MATLA B or in Octave, which is sort of — I \nknow some people call it a free ve rsion of MATLAB, which it sort  of is, sort of isn\&#39;t.  \nSo I guess for those of you that haven\&#39;t s een MATLAB before, and I know most of you \nhave, MATLAB is I guess part of the programming language that makes it very easy to write codes using matrices, to write code for numerical routines, to move data around, to \nplot data. And it\&#39;s sort of an extremely easy to  learn tool to use for implementing a lot of \nlearning algorithms.  \nAnd in case some of you want to work on your  own home computer or something if you \ndon\&#39;t have a MATLAB license, for the purposes of  this class, there\&#39;s also — [inaudible] \nwrite that down [inaudible] MATLAB — there\&#39; s also a software package called Octave \nthat you can download for free off the Internet. And it has somewhat fewer features than MATLAB, but it\&#39;s free, and for the purposes of  this class, it will work for just about \neverything.  \nSo actually I, well, so yeah, just a side comment for those of you that haven\&#39;t seen \nMATLAB before I guess, once a colleague of mine at a different university, not at \nStanford, actually teaches another machine l earning course. He\&#39;s taught it for many years. \nSo one day, he was in his office, and an old student of his from, lik e, ten years ago came \ninto his office and he said, &quot;Oh, professo r, professor, thank you so much for your&#39; metadata={&#39;source&#39;: &#39;docs/cs229_lectures/MachineLearning-Lecture01.pdf&#39;, &#39;page&#39;: 8}
+docs[1]
+page_content=&#39;those homeworks will be done in either MATLA B or in Octave, which is sort of — I \nknow some people call it a free ve rsion of MATLAB, which it sort  of is, sort of isn\&#39;t.  \nSo I guess for those of you that haven\&#39;t s een MATLAB before, and I know most of you \nhave, MATLAB is I guess part of the programming language that makes it very easy to write codes using matrices, to write code for numerical routines, to move data around, to \nplot data. And it\&#39;s sort of an extremely easy to  learn tool to use for implementing a lot of \nlearning algorithms.  \nAnd in case some of you want to work on your  own home computer or something if you \ndon\&#39;t have a MATLAB license, for the purposes of  this class, there\&#39;s also — [inaudible] \nwrite that down [inaudible] MATLAB — there\&#39; s also a software package called Octave \nthat you can download for free off the Internet. And it has somewhat fewer features than MATLAB, but it\&#39;s free, and for the purposes of  this class, it will work for just about \neverything.  \nSo actually I, well, so yeah, just a side comment for those of you that haven\&#39;t seen \nMATLAB before I guess, once a colleague of mine at a different university, not at \nStanford, actually teaches another machine l earning course. He\&#39;s taught it for many years. \nSo one day, he was in his office, and an old student of his from, lik e, ten years ago came \ninto his office and he said, &quot;Oh, professo r, professor, thank you so much for your&#39; metadata={&#39;source&#39;: &#39;docs/cs229_lectures/MachineLearning-Lecture01.pdf&#39;, &#39;page&#39;: 8}</code></pre>
+<p><strong>4.2 检索错误答案</strong></p>
+<div class="sourceCode" id="cb44"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="st">&quot;what did they say about regression in the third lecture?&quot;</span>  <span class="co"># &quot;他们在第三讲中是怎么谈论回归的？&quot;</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> vectordb.similarity_search(question,k<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> doc <span class="kw">in</span> docs:</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(doc.metadata)</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;docs-4:&quot;</span>)</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(docs[<span class="dv">4</span>].page_content)</span></code></pre></div>
+<pre><code>{&#39;source&#39;: &#39;docs/cs229_lectures/MachineLearning-Lecture03.pdf&#39;, &#39;page&#39;: 0}
+{&#39;source&#39;: &#39;docs/cs229_lectures/MachineLearning-Lecture03.pdf&#39;, &#39;page&#39;: 14}
+{&#39;source&#39;: &#39;docs/cs229_lectures/MachineLearning-Lecture02.pdf&#39;, &#39;page&#39;: 0}
+{&#39;source&#39;: &#39;docs/cs229_lectures/MachineLearning-Lecture03.pdf&#39;, &#39;page&#39;: 6}
+{&#39;source&#39;: &#39;docs/cs229_lectures/MachineLearning-Lecture01.pdf&#39;, &#39;page&#39;: 8}
+docs-4:
+into his office and he said, &quot;Oh, professo r, professor, thank you so much for your 
+machine learning class. I learned so much from it. There&#39;s this stuff that I learned in your 
+class, and I now use every day. And it&#39;s help ed me make lots of money, and here&#39;s a 
+picture of my big house.&quot;  
+So my friend was very excited. He said, &quot;W ow. That&#39;s great. I&#39;m glad to hear this 
+machine learning stuff was actually useful. So what was it that you learned? Was it 
+logistic regression? Was it the PCA? Was it the data ne tworks? What was it that you 
+learned that was so helpful?&quot; And the student said, &quot;Oh, it was the MATLAB.&quot;  
+So for those of you that don&#39;t know MATLAB yet, I hope you do learn it. It&#39;s not hard, 
+and we&#39;ll actually have a short MATLAB tutori al in one of the discussion sections for 
+those of you that don&#39;t know it.  
+Okay. The very last piece of logistical th ing is the discussion s ections. So discussion 
+sections will be taught by the TAs, and atte ndance at discussion sections is optional, 
+although they&#39;ll also be recorded and televi sed. And we&#39;ll use the discussion sections 
+mainly for two things. For the next two or th ree weeks, we&#39;ll use the discussion sections 
+to go over the prerequisites to this class or if some of you haven&#39;t seen probability or 
+statistics for a while or maybe algebra, we&#39;ll go over those in the discussion sections as a 
+refresher for those of you that want one.</code></pre>
+</body>
+</html>

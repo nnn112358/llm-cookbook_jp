@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>7. チャット</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第7章-チャット-chat">第7章 チャット Chat</h1>
+<p>検索拡張生成（retrieval augmented
+generation、RAG）の全体的なワークフローを振り返ってみましょう：</p>
+<figure>
+<img src="../figures/C4/overview.png" alt="overview.jpeg" />
+<figcaption aria-hidden="true">overview.jpeg</figcaption>
+</figure>
+<div data-align="center">
+図 4.7.1 RAG
+</div>
+<p>私たちは機能的なチャットボットの完成に近づいています。<code>文書読み込み</code>、<code>分割</code>、<code>ストレージ</code>、<code>検索</code>について説明しました。Q&amp;Aで<code>検索QA</code>チェーンを使用して<code>検索</code>で出力を生成する方法を示しました。</p>
+<p>私たちのボットはすでに質問に答えることができますが、まだ後続の質問を処理できず、真の対話を行うことができません。本章では、この問題を解決します。</p>
+<p>今度は質問応答チャットボットを作成します。これは以前のものと非常に似ていますが、チャット履歴機能を追加します。これは、以前に行った任意の対話やメッセージです。これにより、ボットが質問に答えようとする際にチャット履歴のコンテキストを考慮できるようになります。つまり、継続して質問をした場合、ボットはあなたが何について話したいのかを理解します。</p>
+<h2 id="一复现之前代码">一、复现之前代码</h2>
+<p>以下代码是为了 openai LLM 版本备案，直至其被弃用（于 2023 年 9
+月）。LLM
+响应通常会有所不同，但在使用不同模型版本时，这种差异可能会更明显。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> datetime</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>current_date <span class="op">=</span> datetime.datetime.now().date()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> current_date <span class="op">&lt;</span> datetime.date(<span class="dv">2023</span>, <span class="dv">9</span>, <span class="dv">2</span>):</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    llm_name <span class="op">=</span> <span class="st">&quot;gpt-3.5-turbo-0301&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    llm_name <span class="op">=</span> <span class="st">&quot;gpt-3.5-turbo&quot;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(llm_name)</span></code></pre></div>
+<pre><code>gpt-3.5-turbo-0301</code></pre>
+<p>如果您想在 <code>Lang Chain plus</code> 平台上进行实验：</p>
+<ul>
+<li><p>前往 langchain plus 平台并注册</p></li>
+<li><p>从您的帐户设置创建 api 密钥</p></li>
+<li><p>在下面的代码中使用此 api 密钥</p></li>
+</ul>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#import os</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#os.environ[&quot;LANGCHAIN_TRACING_V2&quot;] = &quot;true&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#os.environ[&quot;LANGCHAIN_ENDPOINT&quot;] = &quot;https://api.langchain.plus&quot;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">#os.environ[&quot;LANGCHAIN_API_KEY&quot;] = &quot;...&quot;</span></span></code></pre></div>
+<p>首先我们加载在前几节课创建的向量数据库，并测试一下：</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 加载向量库，其中包含了所有课程材料的 Embedding。</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.vectorstores <span class="im">import</span> Chroma</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.embeddings.openai <span class="im">import</span> OpenAIEmbeddings</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> panel <span class="im">as</span> pn  <span class="co"># GUI</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># pn.extension()</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>persist_directory <span class="op">=</span> <span class="st">&#39;docs/chroma/matplotlib&#39;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>embedding <span class="op">=</span> OpenAIEmbeddings()</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>vectordb <span class="op">=</span> Chroma(persist_directory<span class="op">=</span>persist_directory, embedding_function<span class="op">=</span>embedding)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="st">&quot;这门课的主要内容是什么？&quot;</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> vectordb.similarity_search(question,k<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">len</span>(docs))</span></code></pre></div>
+<pre><code>3</code></pre>
+<p>接着我们从 OpenAI 的 API 创建一个 LLM：</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(model_name<span class="op">=</span>llm_name, temperature<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>llm.predict(<span class="st">&quot;你好&quot;</span>)</span></code></pre></div>
+<pre><code>&#39;你好！有什么我可以帮助你的吗？&#39;</code></pre>
+<p>再创建一个基于模板的检索链：</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 构建 prompt</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.prompts <span class="im">import</span> PromptTemplate</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>template <span class="op">=</span> <span class="st">&quot;&quot;&quot;使用以下上下文来回答最后的问题。如果你不知道答案，就说你不知道，不要试图编造答案。最多使用三句话。尽量使答案简明扼要。总是在回答的最后说“谢谢你的提问！”。</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="sc">{context}</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="st">问题: </span><span class="sc">{question}</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="st">有用的回答:&quot;&quot;&quot;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>QA_CHAIN_PROMPT <span class="op">=</span> PromptTemplate(input_variables<span class="op">=</span>[<span class="st">&quot;context&quot;</span>, <span class="st">&quot;question&quot;</span>],template<span class="op">=</span>template,)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 运行 chain</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> RetrievalQA</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="st">&quot;这门课的主题是什么？&quot;</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>qa_chain <span class="op">=</span> RetrievalQA.from_chain_type(llm,</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>                                       retriever<span class="op">=</span>vectordb.as_retriever(),</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>                                       return_source_documents<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>                                       chain_type_kwargs<span class="op">=</span>{<span class="st">&quot;prompt&quot;</span>: QA_CHAIN_PROMPT})</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> qa_chain({<span class="st">&quot;query&quot;</span>: question})</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result[<span class="st">&quot;result&quot;</span>])</span></code></pre></div>
+<pre><code>这门课的主题是 Matplotlib 数据可视化库的初学者指南。</code></pre>
+<h2 id="二记忆memory">二、记忆（Memory）</h2>
+<p>现在让我们更进一步，添加一些记忆功能。</p>
+<p>我们将使用
+<code>ConversationBufferMemory</code>。它保存聊天消息历史记录的列表，这些历史记录将在回答问题时与问题一起传递给聊天机器人，从而将它们添加到上下文中。</p>
+<p>需要注意的是，我们之前讨论的上下文检索等方法，在这里同样可用。</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationBufferMemory</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationBufferMemory(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    memory_key<span class="op">=</span><span class="st">&quot;chat_history&quot;</span>, <span class="co"># 与 prompt 的输入变量保持一致。</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    return_messages<span class="op">=</span><span class="va">True</span> <span class="co"># 将以消息列表的形式返回聊天记录，而不是单个字符串</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<h2
+id="三对话检索链conversationalretrievalchain">三、对话检索链（ConversationalRetrievalChain）</h2>
+<p>对话检索链（ConversationalRetrievalChain）在检索 QA
+链的基础上，增加了处理对话历史的能力。</p>
+<p>它的工作流程是:</p>
+<ol type="1">
+<li><p>将之前的对话与新问题合并生成一个完整的查询语句。</p></li>
+<li><p>在向量数据库中搜索该查询的相关文档。</p></li>
+<li><p>获取结果后,存储所有答案到对话记忆区。</p></li>
+<li><p>用户可在 UI 中查看完整的对话流程。</p></li>
+</ol>
+<p><img src="../figures/C4/Modular_components.png" /></p>
+<div data-align="center">
+图 4.7.2 对话检索链
+</div>
+<p>这种链式方式将新问题放在之前对话的语境中进行检索，可以处理依赖历史信息的查询。并保留所有信息在对话记忆中，方便追踪。</p>
+<p>接下来让我们可以测试这个对话检索链的效果：</p>
+<p>首先提出一个无历史的问题“这门课会学习 Python 吗？”，并查看回答。</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> ConversationalRetrievalChain</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>retriever<span class="op">=</span>vectordb.as_retriever()</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>qa <span class="op">=</span> ConversationalRetrievalChain.from_llm(</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    llm,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    retriever<span class="op">=</span>retriever,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    memory<span class="op">=</span>memory</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="st">&quot;这门课会学习 Python 吗？&quot;</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> qa({<span class="st">&quot;question&quot;</span>: question})</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result[<span class="st">&#39;answer&#39;</span>])</span></code></pre></div>
+<pre><code>是的，这门课程会涉及到 Python 编程语言的使用，特别是在数据可视化方面。因此，学习 Python 是这门课程的前提之一。</code></pre>
+<p>然后基于答案进行下一个问题“为什么这门课需要这个前提？”：</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="st">&quot;为什么这门课需要这个前提？&quot;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> qa({<span class="st">&quot;question&quot;</span>: question})</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result[<span class="st">&#39;answer&#39;</span>])</span></code></pre></div>
+<pre><code>学习Python的前提是需要具备一定的计算机基础知识，包括但不限于计算机操作系统、编程语言基础、数据结构与算法等。此外，对于数据科学领域的学习，还需要具备一定的数学和统计学基础，如线性代数、微积分、概率论与数理统计等。</code></pre>
+<p>可以看到，虽然 LLM
+的回答有些不对劲，但它准确地判断了这个前提的指代内容是学习
+Python，也就是我们成功地传递给了它历史信息。这种持续学习和关联前后问题的能力，可大大增强问答系统的连续性和智能水平。</p>
+<h2
+id="四定义一个适用于您文档的聊天机器人">四、定义一个适用于您文档的聊天机器人</h2>
+<p>通过上述所学内容，我们可以通过以下代码来定义一个适用于私人文档的聊天机器人：</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.embeddings.openai <span class="im">import</span> OpenAIEmbeddings</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.text_splitter <span class="im">import</span> CharacterTextSplitter, RecursiveCharacterTextSplitter</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.vectorstores <span class="im">import</span> DocArrayInMemorySearch</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> TextLoader</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> RetrievalQA,  ConversationalRetrievalChain</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationBufferMemory</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> TextLoader</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> PyPDFLoader</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> load_db(<span class="bu">file</span>, chain_type, k):</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co">    该函数用于加载 PDF 文件，切分文档，生成文档的嵌入向量，创建向量数据库，定义检索器，并创建聊天机器人实例。</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="co">    参数:</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="co">    file (str): 要加载的 PDF 文件路径。</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="co">    chain_type (str): 链类型，用于指定聊天机器人的类型。</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="co">    k (int): 在检索过程中，返回最相似的 k 个结果。</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="co">    返回:</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="co">    qa (ConversationalRetrievalChain): 创建的聊天机器人实例。</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 载入文档</span></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>    loader <span class="op">=</span> PyPDFLoader(<span class="bu">file</span>)</span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>    documents <span class="op">=</span> loader.load()</span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 切分文档</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>    text_splitter <span class="op">=</span> RecursiveCharacterTextSplitter(chunk_size<span class="op">=</span><span class="dv">1000</span>, chunk_overlap<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>    docs <span class="op">=</span> text_splitter.split_documents(documents)</span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 定义 Embeddings</span></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>    embeddings <span class="op">=</span> OpenAIEmbeddings()</span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 根据数据创建向量数据库</span></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>    db <span class="op">=</span> DocArrayInMemorySearch.from_documents(docs, embeddings)</span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 定义检索器</span></span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>    retriever <span class="op">=</span> db.as_retriever(search_type<span class="op">=</span><span class="st">&quot;similarity&quot;</span>, search_kwargs<span class="op">=</span>{<span class="st">&quot;k&quot;</span>: k})</span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 创建 chatbot 链，Memory 由外部管理</span></span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a>    qa <span class="op">=</span> ConversationalRetrievalChain.from_llm(</span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a>        llm<span class="op">=</span>ChatOpenAI(model_name<span class="op">=</span>llm_name, temperature<span class="op">=</span><span class="dv">0</span>), </span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a>        chain_type<span class="op">=</span>chain_type, </span>
+<span id="cb15-39"><a href="#cb15-39" aria-hidden="true" tabindex="-1"></a>        retriever<span class="op">=</span>retriever, </span>
+<span id="cb15-40"><a href="#cb15-40" aria-hidden="true" tabindex="-1"></a>        return_source_documents<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb15-41"><a href="#cb15-41" aria-hidden="true" tabindex="-1"></a>        return_generated_question<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb15-42"><a href="#cb15-42" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-43"><a href="#cb15-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> qa </span>
+<span id="cb15-44"><a href="#cb15-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-45"><a href="#cb15-45" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> panel <span class="im">as</span> pn</span>
+<span id="cb15-46"><a href="#cb15-46" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> param</span>
+<span id="cb15-47"><a href="#cb15-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-48"><a href="#cb15-48" aria-hidden="true" tabindex="-1"></a><span class="co"># 用于存储聊天记录、回答、数据库查询和回复</span></span>
+<span id="cb15-49"><a href="#cb15-49" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> cbfs(param.Parameterized):</span>
+<span id="cb15-50"><a href="#cb15-50" aria-hidden="true" tabindex="-1"></a>    chat_history <span class="op">=</span> param.List([])</span>
+<span id="cb15-51"><a href="#cb15-51" aria-hidden="true" tabindex="-1"></a>    answer <span class="op">=</span> param.String(<span class="st">&quot;&quot;</span>)</span>
+<span id="cb15-52"><a href="#cb15-52" aria-hidden="true" tabindex="-1"></a>    db_query  <span class="op">=</span> param.String(<span class="st">&quot;&quot;</span>)</span>
+<span id="cb15-53"><a href="#cb15-53" aria-hidden="true" tabindex="-1"></a>    db_response <span class="op">=</span> param.List([])</span>
+<span id="cb15-54"><a href="#cb15-54" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-55"><a href="#cb15-55" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>,  <span class="op">**</span>params):</span>
+<span id="cb15-56"><a href="#cb15-56" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>(cbfs, <span class="va">self</span>).<span class="fu">__init__</span>( <span class="op">**</span>params)</span>
+<span id="cb15-57"><a href="#cb15-57" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.panels <span class="op">=</span> []</span>
+<span id="cb15-58"><a href="#cb15-58" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.loaded_file <span class="op">=</span> <span class="st">&quot;docs/matplotlib/第一回：Matplotlib初相识.pdf&quot;</span></span>
+<span id="cb15-59"><a href="#cb15-59" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.qa <span class="op">=</span> load_db(<span class="va">self</span>.loaded_file,<span class="st">&quot;stuff&quot;</span>, <span class="dv">4</span>)</span>
+<span id="cb15-60"><a href="#cb15-60" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-61"><a href="#cb15-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 将文档加载到聊天机器人中</span></span>
+<span id="cb15-62"><a href="#cb15-62" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> call_load_db(<span class="va">self</span>, count):</span>
+<span id="cb15-63"><a href="#cb15-63" aria-hidden="true" tabindex="-1"></a>        <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb15-64"><a href="#cb15-64" aria-hidden="true" tabindex="-1"></a><span class="co">        count: 数量</span></span>
+<span id="cb15-65"><a href="#cb15-65" aria-hidden="true" tabindex="-1"></a><span class="co">        &quot;&quot;&quot;</span></span>
+<span id="cb15-66"><a href="#cb15-66" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> count <span class="op">==</span> <span class="dv">0</span> <span class="kw">or</span> file_input.value <span class="kw">is</span> <span class="va">None</span>:  <span class="co"># 初始化或未指定文件 :</span></span>
+<span id="cb15-67"><a href="#cb15-67" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> pn.pane.Markdown(<span class="ss">f&quot;Loaded File: </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>loaded_file<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb15-68"><a href="#cb15-68" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb15-69"><a href="#cb15-69" aria-hidden="true" tabindex="-1"></a>            file_input.save(<span class="st">&quot;temp.pdf&quot;</span>)  <span class="co"># 本地副本</span></span>
+<span id="cb15-70"><a href="#cb15-70" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.loaded_file <span class="op">=</span> file_input.filename</span>
+<span id="cb15-71"><a href="#cb15-71" aria-hidden="true" tabindex="-1"></a>            button_load.button_style<span class="op">=</span><span class="st">&quot;outline&quot;</span></span>
+<span id="cb15-72"><a href="#cb15-72" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.qa <span class="op">=</span> load_db(<span class="st">&quot;temp.pdf&quot;</span>, <span class="st">&quot;stuff&quot;</span>, <span class="dv">4</span>)</span>
+<span id="cb15-73"><a href="#cb15-73" aria-hidden="true" tabindex="-1"></a>            button_load.button_style<span class="op">=</span><span class="st">&quot;solid&quot;</span></span>
+<span id="cb15-74"><a href="#cb15-74" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.clr_history()</span>
+<span id="cb15-75"><a href="#cb15-75" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> pn.pane.Markdown(<span class="ss">f&quot;Loaded File: </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>loaded_file<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb15-76"><a href="#cb15-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-77"><a href="#cb15-77" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 处理对话链</span></span>
+<span id="cb15-78"><a href="#cb15-78" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> convchain(<span class="va">self</span>, query):</span>
+<span id="cb15-79"><a href="#cb15-79" aria-hidden="true" tabindex="-1"></a>        <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb15-80"><a href="#cb15-80" aria-hidden="true" tabindex="-1"></a><span class="co">        query: 用户的查询</span></span>
+<span id="cb15-81"><a href="#cb15-81" aria-hidden="true" tabindex="-1"></a><span class="co">        &quot;&quot;&quot;</span></span>
+<span id="cb15-82"><a href="#cb15-82" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> query:</span>
+<span id="cb15-83"><a href="#cb15-83" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> pn.WidgetBox(pn.Row(<span class="st">&#39;User:&#39;</span>, pn.pane.Markdown(<span class="st">&quot;&quot;</span>, width<span class="op">=</span><span class="dv">600</span>)), scroll<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb15-84"><a href="#cb15-84" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="va">self</span>.qa({<span class="st">&quot;question&quot;</span>: query, <span class="st">&quot;chat_history&quot;</span>: <span class="va">self</span>.chat_history})</span>
+<span id="cb15-85"><a href="#cb15-85" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.chat_history.extend([(query, result[<span class="st">&quot;answer&quot;</span>])])</span>
+<span id="cb15-86"><a href="#cb15-86" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.db_query <span class="op">=</span> result[<span class="st">&quot;generated_question&quot;</span>]</span>
+<span id="cb15-87"><a href="#cb15-87" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.db_response <span class="op">=</span> result[<span class="st">&quot;source_documents&quot;</span>]</span>
+<span id="cb15-88"><a href="#cb15-88" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.answer <span class="op">=</span> result[<span class="st">&#39;answer&#39;</span>] </span>
+<span id="cb15-89"><a href="#cb15-89" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.panels.extend([</span>
+<span id="cb15-90"><a href="#cb15-90" aria-hidden="true" tabindex="-1"></a>            pn.Row(<span class="st">&#39;User:&#39;</span>, pn.pane.Markdown(query, width<span class="op">=</span><span class="dv">600</span>)),</span>
+<span id="cb15-91"><a href="#cb15-91" aria-hidden="true" tabindex="-1"></a>            pn.Row(<span class="st">&#39;ChatBot:&#39;</span>, pn.pane.Markdown(<span class="va">self</span>.answer, width<span class="op">=</span><span class="dv">600</span>, style<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>}))</span>
+<span id="cb15-92"><a href="#cb15-92" aria-hidden="true" tabindex="-1"></a>        ])</span>
+<span id="cb15-93"><a href="#cb15-93" aria-hidden="true" tabindex="-1"></a>        inp.value <span class="op">=</span> <span class="st">&#39;&#39;</span>  <span class="co"># 清除时清除装载指示器</span></span>
+<span id="cb15-94"><a href="#cb15-94" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> pn.WidgetBox(<span class="op">*</span><span class="va">self</span>.panels,scroll<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb15-95"><a href="#cb15-95" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-96"><a href="#cb15-96" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 获取最后发送到数据库的问题</span></span>
+<span id="cb15-97"><a href="#cb15-97" aria-hidden="true" tabindex="-1"></a>    <span class="at">@param.depends</span>(<span class="st">&#39;db_query &#39;</span>, )</span>
+<span id="cb15-98"><a href="#cb15-98" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_lquest(<span class="va">self</span>):</span>
+<span id="cb15-99"><a href="#cb15-99" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.db_query :</span>
+<span id="cb15-100"><a href="#cb15-100" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> pn.Column(</span>
+<span id="cb15-101"><a href="#cb15-101" aria-hidden="true" tabindex="-1"></a>                pn.Row(pn.pane.Markdown(<span class="ss">f&quot;Last question to DB:&quot;</span>, styles<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>})),</span>
+<span id="cb15-102"><a href="#cb15-102" aria-hidden="true" tabindex="-1"></a>                pn.Row(pn.pane.Str(<span class="st">&quot;no DB accesses so far&quot;</span>))</span>
+<span id="cb15-103"><a href="#cb15-103" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb15-104"><a href="#cb15-104" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> pn.Column(</span>
+<span id="cb15-105"><a href="#cb15-105" aria-hidden="true" tabindex="-1"></a>            pn.Row(pn.pane.Markdown(<span class="ss">f&quot;DB query:&quot;</span>, styles<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>})),</span>
+<span id="cb15-106"><a href="#cb15-106" aria-hidden="true" tabindex="-1"></a>            pn.pane.Str(<span class="va">self</span>.db_query )</span>
+<span id="cb15-107"><a href="#cb15-107" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb15-108"><a href="#cb15-108" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-109"><a href="#cb15-109" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 获取数据库返回的源文件</span></span>
+<span id="cb15-110"><a href="#cb15-110" aria-hidden="true" tabindex="-1"></a>    <span class="at">@param.depends</span>(<span class="st">&#39;db_response&#39;</span>, )</span>
+<span id="cb15-111"><a href="#cb15-111" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_sources(<span class="va">self</span>):</span>
+<span id="cb15-112"><a href="#cb15-112" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.db_response:</span>
+<span id="cb15-113"><a href="#cb15-113" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> </span>
+<span id="cb15-114"><a href="#cb15-114" aria-hidden="true" tabindex="-1"></a>        rlist<span class="op">=</span>[pn.Row(pn.pane.Markdown(<span class="ss">f&quot;Result of DB lookup:&quot;</span>, styles<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>}))]</span>
+<span id="cb15-115"><a href="#cb15-115" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> doc <span class="kw">in</span> <span class="va">self</span>.db_response:</span>
+<span id="cb15-116"><a href="#cb15-116" aria-hidden="true" tabindex="-1"></a>            rlist.append(pn.Row(pn.pane.Str(doc)))</span>
+<span id="cb15-117"><a href="#cb15-117" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> pn.WidgetBox(<span class="op">*</span>rlist, width<span class="op">=</span><span class="dv">600</span>, scroll<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb15-118"><a href="#cb15-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-119"><a href="#cb15-119" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 获取当前聊天记录</span></span>
+<span id="cb15-120"><a href="#cb15-120" aria-hidden="true" tabindex="-1"></a>    <span class="at">@param.depends</span>(<span class="st">&#39;convchain&#39;</span>, <span class="st">&#39;clr_history&#39;</span>) </span>
+<span id="cb15-121"><a href="#cb15-121" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_chats(<span class="va">self</span>):</span>
+<span id="cb15-122"><a href="#cb15-122" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.chat_history:</span>
+<span id="cb15-123"><a href="#cb15-123" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> pn.WidgetBox(pn.Row(pn.pane.Str(<span class="st">&quot;No History Yet&quot;</span>)), width<span class="op">=</span><span class="dv">600</span>, scroll<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb15-124"><a href="#cb15-124" aria-hidden="true" tabindex="-1"></a>        rlist<span class="op">=</span>[pn.Row(pn.pane.Markdown(<span class="ss">f&quot;Current Chat History variable&quot;</span>, styles<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>}))]</span>
+<span id="cb15-125"><a href="#cb15-125" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> exchange <span class="kw">in</span> <span class="va">self</span>.chat_history:</span>
+<span id="cb15-126"><a href="#cb15-126" aria-hidden="true" tabindex="-1"></a>            rlist.append(pn.Row(pn.pane.Str(exchange)))</span>
+<span id="cb15-127"><a href="#cb15-127" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> pn.WidgetBox(<span class="op">*</span>rlist, width<span class="op">=</span><span class="dv">600</span>, scroll<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb15-128"><a href="#cb15-128" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-129"><a href="#cb15-129" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 清除聊天记录</span></span>
+<span id="cb15-130"><a href="#cb15-130" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> clr_history(<span class="va">self</span>,count<span class="op">=</span><span class="dv">0</span>):</span>
+<span id="cb15-131"><a href="#cb15-131" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.chat_history <span class="op">=</span> []</span>
+<span id="cb15-132"><a href="#cb15-132" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> </span></code></pre></div>
+<p>接着可以运行这个聊天机器人：</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 初始化聊天机器人</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>cb <span class="op">=</span> cbfs() </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 定义界面的小部件</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>file_input <span class="op">=</span> pn.widgets.FileInput(accept<span class="op">=</span><span class="st">&#39;.pdf&#39;</span>) <span class="co"># PDF 文件的文件输入小部件</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>button_load <span class="op">=</span> pn.widgets.Button(name<span class="op">=</span><span class="st">&quot;Load DB&quot;</span>, button_type<span class="op">=</span><span class="st">&#39;primary&#39;</span>) <span class="co"># 加载数据库的按钮</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>button_clearhistory <span class="op">=</span> pn.widgets.Button(name<span class="op">=</span><span class="st">&quot;Clear History&quot;</span>, button_type<span class="op">=</span><span class="st">&#39;warning&#39;</span>) <span class="co"># 清除聊天记录的按钮</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>button_clearhistory.on_click(cb.clr_history) <span class="co"># 将清除历史记录功能绑定到按钮上</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>inp <span class="op">=</span> pn.widgets.TextInput( placeholder<span class="op">=</span><span class="st">&#39;Enter text here…&#39;</span>) <span class="co"># 用于用户查询的文本输入小部件</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 将加载数据库和对话的函数绑定到相应的部件上</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>bound_button_load <span class="op">=</span> pn.bind(cb.call_load_db, button_load.param.clicks)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>conversation <span class="op">=</span> pn.bind(cb.convchain, inp) </span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>jpg_pane <span class="op">=</span> pn.pane.Image( <span class="st">&#39;./img/convchain.jpg&#39;</span>)</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="co"># 使用 Panel 定义界面布局</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>tab1 <span class="op">=</span> pn.Column(</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>    pn.Row(inp),</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    pn.layout.Divider(),</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    pn.panel(conversation,  loading_indicator<span class="op">=</span><span class="va">True</span>, height<span class="op">=</span><span class="dv">300</span>),</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    pn.layout.Divider(),</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>tab2<span class="op">=</span> pn.Column(</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>    pn.panel(cb.get_lquest),</span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    pn.layout.Divider(),</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    pn.panel(cb.get_sources ),</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>tab3<span class="op">=</span> pn.Column(</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>    pn.panel(cb.get_chats),</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>    pn.layout.Divider(),</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>tab4<span class="op">=</span>pn.Column(</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>    pn.Row( file_input, button_load, bound_button_load),</span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>    pn.Row( button_clearhistory, pn.pane.Markdown(<span class="st">&quot;Clears chat history. Can use to start a new topic&quot;</span> )),</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>    pn.layout.Divider(),</span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>    pn.Row(jpg_pane.clone(width<span class="op">=</span><span class="dv">400</span>))</span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a><span class="co"># 将所有选项卡合并为一个仪表盘</span></span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>dashboard <span class="op">=</span> pn.Column(</span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>    pn.Row(pn.pane.Markdown(<span class="st">&#39;# ChatWithYourData_Bot&#39;</span>)),</span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a>    pn.Tabs((<span class="st">&#39;Conversation&#39;</span>, tab1), (<span class="st">&#39;Database&#39;</span>, tab2), (<span class="st">&#39;Chat History&#39;</span>, tab3),(<span class="st">&#39;Configure&#39;</span>, tab4))</span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a>dashboard</span></code></pre></div>
+<p>以下截图展示了该机器人的运行情况：</p>
+<p><img src="../figures/C4/ChatBot.png" /></p>
+<div data-align="center">
+图 4.7.3 聊天机器人
+</div>
+<p>您可以自由使用并修改上述代码，以添加自定义功能。例如，可以修改
+<code>load_db</code> 函数和 <code>convchain</code>
+方法中的配置，尝试不同的存储器模块和检索器模型。</p>
+<p>此外，<a href="https://panel.holoviz.org/">panel</a> 和 <a
+href="https://param.holoviz.org/">Param</a>
+这两个库提供了丰富的组件和小工具，可以用来扩展和增强图形用户界面。Panel
+可以创建交互式的控制面板，Param
+可以声明输入参数并生成控件。组合使用可以构建强大的可配置GUI。</p>
+<p>您可以通过创造性地应用这些工具,开发出功能更丰富的对话系统和界面。自定义控件可以实现参数配置、可视化等高级功能。欢迎修改和扩展示例代码,开发出功能更强大、体验更佳的智能对话应用。</p>
+<h2 id="五英文版">五、英文版</h2>
+<p><strong>1.1 复习</strong></p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 加载向量库，其中包含了所有课程材料的 Embedding。</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.vectorstores <span class="im">import</span> Chroma</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.embeddings.openai <span class="im">import</span> OpenAIEmbeddings</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> panel <span class="im">as</span> pn  <span class="co"># GUI</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co"># pn.extension()</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>persist_directory <span class="op">=</span> <span class="st">&#39;docs/chroma/cs229_lectures&#39;</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>embedding <span class="op">=</span> OpenAIEmbeddings()</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>vectordb <span class="op">=</span> Chroma(persist_directory<span class="op">=</span>persist_directory, embedding_function<span class="op">=</span>embedding)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 对向量库进行基本的相似度搜索</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="st">&quot;What are major topics for this class?&quot;</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> vectordb.similarity_search(question,k<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">len</span>(docs))</span></code></pre></div>
+<pre><code>3</code></pre>
+<p>创建一个 LLM</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(model_name<span class="op">=</span>llm_name, temperature<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>llm.predict(<span class="st">&quot;Hello world!&quot;</span>)</span></code></pre></div>
+<pre><code>&#39;Hello there! How can I assist you today?&#39;</code></pre>
+<p>创建一个基于模板的检索链</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 初始化一个 prompt 模板，创建一个检索 QA 链，然后传入一个问题并得到一个结果。</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 构建 prompt</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.prompts <span class="im">import</span> PromptTemplate</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>template <span class="op">=</span> <span class="st">&quot;&quot;&quot;Use the following pieces of context to answer the question at the end. If you don&#39;t know the answer, just say that you don&#39;t know, don&#39;t try to make up an answer. Use three sentences maximum. Keep the answer as concise as possible. Always say &quot;thanks for asking!&quot; at the end of the answer. </span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="sc">{context}</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="st">Question: </span><span class="sc">{question}</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="st">Helpful Answer:&quot;&quot;&quot;</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>QA_CHAIN_PROMPT <span class="op">=</span> PromptTemplate(input_variables<span class="op">=</span>[<span class="st">&quot;context&quot;</span>, <span class="st">&quot;question&quot;</span>],template<span class="op">=</span>template,)</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 运行 chain</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> RetrievalQA</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="st">&quot;Is probability a class topic?&quot;</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>qa_chain <span class="op">=</span> RetrievalQA.from_chain_type(llm,</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>                                       retriever<span class="op">=</span>vectordb.as_retriever(),</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>                                       return_source_documents<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>                                       chain_type_kwargs<span class="op">=</span>{<span class="st">&quot;prompt&quot;</span>: QA_CHAIN_PROMPT})</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> qa_chain({<span class="st">&quot;query&quot;</span>: question})</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result[<span class="st">&quot;result&quot;</span>])</span></code></pre></div>
+<pre><code>Yes, probability is assumed to be a prerequisite for this class. The instructor assumes familiarity with basic probability and statistics, and will go over some of the prerequisites in the discussion sections as a refresher course. Thanks for asking!</code></pre>
+<p><strong>2.1 记忆</strong></p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationBufferMemory</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>memory <span class="op">=</span> ConversationBufferMemory(</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    memory_key<span class="op">=</span><span class="st">&quot;chat_history&quot;</span>, <span class="co"># 与 prompt 的输入变量保持一致。</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    return_messages<span class="op">=</span><span class="va">True</span> <span class="co"># 将以消息列表的形式返回聊天记录，而不是单个字符串</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>3.1 对话检索链</strong></p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> ConversationalRetrievalChain</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>retriever<span class="op">=</span>vectordb.as_retriever()</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>qa <span class="op">=</span> ConversationalRetrievalChain.from_llm(</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    llm,</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    retriever<span class="op">=</span>retriever,</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    memory<span class="op">=</span>memory</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="st">&quot;Is probability a class topic?&quot;</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> qa({<span class="st">&quot;question&quot;</span>: question})</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Q: &quot;</span>, question)</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;A: &quot;</span>, result[<span class="st">&#39;answer&#39;</span>])</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>question <span class="op">=</span> <span class="st">&quot;why are those prerequesites needed?&quot;</span></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> qa({<span class="st">&quot;question&quot;</span>: question})</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Q: &quot;</span>, question)</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;A: &quot;</span>, result[<span class="st">&#39;answer&#39;</span>])</span></code></pre></div>
+<pre><code>Q:  Is probability a class topic?
+A:  Yes, probability is a topic that will be assumed to be familiar to students in this class. The instructor assumes that students have familiarity with basic probability and statistics, and that most undergraduate statistics classes will be more than enough.
+Q:  why are those prerequesites needed?
+A:  The reason for requiring familiarity with basic probability and statistics as prerequisites for this class is that the class assumes that students already know what random variables are, what expectation is, what a variance or a random variable is. The class will not spend much time reviewing these concepts, so students are expected to have a basic understanding of them before taking the class.</code></pre>
+<p><strong>4.1 定义一个聊天机器人</strong></p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.embeddings.openai <span class="im">import</span> OpenAIEmbeddings</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.text_splitter <span class="im">import</span> CharacterTextSplitter, RecursiveCharacterTextSplitter</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.vectorstores <span class="im">import</span> DocArrayInMemorySearch</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> TextLoader</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> RetrievalQA,  ConversationalRetrievalChain</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.memory <span class="im">import</span> ConversationBufferMemory</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> TextLoader</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> PyPDFLoader</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> load_db(<span class="bu">file</span>, chain_type, k):</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="co">    该函数用于加载 PDF 文件，切分文档，生成文档的嵌入向量，创建向量数据库，定义检索器，并创建聊天机器人实例。</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="co">    参数:</span></span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="co">    file (str): 要加载的 PDF 文件路径。</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a><span class="co">    chain_type (str): 链类型，用于指定聊天机器人的类型。</span></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="co">    k (int): 在检索过程中，返回最相似的 k 个结果。</span></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a><span class="co">    返回:</span></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a><span class="co">    qa (ConversationalRetrievalChain): 创建的聊天机器人实例。</span></span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 载入文档</span></span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a>    loader <span class="op">=</span> PyPDFLoader(<span class="bu">file</span>)</span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a>    documents <span class="op">=</span> loader.load()</span>
+<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 切分文档</span></span>
+<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a>    text_splitter <span class="op">=</span> RecursiveCharacterTextSplitter(chunk_size<span class="op">=</span><span class="dv">1000</span>, chunk_overlap<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a>    docs <span class="op">=</span> text_splitter.split_documents(documents)</span>
+<span id="cb26-29"><a href="#cb26-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 定义 Embeddings</span></span>
+<span id="cb26-30"><a href="#cb26-30" aria-hidden="true" tabindex="-1"></a>    embeddings <span class="op">=</span> OpenAIEmbeddings()</span>
+<span id="cb26-31"><a href="#cb26-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 根据数据创建向量数据库</span></span>
+<span id="cb26-32"><a href="#cb26-32" aria-hidden="true" tabindex="-1"></a>    db <span class="op">=</span> DocArrayInMemorySearch.from_documents(docs, embeddings)</span>
+<span id="cb26-33"><a href="#cb26-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 定义检索器</span></span>
+<span id="cb26-34"><a href="#cb26-34" aria-hidden="true" tabindex="-1"></a>    retriever <span class="op">=</span> db.as_retriever(search_type<span class="op">=</span><span class="st">&quot;similarity&quot;</span>, search_kwargs<span class="op">=</span>{<span class="st">&quot;k&quot;</span>: k})</span>
+<span id="cb26-35"><a href="#cb26-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 创建 chatbot 链，Memory 由外部管理</span></span>
+<span id="cb26-36"><a href="#cb26-36" aria-hidden="true" tabindex="-1"></a>    qa <span class="op">=</span> ConversationalRetrievalChain.from_llm(</span>
+<span id="cb26-37"><a href="#cb26-37" aria-hidden="true" tabindex="-1"></a>        llm<span class="op">=</span>ChatOpenAI(model_name<span class="op">=</span>llm_name, temperature<span class="op">=</span><span class="dv">0</span>), </span>
+<span id="cb26-38"><a href="#cb26-38" aria-hidden="true" tabindex="-1"></a>        chain_type<span class="op">=</span>chain_type, </span>
+<span id="cb26-39"><a href="#cb26-39" aria-hidden="true" tabindex="-1"></a>        retriever<span class="op">=</span>retriever, </span>
+<span id="cb26-40"><a href="#cb26-40" aria-hidden="true" tabindex="-1"></a>        return_source_documents<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb26-41"><a href="#cb26-41" aria-hidden="true" tabindex="-1"></a>        return_generated_question<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb26-42"><a href="#cb26-42" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb26-43"><a href="#cb26-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> qa </span>
+<span id="cb26-44"><a href="#cb26-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-45"><a href="#cb26-45" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> panel <span class="im">as</span> pn</span>
+<span id="cb26-46"><a href="#cb26-46" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> param</span>
+<span id="cb26-47"><a href="#cb26-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-48"><a href="#cb26-48" aria-hidden="true" tabindex="-1"></a><span class="co"># 用于存储聊天记录、回答、数据库查询和回复</span></span>
+<span id="cb26-49"><a href="#cb26-49" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> cbfs(param.Parameterized):</span>
+<span id="cb26-50"><a href="#cb26-50" aria-hidden="true" tabindex="-1"></a>    chat_history <span class="op">=</span> param.List([])</span>
+<span id="cb26-51"><a href="#cb26-51" aria-hidden="true" tabindex="-1"></a>    answer <span class="op">=</span> param.String(<span class="st">&quot;&quot;</span>)</span>
+<span id="cb26-52"><a href="#cb26-52" aria-hidden="true" tabindex="-1"></a>    db_query  <span class="op">=</span> param.String(<span class="st">&quot;&quot;</span>)</span>
+<span id="cb26-53"><a href="#cb26-53" aria-hidden="true" tabindex="-1"></a>    db_response <span class="op">=</span> param.List([])</span>
+<span id="cb26-54"><a href="#cb26-54" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-55"><a href="#cb26-55" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>,  <span class="op">**</span>params):</span>
+<span id="cb26-56"><a href="#cb26-56" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>(cbfs, <span class="va">self</span>).<span class="fu">__init__</span>( <span class="op">**</span>params)</span>
+<span id="cb26-57"><a href="#cb26-57" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.panels <span class="op">=</span> []</span>
+<span id="cb26-58"><a href="#cb26-58" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.loaded_file <span class="op">=</span> <span class="st">&quot;docs/cs229_lectures/MachineLearning-Lecture01.pdf&quot;</span></span>
+<span id="cb26-59"><a href="#cb26-59" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.qa <span class="op">=</span> load_db(<span class="va">self</span>.loaded_file,<span class="st">&quot;stuff&quot;</span>, <span class="dv">4</span>)</span>
+<span id="cb26-60"><a href="#cb26-60" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-61"><a href="#cb26-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 将文档加载到聊天机器人中</span></span>
+<span id="cb26-62"><a href="#cb26-62" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> call_load_db(<span class="va">self</span>, count):</span>
+<span id="cb26-63"><a href="#cb26-63" aria-hidden="true" tabindex="-1"></a>        <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb26-64"><a href="#cb26-64" aria-hidden="true" tabindex="-1"></a><span class="co">        count: 数量</span></span>
+<span id="cb26-65"><a href="#cb26-65" aria-hidden="true" tabindex="-1"></a><span class="co">        &quot;&quot;&quot;</span></span>
+<span id="cb26-66"><a href="#cb26-66" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> count <span class="op">==</span> <span class="dv">0</span> <span class="kw">or</span> file_input.value <span class="kw">is</span> <span class="va">None</span>:  <span class="co"># 初始化或未指定文件 :</span></span>
+<span id="cb26-67"><a href="#cb26-67" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> pn.pane.Markdown(<span class="ss">f&quot;Loaded File: </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>loaded_file<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb26-68"><a href="#cb26-68" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb26-69"><a href="#cb26-69" aria-hidden="true" tabindex="-1"></a>            file_input.save(<span class="st">&quot;temp.pdf&quot;</span>)  <span class="co"># 本地副本</span></span>
+<span id="cb26-70"><a href="#cb26-70" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.loaded_file <span class="op">=</span> file_input.filename</span>
+<span id="cb26-71"><a href="#cb26-71" aria-hidden="true" tabindex="-1"></a>            button_load.button_style<span class="op">=</span><span class="st">&quot;outline&quot;</span></span>
+<span id="cb26-72"><a href="#cb26-72" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.qa <span class="op">=</span> load_db(<span class="st">&quot;temp.pdf&quot;</span>, <span class="st">&quot;stuff&quot;</span>, <span class="dv">4</span>)</span>
+<span id="cb26-73"><a href="#cb26-73" aria-hidden="true" tabindex="-1"></a>            button_load.button_style<span class="op">=</span><span class="st">&quot;solid&quot;</span></span>
+<span id="cb26-74"><a href="#cb26-74" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.clr_history()</span>
+<span id="cb26-75"><a href="#cb26-75" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> pn.pane.Markdown(<span class="ss">f&quot;Loaded File: </span><span class="sc">{</span><span class="va">self</span><span class="sc">.</span>loaded_file<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb26-76"><a href="#cb26-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-77"><a href="#cb26-77" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 处理对话链</span></span>
+<span id="cb26-78"><a href="#cb26-78" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> convchain(<span class="va">self</span>, query):</span>
+<span id="cb26-79"><a href="#cb26-79" aria-hidden="true" tabindex="-1"></a>        <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb26-80"><a href="#cb26-80" aria-hidden="true" tabindex="-1"></a><span class="co">        query: 用户的查询</span></span>
+<span id="cb26-81"><a href="#cb26-81" aria-hidden="true" tabindex="-1"></a><span class="co">        &quot;&quot;&quot;</span></span>
+<span id="cb26-82"><a href="#cb26-82" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> query:</span>
+<span id="cb26-83"><a href="#cb26-83" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> pn.WidgetBox(pn.Row(<span class="st">&#39;User:&#39;</span>, pn.pane.Markdown(<span class="st">&quot;&quot;</span>, width<span class="op">=</span><span class="dv">600</span>)), scroll<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb26-84"><a href="#cb26-84" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="va">self</span>.qa({<span class="st">&quot;question&quot;</span>: query, <span class="st">&quot;chat_history&quot;</span>: <span class="va">self</span>.chat_history})</span>
+<span id="cb26-85"><a href="#cb26-85" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.chat_history.extend([(query, result[<span class="st">&quot;answer&quot;</span>])])</span>
+<span id="cb26-86"><a href="#cb26-86" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.db_query <span class="op">=</span> result[<span class="st">&quot;generated_question&quot;</span>]</span>
+<span id="cb26-87"><a href="#cb26-87" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.db_response <span class="op">=</span> result[<span class="st">&quot;source_documents&quot;</span>]</span>
+<span id="cb26-88"><a href="#cb26-88" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.answer <span class="op">=</span> result[<span class="st">&#39;answer&#39;</span>] </span>
+<span id="cb26-89"><a href="#cb26-89" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.panels.extend([</span>
+<span id="cb26-90"><a href="#cb26-90" aria-hidden="true" tabindex="-1"></a>            pn.Row(<span class="st">&#39;User:&#39;</span>, pn.pane.Markdown(query, width<span class="op">=</span><span class="dv">600</span>)),</span>
+<span id="cb26-91"><a href="#cb26-91" aria-hidden="true" tabindex="-1"></a>            pn.Row(<span class="st">&#39;ChatBot:&#39;</span>, pn.pane.Markdown(<span class="va">self</span>.answer, width<span class="op">=</span><span class="dv">600</span>, style<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>}))</span>
+<span id="cb26-92"><a href="#cb26-92" aria-hidden="true" tabindex="-1"></a>        ])</span>
+<span id="cb26-93"><a href="#cb26-93" aria-hidden="true" tabindex="-1"></a>        inp.value <span class="op">=</span> <span class="st">&#39;&#39;</span>  <span class="co"># 清除时清除装载指示器</span></span>
+<span id="cb26-94"><a href="#cb26-94" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> pn.WidgetBox(<span class="op">*</span><span class="va">self</span>.panels,scroll<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb26-95"><a href="#cb26-95" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-96"><a href="#cb26-96" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 获取最后发送到数据库的问题</span></span>
+<span id="cb26-97"><a href="#cb26-97" aria-hidden="true" tabindex="-1"></a>    <span class="at">@param.depends</span>(<span class="st">&#39;db_query &#39;</span>, )</span>
+<span id="cb26-98"><a href="#cb26-98" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_lquest(<span class="va">self</span>):</span>
+<span id="cb26-99"><a href="#cb26-99" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.db_query :</span>
+<span id="cb26-100"><a href="#cb26-100" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> pn.Column(</span>
+<span id="cb26-101"><a href="#cb26-101" aria-hidden="true" tabindex="-1"></a>                pn.Row(pn.pane.Markdown(<span class="ss">f&quot;Last question to DB:&quot;</span>, styles<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>})),</span>
+<span id="cb26-102"><a href="#cb26-102" aria-hidden="true" tabindex="-1"></a>                pn.Row(pn.pane.Str(<span class="st">&quot;no DB accesses so far&quot;</span>))</span>
+<span id="cb26-103"><a href="#cb26-103" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb26-104"><a href="#cb26-104" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> pn.Column(</span>
+<span id="cb26-105"><a href="#cb26-105" aria-hidden="true" tabindex="-1"></a>            pn.Row(pn.pane.Markdown(<span class="ss">f&quot;DB query:&quot;</span>, styles<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>})),</span>
+<span id="cb26-106"><a href="#cb26-106" aria-hidden="true" tabindex="-1"></a>            pn.pane.Str(<span class="va">self</span>.db_query )</span>
+<span id="cb26-107"><a href="#cb26-107" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb26-108"><a href="#cb26-108" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-109"><a href="#cb26-109" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 获取数据库返回的源文件</span></span>
+<span id="cb26-110"><a href="#cb26-110" aria-hidden="true" tabindex="-1"></a>    <span class="at">@param.depends</span>(<span class="st">&#39;db_response&#39;</span>, )</span>
+<span id="cb26-111"><a href="#cb26-111" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_sources(<span class="va">self</span>):</span>
+<span id="cb26-112"><a href="#cb26-112" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.db_response:</span>
+<span id="cb26-113"><a href="#cb26-113" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> </span>
+<span id="cb26-114"><a href="#cb26-114" aria-hidden="true" tabindex="-1"></a>        rlist<span class="op">=</span>[pn.Row(pn.pane.Markdown(<span class="ss">f&quot;Result of DB lookup:&quot;</span>, styles<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>}))]</span>
+<span id="cb26-115"><a href="#cb26-115" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> doc <span class="kw">in</span> <span class="va">self</span>.db_response:</span>
+<span id="cb26-116"><a href="#cb26-116" aria-hidden="true" tabindex="-1"></a>            rlist.append(pn.Row(pn.pane.Str(doc)))</span>
+<span id="cb26-117"><a href="#cb26-117" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> pn.WidgetBox(<span class="op">*</span>rlist, width<span class="op">=</span><span class="dv">600</span>, scroll<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb26-118"><a href="#cb26-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-119"><a href="#cb26-119" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 获取当前聊天记录</span></span>
+<span id="cb26-120"><a href="#cb26-120" aria-hidden="true" tabindex="-1"></a>    <span class="at">@param.depends</span>(<span class="st">&#39;convchain&#39;</span>, <span class="st">&#39;clr_history&#39;</span>) </span>
+<span id="cb26-121"><a href="#cb26-121" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_chats(<span class="va">self</span>):</span>
+<span id="cb26-122"><a href="#cb26-122" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>.chat_history:</span>
+<span id="cb26-123"><a href="#cb26-123" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> pn.WidgetBox(pn.Row(pn.pane.Str(<span class="st">&quot;No History Yet&quot;</span>)), width<span class="op">=</span><span class="dv">600</span>, scroll<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb26-124"><a href="#cb26-124" aria-hidden="true" tabindex="-1"></a>        rlist<span class="op">=</span>[pn.Row(pn.pane.Markdown(<span class="ss">f&quot;Current Chat History variable&quot;</span>, styles<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>}))]</span>
+<span id="cb26-125"><a href="#cb26-125" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> exchange <span class="kw">in</span> <span class="va">self</span>.chat_history:</span>
+<span id="cb26-126"><a href="#cb26-126" aria-hidden="true" tabindex="-1"></a>            rlist.append(pn.Row(pn.pane.Str(exchange)))</span>
+<span id="cb26-127"><a href="#cb26-127" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> pn.WidgetBox(<span class="op">*</span>rlist, width<span class="op">=</span><span class="dv">600</span>, scroll<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb26-128"><a href="#cb26-128" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-129"><a href="#cb26-129" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 清除聊天记录</span></span>
+<span id="cb26-130"><a href="#cb26-130" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> clr_history(<span class="va">self</span>,count<span class="op">=</span><span class="dv">0</span>):</span>
+<span id="cb26-131"><a href="#cb26-131" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.chat_history <span class="op">=</span> []</span>
+<span id="cb26-132"><a href="#cb26-132" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> </span></code></pre></div>
+<p><strong>4.2 创建聊天机器人</strong></p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 初始化聊天机器人</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>cb <span class="op">=</span> cbfs() </span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 定义界面的小部件</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>file_input <span class="op">=</span> pn.widgets.FileInput(accept<span class="op">=</span><span class="st">&#39;.pdf&#39;</span>) <span class="co"># PDF 文件的文件输入小部件</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>button_load <span class="op">=</span> pn.widgets.Button(name<span class="op">=</span><span class="st">&quot;Load DB&quot;</span>, button_type<span class="op">=</span><span class="st">&#39;primary&#39;</span>) <span class="co"># 加载数据库的按钮</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>button_clearhistory <span class="op">=</span> pn.widgets.Button(name<span class="op">=</span><span class="st">&quot;Clear History&quot;</span>, button_type<span class="op">=</span><span class="st">&#39;warning&#39;</span>) <span class="co"># 清除聊天记录的按钮</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>button_clearhistory.on_click(cb.clr_history) <span class="co"># 将清除历史记录功能绑定到按钮上</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>inp <span class="op">=</span> pn.widgets.TextInput( placeholder<span class="op">=</span><span class="st">&#39;Enter text here…&#39;</span>) <span class="co"># 用于用户查询的文本输入小部件</span></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 将加载数据库和对话的函数绑定到相应的部件上</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>bound_button_load <span class="op">=</span> pn.bind(cb.call_load_db, button_load.param.clicks)</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>conversation <span class="op">=</span> pn.bind(cb.convchain, inp) </span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>jpg_pane <span class="op">=</span> pn.pane.Image( <span class="st">&#39;./img/convchain.jpg&#39;</span>)</span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a><span class="co"># 使用 Panel 定义界面布局</span></span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>tab1 <span class="op">=</span> pn.Column(</span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a>    pn.Row(inp),</span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a>    pn.layout.Divider(),</span>
+<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a>    pn.panel(conversation,  loading_indicator<span class="op">=</span><span class="va">True</span>, height<span class="op">=</span><span class="dv">300</span>),</span>
+<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a>    pn.layout.Divider(),</span>
+<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb27-24"><a href="#cb27-24" aria-hidden="true" tabindex="-1"></a>tab2<span class="op">=</span> pn.Column(</span>
+<span id="cb27-25"><a href="#cb27-25" aria-hidden="true" tabindex="-1"></a>    pn.panel(cb.get_lquest),</span>
+<span id="cb27-26"><a href="#cb27-26" aria-hidden="true" tabindex="-1"></a>    pn.layout.Divider(),</span>
+<span id="cb27-27"><a href="#cb27-27" aria-hidden="true" tabindex="-1"></a>    pn.panel(cb.get_sources ),</span>
+<span id="cb27-28"><a href="#cb27-28" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb27-29"><a href="#cb27-29" aria-hidden="true" tabindex="-1"></a>tab3<span class="op">=</span> pn.Column(</span>
+<span id="cb27-30"><a href="#cb27-30" aria-hidden="true" tabindex="-1"></a>    pn.panel(cb.get_chats),</span>
+<span id="cb27-31"><a href="#cb27-31" aria-hidden="true" tabindex="-1"></a>    pn.layout.Divider(),</span>
+<span id="cb27-32"><a href="#cb27-32" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb27-33"><a href="#cb27-33" aria-hidden="true" tabindex="-1"></a>tab4<span class="op">=</span>pn.Column(</span>
+<span id="cb27-34"><a href="#cb27-34" aria-hidden="true" tabindex="-1"></a>    pn.Row( file_input, button_load, bound_button_load),</span>
+<span id="cb27-35"><a href="#cb27-35" aria-hidden="true" tabindex="-1"></a>    pn.Row( button_clearhistory, pn.pane.Markdown(<span class="st">&quot;Clears chat history. Can use to start a new topic&quot;</span> )),</span>
+<span id="cb27-36"><a href="#cb27-36" aria-hidden="true" tabindex="-1"></a>    pn.layout.Divider(),</span>
+<span id="cb27-37"><a href="#cb27-37" aria-hidden="true" tabindex="-1"></a>    pn.Row(jpg_pane.clone(width<span class="op">=</span><span class="dv">400</span>))</span>
+<span id="cb27-38"><a href="#cb27-38" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb27-39"><a href="#cb27-39" aria-hidden="true" tabindex="-1"></a><span class="co"># 将所有选项卡合并为一个仪表盘</span></span>
+<span id="cb27-40"><a href="#cb27-40" aria-hidden="true" tabindex="-1"></a>dashboard <span class="op">=</span> pn.Column(</span>
+<span id="cb27-41"><a href="#cb27-41" aria-hidden="true" tabindex="-1"></a>    pn.Row(pn.pane.Markdown(<span class="st">&#39;# ChatWithYourData_Bot&#39;</span>)),</span>
+<span id="cb27-42"><a href="#cb27-42" aria-hidden="true" tabindex="-1"></a>    pn.Tabs((<span class="st">&#39;Conversation&#39;</span>, tab1), (<span class="st">&#39;Database&#39;</span>, tab2), (<span class="st">&#39;Chat History&#39;</span>, tab3),(<span class="st">&#39;Configure&#39;</span>, tab4))</span>
+<span id="cb27-43"><a href="#cb27-43" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb27-44"><a href="#cb27-44" aria-hidden="true" tabindex="-1"></a>dashboard</span></code></pre></div>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>7. テキスト拡張</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第7章-テキスト拡張">第7章 テキスト拡張</h1>
+<p><strong>テキスト拡張</strong>は大規模言語モデルの重要な応用方向で、短いテキストを入力してより豊富な長文を生成できます。これは創作に強力な支援を提供しますが、悪用される可能性もあります。そのため開発者は使用時に社会的責任を忘れず、有害なコンテンツの生成を避ける必要があります。</p>
+<p>本章では、<strong>OpenAI
+APIを基盤とした顧客メール自動生成例の実現</strong>について学習し、<strong>顧客フィードバックに基づく顧客サービスメールの最適化</strong>に使用します。ここでは「温度」（temperature）というハイパーパラメータも紹介します。これは<strong>テキスト生成の多様性を制御</strong>できます。</p>
+<p>注意すべきは、拡張機能は人間の創作を支援するためのみに使用し、大規模な自動コンテンツ生成には使用しないことです。開発者は慎重に使用し、負の影響を生じないよう避ける必要があります。責任ある有益な方式で言語モデルを応用してこそ、その最大価値を発揮できます。社会的責任を実践する開発者は、言語モデルの拡張機能を利用して、真に人類に利益をもたらす革新的アプリケーションを開発できると信じています。</p>
+<h2 id="一カスタマイズ顧客メール">一、カスタマイズ顧客メール</h2>
+<p>この顧客メール自動生成例では、<strong>顧客の評価とその中の感情傾向に基づいて、大規模言語モデルを使用して対象化された返信メールを生成</strong>します。</p>
+<p>具体的には、まず顧客のコメントテキストと対応する感情分析結果（ポジティブまたはネガティブ）を入力します。次にPromptを構築し、大規模言語モデルにこれらの情報に基づいてカスタマイズされた返信電子メールを生成するよう要求します。</p>
+<p>以下にまず実例を示し、顧客評価とこの評価が表現する感情を含みます。これは後続の言語モデルによる返信メール生成の重要な入力情報を提供します。顧客フィードバックの具体的内容と感情態度を入力することで、言語モデルはこの特定の顧客を対象とし、その具体的感情要因を考慮した個人化返信を生成できます。この<strong>個別顧客特性に対するメール生成方式は、顧客満足度を大幅に向上させる</strong>でしょう。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 推論の章で学習できるように、レビューの感情傾向を判断します</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sentiment <span class="op">=</span> <span class="st">&quot;ネガティブ&quot;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># ある製品の評価</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>review <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ss">彼らは11月の季節セール期間中、約49ドルで17ピースセットを販売していました。約半額の割引でした。</span><span class="ch">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ss">しかし何らかの理由で（価格詐欺と呼べるかもしれません）、12月第2週までに、同じセットの価格がすべて70ドルから89ドルの範囲に上がりました。</span><span class="ch">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ss">11ピースセットの価格も以前の約10ドル上昇しました。</span><span class="ch">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="ss">外観はまだ良く見えますが、ベース部分のブレードロック部分は数年前の初期バージョンほど良く見えません。</span><span class="ch">\</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="ss">しかし私は非常に優しく使用するつもりです。例えば、</span><span class="ch">\</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="ss">ブレンダーで豆、氷、米などの硬い物を最初に粉砕し、その後必要な分量を作り、</span><span class="ch">\</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ss">ホイップブレードに切り替えてより細かい粉を作るか、スムージーを作る時は十字切断ブレードを使ってから平面ブレードでより細かい/粘着性の少ない効果を作ります。</span><span class="ch">\</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="ss">スムージーを作る時の特別なヒント：</span><span class="ch">\</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="ss">果物と野菜を細かく切って冷凍します（ほうれん草を使用する場合は、軽く茹でて柔らかくしてから冷凍し、使用まで保管；</span><span class="ch">\</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="ss">ジャムを作る場合は、小から中サイズのフードプロセッサーを使用）、これによりスムージー作りで氷を大量に追加する必要がなくなります。</span><span class="ch">\</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="ss">約1年後、モーターが奇妙な音を出すようになりました。カスタマーサービスに電話しましたが、保証期間が過ぎていたので、新しいものを購入する必要がありました。</span><span class="ch">\</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="ss">全体的に、これらの製品の全体的品質は低下しており、ブランド認知度と消費者忠誠度に依存して販売を維持しています。</span><span class="ch">\</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="ss">商品は2日以内に到着しました。</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span></code></pre></div>
+<p>この例では、前の章で学んだ方法を利用して、顧客評価からその表現する感情傾向を抽出しました。これはブレンダーに関するコメントです。今、このコメントの感情傾向に基づいて、大規模言語モデルを使用して自動的に返信メールを生成します。</p>
+<p>以下のPromptを例にします：まず大規模言語モデルの身分を顧客サービスAIアシスタントとして明確にし、それの任務は顧客に電子メール返信を送ることです；次に三つのバッククォートの間に具体的な顧客コメントを提供し；最後に言語モデルにこのフィードバックメールに基づいて返信を生成し、顧客の評価に感謝するよう要求します。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tool <span class="im">import</span> get_completion</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ss">あなたは顧客サービスのAIアシスタントです。</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ss">あなたの任務は重要な顧客にメール返信を送ることです。</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ss">「```」で区切られた評価に基づいて、評価に感謝する返信を生成してください。モデルには評価の具体的詳細を使用するよう提醒してください</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="ss">簡潔で専門的な語調で手紙を書いてください。</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="ss">「AI顧客代理」として電子メールに署名してください。</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="ss">顧客レビュー：</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="ss">```</span><span class="sc">{</span>review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューの感情：</span><span class="sc">{</span>sentiment<span class="sc">}</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>お客様へ
+
+この度は貴重なご意見をお寄せいただき、誠にありがとうございます。ご購入時の価格変動についてご不便をおかけし、深くお詫び申し上げます。市場状況により価格が変動することがございますが、お客様にはより透明性のある価格設定を提供できるよう努めてまいります。
+
+製品の品質についてご指摘いただいた点につきましても真摯に受け止めております。お客様の詳細なご使用方法やアドバイスは非常に貴重であり、製品改善の参考にさせていただきます。
+
+保証期間外の製品につきましては、ご不便をおかけして申し訳ございません。今後ともより良い製品とサービスの提供に努めてまいりますので、何かご不明な点がございましたら、お気軽にカスタマーサービスまでお問い合わせください。
+
+今後ともよろしくお願いいたします。
+
+AI顧客代理</code></pre>
+<p>このPromptにより、具体的な顧客コメント内容と必要な顧客サービスアシスタント語調と生成する返信メールを結びつけました。言語モデルは顧客フィードバックを十分に理解した基礎の上で、自動的に適切な返信を作成できます。</p>
+<p>この具体的顧客評価に基づく個人化返信方法は、顧客体験と満足度を大幅に向上させるでしょう。</p>
+<h2 id="二温度係数の導入">二、温度係数の導入</h2>
+<p>大規模言語モデルの「温度」(temperature)パラメータは生成テキストのランダム性と多様性を制御できます。temperatureの値が大きいほど、言語モデル出力の多様性が高く；temperatureの値が小さいほど、出力は高確率テキストに傾きます。</p>
+<p>例えば、ある文脈で言語モデルが「ピザ」が次に最も可能性の高い語だと考え、その次が「寿司」と「タコス」だとします。temperatureが0の場合、毎回「ピザ」を生成し；temperatureが1に近づくほど、「寿司」や「タコス」を生成する可能性が高くなり、テキストがより多様になります。</p>
+<figure>
+<img src="../figures/C1/Temperature.jpg" alt="1" />
+<figcaption aria-hidden="true">1</figcaption>
+</figure>
+<div data-align="center">
+図 1.7 温度係数
+</div>
+<p>一般的に、予測可能で信頼できる出力が必要な場合はtemperatureを0に設定します。すべてのコースで我々は常に温度をゼロに設定しています；より創造的な多様テキストが必要な場合は、適度にtemperatureを上げることが有効です。このパラメータを調整することで、言語モデルの出力特性を柔軟に制御できます。</p>
+<p>以下の例では、同じメールに対して、言語モデルにユーザーメールの詳細情報を使用するよう提醒し、より高いtemperatureを設定して、2回実行し、結果の違いを比較します。</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1回目の実行</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ss">あなたは顧客サービスのAIアシスタントです。</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ss">あなたの任務は重要な顧客にメール返信を送ることです。</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ss">「```」で区切られた顧客電子メールに基づいて返信を生成し、評価に感謝してください。</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ss">感情がポジティブまたは中性の場合、評価に感謝してください。</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="ss">感情がネガティブの場合、謝罪し、顧客サービスに連絡するよう提案してください。</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューの具体的詳細を必ず使用してください。</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="ss">簡潔で専門的な語調で手紙を書いてください。</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="ss">「AI顧客代理」の名義で電子メールに署名してください。</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="ss">顧客評価：```</span><span class="sc">{</span>review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューの感情：</span><span class="sc">{</span>sentiment<span class="sc">}</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt, temperature<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>お客様へ
+
+この度は貴重なご意見をお聞かせいただき、誠にありがとうございます。ご使用過程でご不便をおかけし、心よりお詫び申し上げます。
+
+価格変動についてご不満をお持ちいただいたこと、深くお詫び申し上げます。お客様のご指摘の通り、12月第2週に価格が上昇したことについて、より透明性のある価格戦略を検討し、このような状況の再発防止に努めてまいります。
+
+製品品質に関するご指摘についても真摯に受け止めております。特にブレードロック部分の品質低下について、研究開発チームにフィードバックし、製品設計と品質管理の改善に活用させていただきます。お客様のご使用方法に関する詳細なアドバイスも非常に貴重で、今後の製品改善計画に取り入れることを検討いたします。
+
+さらなるサポートが必要でしたり、その他のご質問がございましたら、いつでもカスタマーサービスチームまでお気軽にお問い合わせください。最善のサポートと解決策を提供いたします。
+
+再度、貴重なフィードバックとご支援に感謝申し上げます。より良い製品とサービスの提供に向けて、引き続き努力してまいります。
+
+何かお困りのことがございましたら、いつでもお声かけください。
+
+AI顧客代理</code></pre>
+<p>2回目の実行結果は変化します：</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2回目の実行</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ss">あなたは顧客サービスのAIアシスタントです。</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ss">あなたの任務は重要な顧客にメール返信を送ることです。</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ss">「```」で区切られた顧客電子メールに基づいて返信を生成し、評価に感謝してください。</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ss">感情がポジティブまたは中性の場合、評価に感謝してください。</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="ss">感情がネガティブの場合、謝罪し、顧客サービスに連絡するよう提案してください。</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューの具体的詳細を必ず使用してください。</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="ss">簡潔で専門的な語調で手紙を書いてください。</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="ss">「AI顧客代理」の名義で電子メールに署名してください。</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="ss">顧客評価：```</span><span class="sc">{</span>review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューの感情：</span><span class="sc">{</span>sentiment<span class="sc">}</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt, temperature<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>お客様へ
+
+この度は詳細なレビューをお寄せいただき、誠にありがとうございます。ご使用いただいた製品についてのご意見を真摯に受け止めており、ご指摘いただいた点についてお詫び申し上げます。
+
+まず、価格変動についてご不満をお感じになられたことを深くお詫びいたします。お客様がご指摘の通り、価格の透明性を改善し、より一貫した価格戦略を採用するよう努めてまいります。
+
+製品品質についてのご懸念も承知いたしました。ブレードロック部分の品質向上について、開発チームと共有し、製品の改良に活かしてまいります。お客様の丁寧なご使用方法についてのアドバイスも大変参考になります。
+
+製品保証についてのお問い合わせについては、カスタマーサービスまでお気軽にお問い合わせください。お客様のご不便を解消できるよう、最善を尽くしてサポートいたします。
+
+今後ともお客様にご満足いただける製品とサービスを提供できるよう努力してまいります。何かご質問やご要望がございましたら、いつでもお声かけください。
+
+お客様のご支援に改めて感謝申し上げます。
+
+AI顧客代理</code></pre>
+<p><strong>温度（temperature）パラメータは言語モデル生成テキストのランダム性を制御できます</strong>。温度が0の時、同じPromptを使用するたびに得られる結果は常に一致します。上記のサンプルでは、温度を0.7に設定した時、毎回実行するたびに異なるテキストが生成されます。</p>
+<p>つまり、今回の結果は前回得られたメールとは異なっています。同じPromptを再度実行すると、メール内容はまた変化するでしょう。そのため、読者の皆さんは異なるtemperatureを試して、出力の変化を観察することをお勧めします。全体的に、temperatureが高いほど、言語モデルのテキスト生成はよりランダム性を持ちます。高温度下では、言語モデルはより活発な心境のようですが、より創造的かもしれません。</p>
+<p>このハイパーパラメータを適度に調節することで、言語モデルの生成をより多様性に富ませ、より意外な驚きをもたらすことができます。これらの経験が異なるシナリオで最適な温度設定を見つけるのに役立つことを願っています。</p>
+<h2 id="三英語版">三、英語版</h2>
+<p><strong>1.1 カスタマイズ顧客メール</strong></p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># given the sentiment from the lesson on &quot;inferring&quot;,</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># and the original customer message, customize the email</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>sentiment <span class="op">=</span> <span class="st">&quot;negative&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># review for a blender</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>review <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="ss">So, they still had the 17 piece system on seasonal </span><span class="ch">\</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="ss">sale for around $49 in the month of November, about </span><span class="ch">\</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="ss">half off, but for some reason (call it price gouging) </span><span class="ch">\</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="ss">around the second week of December the prices all went </span><span class="ch">\</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="ss">up to about anywhere from between $70-$89 for the same </span><span class="ch">\</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="ss">system. And the 11 piece system went up around $10 or </span><span class="ch">\</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="ss">so in price also from the earlier sale price of $29. </span><span class="ch">\</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="ss">So it looks okay, but if you look at the base, the part </span><span class="ch">\</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="ss">where the blade locks into place doesn&#39;t look as good </span><span class="ch">\</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="ss">as in previous editions from a few years ago, but I </span><span class="ch">\</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="ss">plan to be very gentle with it (example, I crush </span><span class="ch">\</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="ss">very hard items like beans, ice, rice, etc. in the \ </span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="ss">blender first then pulverize them in the serving size </span><span class="ch">\</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="ss">I want in the blender then switch to the whipping </span><span class="ch">\</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="ss">blade for a finer flour, and use the cross cutting blade </span><span class="ch">\</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="ss">first when making smoothies, then use the flat blade </span><span class="ch">\</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="ss">if I need them finer/less pulpy). Special tip when making </span><span class="ch">\</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a><span class="ss">smoothies, finely cut and freeze the fruits and </span><span class="ch">\</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="ss">vegetables (if using spinach-lightly stew soften the \ </span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="ss">spinach then freeze until ready for use-and if making </span><span class="ch">\</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="ss">sorbet, use a small to medium sized food processor) \ </span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a><span class="ss">that you plan to use that way you can avoid adding so </span><span class="ch">\</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="ss">much ice if at all-when making your smoothie. </span><span class="ch">\</span></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a><span class="ss">After about a year, the motor was making a funny noise. </span><span class="ch">\</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a><span class="ss">I called customer service but the warranty expired </span><span class="ch">\</span></span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a><span class="ss">already, so I had to buy another one. FYI: The overall </span><span class="ch">\</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a><span class="ss">quality has gone done in these types of products, so </span><span class="ch">\</span></span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a><span class="ss">they are kind of counting on brand recognition and </span><span class="ch">\</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a><span class="ss">consumer loyalty to maintain sales. Got it in about </span><span class="ch">\</span></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a><span class="ss">two days.</span></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ss">You are a customer service AI assistant.</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ss">Your task is to send an email reply to a valued customer.</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ss">Given the customer email delimited by ```, </span><span class="ch">\</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ss">Generate a reply to thank the customer for their review.</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="ss">If the sentiment is positive or neutral, thank them for </span><span class="ch">\</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="ss">their review.</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="ss">If the sentiment is negative, apologize and suggest that </span><span class="ch">\</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="ss">they can reach out to customer service. </span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="ss">Make sure to use specific details from the review.</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="ss">Write in a concise and professional tone.</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="ss">Sign the email as `AI customer agent`.</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="ss">Customer review: ```</span><span class="sc">{</span>review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="ss">Review sentiment: </span><span class="sc">{</span>sentiment<span class="sc">}</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Dear Valued Customer,
+
+Thank you for taking the time to share your review with us. We appreciate your feedback and apologize for any inconvenience you may have experienced.
+
+We are sorry to hear about the price increase you noticed in December. We strive to provide competitive pricing for our products, and we understand your frustration. If you have any further concerns regarding pricing or any other issues, we encourage you to reach out to our customer service team. They will be more than happy to assist you.
+
+We also appreciate your feedback regarding the base of the system. We continuously work to improve the quality of our products, and your comments will be taken into consideration for future enhancements.
+
+We apologize for any inconvenience caused by the motor issue you encountered. Our customer service team is always available to assist with any warranty-related concerns. We understand that the warranty had expired, but we would still like to address this matter further. Please feel free to contact our customer service team, and they will do their best to assist you.
+
+Thank you once again for your review. We value your feedback and appreciate your loyalty to our brand. If you have any further questions or concerns, please do not hesitate to contact us.
+
+Best regards,
+
+AI customer agent</code></pre>
+<p><strong>2.1 温度係数の導入</strong></p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ss">You are a customer service AI assistant.</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="ss">Your task is to send an email reply to a valued customer.</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="ss">Given the customer email delimited by ```, </span><span class="ch">\</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="ss">Generate a reply to thank the customer for their review.</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="ss">If the sentiment is positive or neutral, thank them for </span><span class="ch">\</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="ss">their review.</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="ss">If the sentiment is negative, apologize and suggest that </span><span class="ch">\</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="ss">they can reach out to customer service. </span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="ss">Make sure to use specific details from the review.</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="ss">Write in a concise and professional tone.</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="ss">Sign the email as `AI customer agent`.</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="ss">Customer review: ```</span><span class="sc">{</span>review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="ss">Review sentiment: </span><span class="sc">{</span>sentiment<span class="sc">}</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt, temperature<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Dear Valued Customer,
+
+Thank you for taking the time to share your feedback with us. We sincerely apologize for any inconvenience you experienced with our pricing and the quality of our product.
+
+We understand your frustration regarding the price increase of our 17 piece system in December. We assure you that price gouging is not our intention, and we apologize for any confusion caused. We appreciate your loyalty and we value your feedback, as it helps us to improve our products and services.
+
+Regarding the issue with the blade lock and the decrease in overall quality, we apologize for any disappointment caused. We strive to provide our customers with the best possible products, and we regret that we did not meet your expectations. We will make sure to take your feedback into consideration for future improvements.
+
+If you require further assistance or if you have any other concerns, please do not hesitate to reach out to our customer service team. They will be more than happy to assist you in resolving any issues you may have.
+
+Once again, we apologize for any inconvenience caused and we appreciate your understanding. We value your business and we hope to have the opportunity to serve you better in the future.
+
+Best regards,
+
+AI customer agent</code></pre>
+</body>
+</html>

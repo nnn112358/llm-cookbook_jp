@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>5. 入力処理-思考の連鎖推論</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第5章-入力の処理-チェーンオブソート推論">第5章
+入力の処理-チェーン・オブ・ソート推論</h1>
+<p>時々、言語モデルは特定の質問に答えるために詳細な段階的推論を行う必要があります。結論を急ぎすぎると、推論チェーンでエラーが発生する可能性があります。そのため、「<strong>チェーン・オブ・ソート推論</strong>」（Chain
+of Thought
+Reasoning）の戦略を通じて、クエリで明示的に言語モデルに最初に一連の関連する推論ステップを提供し、深く考えてから最終的な答えを出すよう要求することができます。これは人間の問題解決の思考プロセスにより近いものです。</p>
+<p>結果を直接出力するよう要求するのと比較して、言語モデルに段階的推論を導くこの方法は、急いでエラーを減らし、より正確で信頼できる応答を生成することができます。チェーン・オブ・ソート推論により、言語モデルは人間の論理的思考をより良く模倣でき、その回答品質を向上させる重要な戦略の一つです。</p>
+<p>この章では、言語モデルの入力を処理して高品質な出力を生成する方法を探ります。チェーン・オブ・ソート推論プロンプトの構築方法を詳しく紹介し、ケース分析を通してこの手法の効果を説明します。この技術を習得することで、開発者はより良い言語モデル出力を得ることができます。</p>
+<h2
+id="一チェーンオブソートプロンプトの設計">一、チェーン・オブ・ソートプロンプトの設計</h2>
+<p>チェーン・オブ・ソートプロンプトは、言語モデルに段階的推論を導くプロンプト設計技術です。プロンプトでシステムメッセージを設定することで、言語モデルに最終結論を出す前に、まず各推論ステップを明確にするよう要求します。</p>
+<p>具体的には、プロンプトはまず言語モデルに問題の初期理解を述べさせ、次に考慮すべき様々な側面をリストアップし、最後にこれらの要因を一つずつ分析し、支持または反対の論拠を示してから全体的な結論を出すよう要求できます。この段階的推論方法は、人間が複雑な問題を処理する思考プロセスにより近く、言語モデルが急いで誤った結論を出す状況を減らすことができます。なぜなら、直接結論を出力するのではなく、段階的に自分の見解を論証する必要があるからです。詳細なチェーン・オブ・ソートプロンプトを通じて、開発者は言語モデルが生成する結論をより信頼性が高く、理由をより充実させることができます。このプロンプト設計技術は、言語モデルに複雑な推論を行わせる必要がある場合に活用する価値があります。</p>
+<h3 id="システムメッセージの設計">1.1 システムメッセージの設計</h3>
+<p>まず、システムメッセージでチェーン・オブ・ソートプロンプトを使用します：</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>delimiter <span class="op">=</span> <span class="st">&quot;====&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>system_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ss">以下のステップに従って顧客の質問に答えてください。顧客の質問は</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss">で区切られます。</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ss">ステップ1:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss">まず、ユーザーが特定の製品または製品に関する質問をしているかどうかを確認してください。製品カテゴリは範囲に含まれません。</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ss">ステップ2:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss">ユーザーが特定の製品について尋ねている場合、その製品が以下のリストにあるかどうかを確認してください。利用可能なすべての製品：</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="ss">製品：TechPro ウルトラブック</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="ss">カテゴリ：コンピューターとノートパソコン</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ss">ブランド：TechPro</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="ss">型番：TP-UB100</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="ss">保証期間：1年</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="ss">評価：4.5</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="ss">特徴：13.3インチディスプレイ、8GB RAM、256GB SSD、Intel Core i5プロセッサ</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="ss">説明：日常使用に適したスタイリッシュで軽量なウルトラブック。</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="ss">価格：$799.99</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="ss">製品：BlueWave ゲーミングノートパソコン</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="ss">カテゴリ：コンピューターとノートパソコン</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="ss">ブランド：BlueWave</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="ss">型番：BW-GL200</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="ss">保証期間：2年</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="ss">評価：4.7</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="ss">特徴：15.6インチディスプレイ、16GB RAM、512GB SSD、NVIDIA GeForce RTX 3060</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="ss">説明：没入型体験を提供する高性能ゲーミングノートパソコン。</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="ss">価格：$1199.99</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="ss">製品：PowerLite コンバーチブルノートパソコン</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="ss">カテゴリ：コンピューターとノートパソコン</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="ss">ブランド：PowerLite</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="ss">型番：PL-CV300</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="ss">保証期間：1年</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="ss">評価：4.3</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="ss">特徴：14インチタッチスクリーン、8GB RAM、256GB SSD、360度ヒンジ</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="ss">説明：レスポンシブなタッチスクリーンを備えた多機能コンバーチブルノートパソコン。</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="ss">価格：$699.99</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="ss">製品：TechPro デスクトップコンピューター</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="ss">カテゴリ：コンピューターとノートパソコン</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="ss">ブランド：TechPro</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="ss">型番：TP-DT500</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="ss">保証期間：1年</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="ss">評価：4.4</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="ss">特徴：Intel Core i7プロセッサ、16GB RAM、1TB HDD、NVIDIA GeForce GTX 1660</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="ss">説明：仕事と娯楽に適した強力なデスクトップコンピューター。</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="ss">価格：$999.99</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="ss">製品：BlueWave Chromebook</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a><span class="ss">カテゴリ：コンピューターとノートパソコン</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a><span class="ss">ブランド：BlueWave</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="ss">型番：BW-CB100</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a><span class="ss">保証期間：1年</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a><span class="ss">評価：4.1</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a><span class="ss">特徴：11.6インチディスプレイ、4GB RAM、32GB eMMC、Chrome OS</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a><span class="ss">説明：日常的なタスクに適したコンパクトで手頃な価格のChromebook。</span></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a><span class="ss">価格：$249.99</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a><span class="ss">ステップ3:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> メッセージに上記リストの製品が含まれている場合、ユーザーがメッセージで行った仮定をリストアップしてください。</span><span class="ch">\</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a><span class="ss">例えば、ノートパソコンXがノートパソコンYより大きい、またはノートパソコンZに2年保証があるなど。</span></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a><span class="ss">ステップ4:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> ユーザーが何らかの仮定を行った場合、製品情報に基づいてその仮定が正しいかどうかを判断してください。</span></span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a><span class="ss">ステップ5:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> ユーザーに誤った仮定がある場合、まず丁寧に顧客の誤った仮定を訂正してください（該当する場合）。</span><span class="ch">\</span></span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a><span class="ss">利用可能な製品リストの製品のみを言及または参照してください。これらが店舗で販売している唯一の5つの製品だからです。フレンドリーな口調で顧客に答えてください。</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a><span class="ss">以下の形式で質問に答えてください：</span></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a><span class="ss">ステップ1: </span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> &lt;ステップ1の推論&gt;</span></span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a><span class="ss">ステップ2: </span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> &lt;ステップ2の推論&gt;</span></span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a><span class="ss">ステップ3: </span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> &lt;ステップ3の推論&gt;</span></span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a><span class="ss">ステップ4: </span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> &lt;ステップ4の推論&gt;</span></span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a><span class="ss">顧客への返信: </span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> &lt;顧客への返信内容&gt;</span></span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a><span class="ss">上記の回答の各ステップで、</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss">を使用してステップとステップの推論を区切ってください。</span></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span></code></pre></div>
+<h3 id="ユーザーメッセージのテスト">1.2 ユーザーメッセージのテスト</h3>
+<p>次に、ユーザーメッセージでシステムメッセージに設定されたチェーン・オブ・ソートプロンプトをテストします：</p>
+<h4 id="より高価なコンピューター">1.2.1 より高価なコンピューター</h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tool <span class="im">import</span> get_completion_from_messages</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>user_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;BlueWave ChromebookはTechPro デスクトップコンピューターよりどのくらい高いですか？&quot;&quot;&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>: system_message},    </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, </span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>: <span class="ss">f&quot;</span><span class="sc">{</span>delimiter<span class="sc">}{</span>user_message<span class="sc">}{</span>delimiter<span class="sc">}</span><span class="ss">&quot;</span>},  </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>ステップ1: ユーザーは製品価格に関する質問をしています。
+ステップ2: ユーザーは2つの製品に言及しており、1つはBlueWave Chromebook、もう1つはTechPro デスクトップコンピューターです。
+ステップ3: ユーザーはBlueWave ChromebookがTechPro デスクトップコンピューターより高いと仮定しています。
+ステップ4: 製品情報に基づいて、ユーザーの仮定が間違っていることを確認できます。
+顧客への返信: BlueWave Chromebookの価格は$249.99で、TechPro デスクトップコンピューターの価格は$999.99です。したがって、TechPro デスクトップコンピューターがBlueWave Chromebookより$750高くなっています。</code></pre>
+<h4 id="テレビはありますか">1.2.2 テレビはありますか？</h4>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>user_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;テレビはありますか&quot;&quot;&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>: system_message},    </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>: <span class="ss">f&quot;</span><span class="sc">{</span>delimiter<span class="sc">}{</span>user_message<span class="sc">}{</span>delimiter<span class="sc">}</span><span class="ss">&quot;</span>},  </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>ステップ1: ユーザーが特定の製品または製品に関する質問をしているかどうかを確認する必要があります。製品カテゴリは範囲に含まれません。
+
+ステップ2: 利用可能な製品リストには、テレビ製品は含まれていません。
+
+顧客への返信: 申し訳ございませんが、現在テレビ製品は取り扱っておりません。当店の製品範囲は主にコンピューターとノートパソコンです。他の製品について何かご要望やご質問がございましたら、いつでもお知らせください。</code></pre>
+<h2 id="二内心の独白">二、内心の独白</h2>
+<p>一部のアプリケーションシナリオでは、言語モデルの推論プロセス全体を表示すると、重要な情報や答えが漏れる可能性があり、これは望ましくありません。例えば、教育アプリケーションでは、学生が自分の思考を通じて結論を得ることを望み、直接答えを教えられることは望みません。</p>
+<p>この問題に対して、「<strong>内心の独白</strong>」技術は言語モデルの推論チェーンをある程度隠すことができます。具体的な方法は、プロンプトで言語モデルに隠したい中間推論を構造化された形式で保存するよう指示することです。例えば、変数として保存します。そして結果を返す際には、ユーザーにとって価値のある出力のみを表示し、完全な推論プロセスは表示しません。このプロンプト戦略はユーザーに重要な情報のみを表示し、答えを漏らすことを避けます。同時に言語モデルの推論能力も保持されます。「内心の独白」を適切に使用することで、機密情報を保護しながら言語モデルの推論の強みを発揮することができます。</p>
+<p>総じて、中間推論を適度に隠すことは、プロンプトエンジニアリングの重要な技術の一つです。開発者は異なるユーザーに対して異なる情報表示戦略を策定する必要があります。言語モデルの最大価値を発揮するために。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> delimiter <span class="kw">in</span> response:</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        final_response <span class="op">=</span> response.split(delimiter)[<span class="op">-</span><span class="dv">1</span>].strip()</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        final_response <span class="op">=</span> response.split(<span class="st">&quot;:&quot;</span>)[<span class="op">-</span><span class="dv">1</span>].strip()</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> e:</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    final_response <span class="op">=</span> <span class="st">&quot;申し訳ありませんが、現在問題が発生しています。別の質問をお試しください&quot;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(final_response)</span></code></pre></div>
+<pre><code>申し訳ございませんが、現在テレビ製品は取り扱っておりません。当店の製品範囲は主にコンピューターとノートパソコンです。他の製品について何かご要望やご質問がございましたら、いつでもお知らせください。</code></pre>
+<p><br>
+複雑なタスクでは、言語モデルに複数回のやり取りと段階的推論を行わせて、全体のフローを完成させる必要があることがよくあります。1つのプロンプトですべてのタスクを完了しようとすると、言語モデルの能力要求が高すぎて、成功率が低くなります。</p>
+<p>したがって、次の章では、より信頼性の高い戦略を紹介します：複雑なタスクを複数のサブタスクに分解し、プロンプトチェーン（Prompt
+Chaining）を通じてstep-by-stepで言語モデルに完成させる方法です。具体的には、タスクの異なる段階を分析し、各段階に対してシンプルで明確なプロンプトを設計できます。実例を通じてプロンプトチェーンの活用方法と、プロンプトを科学的に分割して言語モデルに多段階タスクを段階的に完成させる方法を示します。これはプロンプトエンジニアリングの非常に重要なスキルの一つです。</p>
+<h2 id="三英語版">三、英語版</h2>
+<p><strong>1.1 チェーン・オブ・ソートプロンプト</strong></p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>delimiter <span class="op">=</span> <span class="st">&quot;####&quot;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>system_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="ss">Follow these steps to answer the customer queries.</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="ss">The customer query will be delimited with four hashtags,</span><span class="ch">\</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="ss">i.e. </span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss">. </span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 1:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> First decide whether the user is </span><span class="ch">\</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="ss">asking a question about a specific product or products. </span><span class="ch">\</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="ss">Product cateogry doesn&#39;t count. </span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 2:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> If the user is asking about </span><span class="ch">\</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="ss">specific products, identify whether </span><span class="ch">\</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="ss">the products are in the following list.</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="ss">All available products: </span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="ss">1. Product: TechPro Ultrabook</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="ss">   Category: Computers and Laptops</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="ss">   Brand: TechPro</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="ss">   Model Number: TP-UB100</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="ss">   Warranty: 1 year</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="ss">   Rating: 4.5</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="ss">   Features: 13.3-inch display, 8GB RAM, 256GB SSD, Intel Core i5 processor</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="ss">   Description: A sleek and lightweight ultrabook for everyday use.</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="ss">   Price: $799.99</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="ss">2. Product: BlueWave Gaming Laptop</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="ss">   Category: Computers and Laptops</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="ss">   Brand: BlueWave</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a><span class="ss">   Model Number: BW-GL200</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="ss">   Warranty: 2 years</span></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a><span class="ss">   Rating: 4.7</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a><span class="ss">   Features: 15.6-inch display, 16GB RAM, 512GB SSD, NVIDIA GeForce RTX 3060</span></span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a><span class="ss">   Description: A high-performance gaming laptop for an immersive experience.</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a><span class="ss">   Price: $1199.99</span></span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a><span class="ss">3. Product: PowerLite Convertible</span></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a><span class="ss">   Category: Computers and Laptops</span></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a><span class="ss">   Brand: PowerLite</span></span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a><span class="ss">   Model Number: PL-CV300</span></span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a><span class="ss">   Warranty: 1 year</span></span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a><span class="ss">   Rating: 4.3</span></span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a><span class="ss">   Features: 14-inch touchscreen, 8GB RAM, 256GB SSD, 360-degree hinge</span></span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a><span class="ss">   Description: A versatile convertible laptop with a responsive touchscreen.</span></span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a><span class="ss">   Price: $699.99</span></span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a><span class="ss">4. Product: TechPro Desktop</span></span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a><span class="ss">   Category: Computers and Laptops</span></span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a><span class="ss">   Brand: TechPro</span></span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a><span class="ss">   Model Number: TP-DT500</span></span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a><span class="ss">   Warranty: 1 year</span></span>
+<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a><span class="ss">   Rating: 4.4</span></span>
+<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a><span class="ss">   Features: Intel Core i7 processor, 16GB RAM, 1TB HDD, NVIDIA GeForce GTX 1660</span></span>
+<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a><span class="ss">   Description: A powerful desktop computer for work and play.</span></span>
+<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a><span class="ss">   Price: $999.99</span></span>
+<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-55"><a href="#cb8-55" aria-hidden="true" tabindex="-1"></a><span class="ss">5. Product: BlueWave Chromebook</span></span>
+<span id="cb8-56"><a href="#cb8-56" aria-hidden="true" tabindex="-1"></a><span class="ss">   Category: Computers and Laptops</span></span>
+<span id="cb8-57"><a href="#cb8-57" aria-hidden="true" tabindex="-1"></a><span class="ss">   Brand: BlueWave</span></span>
+<span id="cb8-58"><a href="#cb8-58" aria-hidden="true" tabindex="-1"></a><span class="ss">   Model Number: BW-CB100</span></span>
+<span id="cb8-59"><a href="#cb8-59" aria-hidden="true" tabindex="-1"></a><span class="ss">   Warranty: 1 year</span></span>
+<span id="cb8-60"><a href="#cb8-60" aria-hidden="true" tabindex="-1"></a><span class="ss">   Rating: 4.1</span></span>
+<span id="cb8-61"><a href="#cb8-61" aria-hidden="true" tabindex="-1"></a><span class="ss">   Features: 11.6-inch display, 4GB RAM, 32GB eMMC, Chrome OS</span></span>
+<span id="cb8-62"><a href="#cb8-62" aria-hidden="true" tabindex="-1"></a><span class="ss">   Description: A compact and affordable Chromebook for everyday tasks.</span></span>
+<span id="cb8-63"><a href="#cb8-63" aria-hidden="true" tabindex="-1"></a><span class="ss">   Price: $249.99</span></span>
+<span id="cb8-64"><a href="#cb8-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-65"><a href="#cb8-65" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 3:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> If the message contains products </span><span class="ch">\</span></span>
+<span id="cb8-66"><a href="#cb8-66" aria-hidden="true" tabindex="-1"></a><span class="ss">in the list above, list any assumptions that the </span><span class="ch">\</span></span>
+<span id="cb8-67"><a href="#cb8-67" aria-hidden="true" tabindex="-1"></a><span class="ss">user is making in their </span><span class="ch">\</span></span>
+<span id="cb8-68"><a href="#cb8-68" aria-hidden="true" tabindex="-1"></a><span class="ss">message e.g. that Laptop X is bigger than </span><span class="ch">\</span></span>
+<span id="cb8-69"><a href="#cb8-69" aria-hidden="true" tabindex="-1"></a><span class="ss">Laptop Y, or that Laptop Z has a 2 year warranty.</span></span>
+<span id="cb8-70"><a href="#cb8-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-71"><a href="#cb8-71" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 4:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss">: If the user made any assumptions, </span><span class="ch">\</span></span>
+<span id="cb8-72"><a href="#cb8-72" aria-hidden="true" tabindex="-1"></a><span class="ss">figure out whether the assumption is true based on your </span><span class="ch">\</span></span>
+<span id="cb8-73"><a href="#cb8-73" aria-hidden="true" tabindex="-1"></a><span class="ss">product information. </span></span>
+<span id="cb8-74"><a href="#cb8-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-75"><a href="#cb8-75" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 5:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss">: First, politely correct the </span><span class="ch">\</span></span>
+<span id="cb8-76"><a href="#cb8-76" aria-hidden="true" tabindex="-1"></a><span class="ss">customer&#39;s incorrect assumptions if applicable. </span><span class="ch">\</span></span>
+<span id="cb8-77"><a href="#cb8-77" aria-hidden="true" tabindex="-1"></a><span class="ss">Only mention or reference products in the list of </span><span class="ch">\</span></span>
+<span id="cb8-78"><a href="#cb8-78" aria-hidden="true" tabindex="-1"></a><span class="ss">5 available products, as these are the only 5 </span><span class="ch">\</span></span>
+<span id="cb8-79"><a href="#cb8-79" aria-hidden="true" tabindex="-1"></a><span class="ss">products that the store sells. </span><span class="ch">\</span></span>
+<span id="cb8-80"><a href="#cb8-80" aria-hidden="true" tabindex="-1"></a><span class="ss">Answer the customer in a friendly tone.</span></span>
+<span id="cb8-81"><a href="#cb8-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-82"><a href="#cb8-82" aria-hidden="true" tabindex="-1"></a><span class="ss">Use the following format:</span></span>
+<span id="cb8-83"><a href="#cb8-83" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 1:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> &lt;step 1 reasoning&gt;</span></span>
+<span id="cb8-84"><a href="#cb8-84" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 2:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> &lt;step 2 reasoning&gt;</span></span>
+<span id="cb8-85"><a href="#cb8-85" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 3:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> &lt;step 3 reasoning&gt;</span></span>
+<span id="cb8-86"><a href="#cb8-86" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 4:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> &lt;step 4 reasoning&gt;</span></span>
+<span id="cb8-87"><a href="#cb8-87" aria-hidden="true" tabindex="-1"></a><span class="ss">Response to user:</span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> &lt;response to customer&gt;</span></span>
+<span id="cb8-88"><a href="#cb8-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-89"><a href="#cb8-89" aria-hidden="true" tabindex="-1"></a><span class="ss">Make sure to include </span><span class="sc">{</span>delimiter<span class="sc">}</span><span class="ss"> to separate every step.</span></span>
+<span id="cb8-90"><a href="#cb8-90" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>user_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ss">by how much is the BlueWave Chromebook more expensive </span><span class="ch">\</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ss">than the TechPro Desktop&quot;&quot;&quot;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, </span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>: system_message},    </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>: <span class="ss">f&quot;</span><span class="sc">{</span>delimiter<span class="sc">}{</span>user_message<span class="sc">}{</span>delimiter<span class="sc">}</span><span class="ss">&quot;</span>},  </span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Step 1:#### The user is asking about the price difference between the BlueWave Chromebook and the TechPro Desktop.
+
+Step 2:#### Both the BlueWave Chromebook and the TechPro Desktop are available products.
+
+Step 3:#### The user assumes that the BlueWave Chromebook is more expensive than the TechPro Desktop.
+
+Step 4:#### Based on the product information, the price of the BlueWave Chromebook is $249.99, and the price of the TechPro Desktop is $999.99. Therefore, the TechPro Desktop is actually more expensive than the BlueWave Chromebook.
+
+Response to user:#### The BlueWave Chromebook is actually less expensive than the TechPro Desktop. The BlueWave Chromebook is priced at $249.99, while the TechPro Desktop is priced at $999.99.</code></pre>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>user_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ss">do you sell tvs&quot;&quot;&quot;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, </span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>: system_message},    </span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, </span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a> <span class="st">&#39;content&#39;</span>: <span class="ss">f&quot;</span><span class="sc">{</span>delimiter<span class="sc">}{</span>user_message<span class="sc">}{</span>delimiter<span class="sc">}</span><span class="ss">&quot;</span>},  </span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>] </span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Step 1:#### The user is asking if the store sells TVs, which is a question about a specific product category.
+
+Step 2:#### TVs are not included in the list of available products. The store only sells computers and laptops.
+
+Response to user:#### I&#39;m sorry, but we currently do not sell TVs. Our store specializes in computers and laptops. If you have any questions or need assistance with our available products, feel free to ask.</code></pre>
+<p><strong>2.1 内心の独白</strong></p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    final_response <span class="op">=</span> response.split(delimiter)[<span class="op">-</span><span class="dv">1</span>].strip()</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> e:</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    final_response <span class="op">=</span> <span class="st">&quot;Sorry, I&#39;m having trouble right now, please try asking another question.&quot;</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(final_response)</span></code></pre></div>
+<pre><code>I&#39;m sorry, but we currently do not sell TVs. Our store specializes in computers and laptops. If you have any questions or need assistance with our available products, feel free to ask.</code></pre>
+</body>
+</html>

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>3. ドキュメント分割</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第3章-文書分割">第3章 文書分割</h1>
+<p>前章では、文書を標準形式に読み込む方法を説明しました。今度はそれらをより小さなチャンクに分割する方法を説明します。これは簡単に聞こえるかもしれませんが、その中には後続の作業に重要な影響を与える多くの細かい点があります。</p>
+<h2 id="一なぜ文書分割が必要なのか">一、なぜ文書分割が必要なのか</h2>
+<ol type="1">
+<li><strong>モデルサイズとメモリ制限</strong>：GPTモデル、特にGPT-3やGPT-4のような大型バージョンは、数百億から数千億のパラメータを持っています。一度の順伝播でこれらすべてのパラメータを処理するためには、大量の計算能力とメモリが必要です。しかし、ほとんどのハードウェアデバイス（GPUやTPUなど）にはメモリ制限があります。文書分割により、モデルはこれらの制限内で動作できます。</li>
+<li><strong>計算効率</strong>：より長いテキストシーケンスの処理には、より多くの計算リソースが必要です。長い文書をより小さなチャンクに分割することで、より効率的な計算が可能になります。</li>
+<li><strong>シーケンス長制限</strong>：GPTモデルには固定の最大シーケンス長があり、例えば2048トークンなどです。これはモデルが一度に処理できるトークン数を意味します。この長さを超える文書は、モデルが処理できるように分割する必要があります。</li>
+<li><strong>より良い汎化</strong>：複数の文書チャンクで訓練することで、モデルはさまざまなテキストスタイルや構造をよりよく学習し、汎化できます。</li>
+<li><strong>データ拡張</strong>：文書分割は訓練データにより多くのサンプルを提供できます。例えば、一つの長い文書を複数の部分に分割し、それぞれを別々の訓練サンプルとして使用できます。</li>
+</ol>
+<p>注意すべきは、文書分割には利点がある一方で、特に分割ポイント付近ではコンテキスト情報の失われる可能性があることです。そのため、文書分割の方法はバランスを考慮すべき問題です。</p>
+<figure>
+<img src="../figures/C4/document-splitting.png" alt="image.png" />
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<div data-align="center">
+图 4.3.1 文档分割的意义
+</div>
+<p>若仅按照单一字符进行文本分割，很容易使文本的语义信息丧失，这样在回答问题时可能会出现偏差。因此，为了确保语义的准确性，我们应该尽量将文本分割为包含完整语义的段落或单元。</p>
+<h2 id="二文档分割方式">二、文档分割方式</h2>
+<p>Langchain 中文本分割器都根据 chunk_size (块大小)和 chunk_overlap
+(块与块之间的重叠大小)进行分割。</p>
+<figure>
+<img src="../figures/C4/example-splitter.png" alt="image.png" />
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<div data-align="center">
+图 4.3.2 文档分割示例
+</div>
+<ul>
+<li><p>chunk_size 指每个块包含的字符或 Token
+（如单词、句子等）的数量</p></li>
+<li><p>chunk_overlap
+指两个块之间共享的字符数量，用于保持上下文的连贯性，避免分割丢失上下文信息</p></li>
+</ul>
+<figure>
+<img src="../figures/C4/types-of-splitters.png" alt="image.png" />
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<div data-align="center">
+图 4.3.3 文档分割工具
+</div>
+<p>Langchain提供多种文档分割方式，区别在怎么确定块与块之间的边界、块由哪些字符/token组成、以及如何测量块大小</p>
+<h2 id="三基于字符分割">三、基于字符分割</h2>
+<p>如何进行文本分割，往往与我们的任务类型息息相关。当我们拆分代码时，这种相关性变得尤为突出。因此，我们引入了一个语言文本分割器，其中包含各种为
+Python、Ruby、C
+等不同编程语言设计的分隔符。在对这些文档进行分割时，必须充分考虑各种编程语言之间的差异。</p>
+<p>我们将从基于字符的分割开始探索，借助 <code>LangChain</code> 提供的
+<code>RecursiveCharacterTextSplitter</code> 和
+<code>CharacterTextSplitter</code> 工具来实现此目标。</p>
+<p><code>CharacterTextSplitter</code>
+是字符文本分割，分隔符的参数是单个的字符串；<code>RecursiveCharacterTextSplitter</code>
+是递归字符文本分割，将按不同的字符递归地分割（按照这个优先级[“”, “”, ”
+“,””]），这样就能尽量把所有和语义相关的内容尽可能长时间地保留在同一位置。因此，<code>RecursiveCharacterTextSplitter</code>
+比 <code>CharacterTextSplitter</code> 对文档切割得更加碎片化</p>
+<p><code>RecursiveCharacterTextSplitter</code>
+需要关注的是如下4个参数：</p>
+<ul>
+<li><code>separators</code> - 分隔符字符串数组</li>
+<li><code>chunk_size</code> - 每个文档的字符数量限制</li>
+<li><code>chunk_overlap</code> - 两份文档重叠区域的长度</li>
+<li><code>length_function</code> - 长度计算函数</li>
+</ul>
+<h3 id="短句分割">3.1 短句分割</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 导入文本分割器</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.text_splitter <span class="im">import</span> RecursiveCharacterTextSplitter, CharacterTextSplitter</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>chunk_size <span class="op">=</span> <span class="dv">20</span> <span class="co">#设置块大小</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>chunk_overlap <span class="op">=</span> <span class="dv">10</span> <span class="co">#设置块重叠大小</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 初始化递归字符文本分割器</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>r_splitter <span class="op">=</span> RecursiveCharacterTextSplitter(</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span>chunk_size,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span>chunk_overlap</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 初始化字符文本分割器</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>c_splitter <span class="op">=</span> CharacterTextSplitter(</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span>chunk_size,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span>chunk_overlap</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<p>接下来我们对比展示两个字符文本分割器的效果。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="st">&quot;在AI的研究中，由于大模型规模非常大，模型参数很多，在大模型上跑完来验证参数好不好训练时间成本很高，所以一般会在小模型上做消融实验来验证哪些改进是有效的再去大模型上做实验。&quot;</span>  <span class="co">#测试文本</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>r_splitter.split_text(text)</span></code></pre></div>
+<pre><code>[&#39;在AI的研究中，由于大模型规模非常大，模&#39;,
+ &#39;大模型规模非常大，模型参数很多，在大模型&#39;,
+ &#39;型参数很多，在大模型上跑完来验证参数好不&#39;,
+ &#39;上跑完来验证参数好不好训练时间成本很高，&#39;,
+ &#39;好训练时间成本很高，所以一般会在小模型上&#39;,
+ &#39;所以一般会在小模型上做消融实验来验证哪些&#39;,
+ &#39;做消融实验来验证哪些改进是有效的再去大模&#39;,
+ &#39;改进是有效的再去大模型上做实验。&#39;]</code></pre>
+<p>可以看到，分割结果中，第二块是从“大模型规模非常大，模”开始的，刚好是我们设定的块重叠大小</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#字符文本分割器</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>c_splitter.split_text(text)</span></code></pre></div>
+<pre><code>[&#39;在AI的研究中，由于大模型规模非常大，模型参数很多，在大模型上跑完来验证参数好不好训练时间成本很高，所以一般会在小模型上做消融实验来验证哪些改进是有效的再去大模型上做实验。&#39;]</code></pre>
+<p>可以看到字符分割器没有分割这个文本，因为字符文本分割器默认以换行符为分隔符，因此需要设置“，”为分隔符。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 设置空格分隔符</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>c_splitter <span class="op">=</span> CharacterTextSplitter(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span>chunk_size,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span>chunk_overlap,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    separator<span class="op">=</span><span class="st">&#39;，&#39;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>c_splitter.split_text(text)</span></code></pre></div>
+<pre><code>Created a chunk of size 23, which is longer than the specified 20
+
+
+
+
+
+[&#39;在AI的研究中，由于大模型规模非常大&#39;,
+ &#39;由于大模型规模非常大，模型参数很多&#39;,
+ &#39;在大模型上跑完来验证参数好不好训练时间成本很高&#39;,
+ &#39;所以一般会在小模型上做消融实验来验证哪些改进是有效的再去大模型上做实验。&#39;]</code></pre>
+<p>设置“，”为分隔符后，分割效果与递归字符文本分割器类似。</p>
+<blockquote>
+<p>可以看到出现了提示”Created a chunk of size 23, which is longer than
+the specified
+20”，意思是“创建了一个长度为23的块，这比指定的20要长。”。这是因为<code>CharacterTextSplitter</code>优先使用我们自定义的分隔符进行分割，所以在长度上会有较小的差距</p>
+</blockquote>
+<h3 id="长文本分割">3.2 长文本分割</h3>
+<p>接下来，我们来尝试对长文本进行分割。</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 中文版</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>some_text <span class="op">=</span> <span class="st">&quot;&quot;&quot;在编写文档时，作者将使用文档结构对内容进行分组。 </span><span class="ch">\</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="st">    这可以向读者传达哪些想法是相关的。 例如，密切相关的想法</span><span class="ch">\</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="st">    是在句子中。 类似的想法在段落中。 段落构成文档。 </span><span class="ch">\n\n\</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="st">    段落通常用一个或两个回车符分隔。 </span><span class="ch">\</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="st">    回车符是您在该字符串中看到的嵌入的“反斜杠 n”。 </span><span class="ch">\</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="st">    句子末尾有一个句号，但也有一个空格。</span><span class="ch">\</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="st">    并且单词之间用空格分隔&quot;&quot;&quot;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">len</span>(some_text))</span></code></pre></div>
+<pre><code>177</code></pre>
+<p>我们使用以上长文本作为示例。</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>c_splitter <span class="op">=</span> CharacterTextSplitter(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span><span class="dv">80</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    separator<span class="op">=</span><span class="st">&#39; &#39;</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co">&#39;&#39;&#39; </span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">对于递归字符分割器，依次传入分隔符列表，分别是双换行符、单换行符、空格、空字符，</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">因此在分割文本时，首先会采用双分换行符进行分割，同时依次使用其他分隔符进行分割</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">&#39;&#39;&#39;</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>r_splitter <span class="op">=</span> RecursiveCharacterTextSplitter(</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span><span class="dv">80</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    separators<span class="op">=</span>[<span class="st">&quot;</span><span class="ch">\n\n</span><span class="st">&quot;</span>, <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>, <span class="st">&quot; &quot;</span>, <span class="st">&quot;&quot;</span>]</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<p>字符分割器结果：</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>c_splitter.split_text(some_text)</span></code></pre></div>
+<pre><code>[&#39;在编写文档时，作者将使用文档结构对内容进行分组。 这可以向读者传达哪些想法是相关的。 例如，密切相关的想法 是在句子中。 类似的想法在段落中。 段落构成文档。&#39;,
+ &#39;段落通常用一个或两个回车符分隔。 回车符是您在该字符串中看到的嵌入的“反斜杠 n”。 句子末尾有一个句号，但也有一个空格。 并且单词之间用空格分隔&#39;]</code></pre>
+<p>递归字符分割器效果：</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>r_splitter.split_text(some_text)</span></code></pre></div>
+<pre><code>[&#39;在编写文档时，作者将使用文档结构对内容进行分组。     这可以向读者传达哪些想法是相关的。 例如，密切相关的想法    是在句子中。 类似的想法在段落中。&#39;,
+ &#39;段落构成文档。&#39;,
+ &#39;段落通常用一个或两个回车符分隔。     回车符是您在该字符串中看到的嵌入的“反斜杠 n”。     句子末尾有一个句号，但也有一个空格。&#39;,
+ &#39;并且单词之间用空格分隔&#39;]</code></pre>
+<p>如果需要按照句子进行分隔，则还要用正则表达式添加一个句号分隔符</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>r_splitter <span class="op">=</span> RecursiveCharacterTextSplitter(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span><span class="dv">30</span>,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    separators<span class="op">=</span>[<span class="st">&quot;</span><span class="ch">\n\n</span><span class="st">&quot;</span>, <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>, <span class="st">&quot;(?&lt;=\。 )&quot;</span>, <span class="st">&quot; &quot;</span>, <span class="st">&quot;&quot;</span>]</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>r_splitter.split_text(some_text)</span></code></pre></div>
+<pre><code>[&#39;在编写文档时，作者将使用文档结构对内容进行分组。&#39;,
+ &#39;这可以向读者传达哪些想法是相关的。&#39;,
+ &#39;例如，密切相关的想法    是在句子中。&#39;,
+ &#39;类似的想法在段落中。 段落构成文档。&#39;,
+ &#39;段落通常用一个或两个回车符分隔。&#39;,
+ &#39;回车符是您在该字符串中看到的嵌入的“反斜杠 n”。&#39;,
+ &#39;句子末尾有一个句号，但也有一个空格。&#39;,
+ &#39;并且单词之间用空格分隔&#39;]</code></pre>
+<p>这就是递归字符文本分割器名字中“递归”的含义，总的来说，我们更建议在通用文本中使用递归字符文本分割器</p>
+<h2 id="四基于-token-分割">四、基于 Token 分割</h2>
+<p>很多 LLM 的上下文窗口长度限制是按照 Token 来计数的。因此，以 LLM
+的视角，按照 Token 对文本进行分隔，通常可以得到更好的结果。
+通过一个实例理解基于字符分割和基于 Token 分割的区别</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 使用token分割器进行分割，</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 将块大小设为1，块重叠大小设为0，相当于将任意字符串分割成了单个Token组成的列</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.text_splitter <span class="im">import</span> TokenTextSplitter</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>text_splitter <span class="op">=</span> TokenTextSplitter(chunk_size<span class="op">=</span><span class="dv">1</span>, chunk_overlap<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="st">&quot;foo bar bazzyfoo&quot;</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>text_splitter.split_text(text)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 注：目前 LangChain 基于 Token 的分割器还不支持中文</span></span></code></pre></div>
+<pre><code>[&#39;foo&#39;, &#39; bar&#39;, &#39; b&#39;, &#39;az&#39;, &#39;zy&#39;, &#39;foo&#39;]</code></pre>
+<p>可以看出token长度和字符长度不一样，token通常为4个字符</p>
+<h2 id="五分割markdown文档">五、分割Markdown文档</h2>
+<h3 id="分割一个自定义-markdown-文档">5.1 分割一个自定义 Markdown
+文档</h3>
+<p>分块的目的是把具有上下文的文本放在一起，我们可以通过使用指定分隔符来进行分隔，但有些类型的文档（例如
+Markdown ）本身就具有可用于分割的结构（如标题）。</p>
+<p>Markdown 标题文本分割器会根据标题或子标题来分割一个 Markdown
+文档，并将标题作为元数据添加到每个块中</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 定义一个Markdown文档</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> NotionDirectoryLoader<span class="co">#Notion加载器</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.text_splitter <span class="im">import</span> MarkdownHeaderTextSplitter<span class="co">#markdown分割器</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>markdown_document <span class="op">=</span> <span class="st">&quot;&quot;&quot;# Title</span><span class="ch">\n\n</span><span class="st"> </span><span class="ch">\</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="st">## 第一章</span><span class="ch">\n\n</span><span class="st"> </span><span class="ch">\</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="st">李白乘舟将欲行</span><span class="ch">\n\n</span><span class="st"> 忽然岸上踏歌声</span><span class="ch">\n\n</span><span class="st"> </span><span class="ch">\</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="st">### Section </span><span class="ch">\n\n</span><span class="st"> </span><span class="ch">\</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="st">桃花潭水深千尺 </span><span class="ch">\n\n</span><span class="st"> </span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="st">## 第二章</span><span class="ch">\n\n</span><span class="st"> </span><span class="ch">\</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="st">不及汪伦送我情&quot;&quot;&quot;</span></span></code></pre></div>
+<p>我们以上述文本作为 Markdown 文档的示例，上述文本格式遵循了 Markdown
+语法，如读者对该语法不了解，可以简单查阅该教程 ：<a
+href="https://markdown.com.cn/basic-syntax/">Markdown 教程</a></p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 定义想要分割的标题列表和名称</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>headers_to_split_on <span class="op">=</span> [</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;#&quot;</span>, <span class="st">&quot;Header 1&quot;</span>),</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;##&quot;</span>, <span class="st">&quot;Header 2&quot;</span>),</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;###&quot;</span>, <span class="st">&quot;Header 3&quot;</span>),</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>markdown_splitter <span class="op">=</span> MarkdownHeaderTextSplitter(</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    headers_to_split_on<span class="op">=</span>headers_to_split_on</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>)<span class="co">#message_typemessage_type</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>md_header_splits <span class="op">=</span> markdown_splitter.split_text(markdown_document)</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;第一个块&quot;</span>)</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(md_header_splits[<span class="dv">0</span>])</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;第二个块&quot;</span>)</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(md_header_splits[<span class="dv">1</span>])</span></code></pre></div>
+<pre><code>第一个块
+page_content=&#39;李白乘舟将欲行  \n忽然岸上踏歌声&#39; metadata={&#39;Header 1&#39;: &#39;Title&#39;, &#39;Header 2&#39;: &#39;第一章&#39;}
+第二个块
+page_content=&#39;桃花潭水深千尺&#39; metadata={&#39;Header 1&#39;: &#39;Title&#39;, &#39;Header 2&#39;: &#39;第一章&#39;, &#39;Header 3&#39;: &#39;Section&#39;}</code></pre>
+<p>可以看到，每个块都包含了页面内容和元数据，元数据中记录了该块所属的标题和子标题。</p>
+<h2 id="分割数据库中的-markdown-文档">5.2 分割数据库中的 Markdown
+文档</h2>
+<p>在上一章中，我们尝试了 Notion 数据库的加载，Notion 文档就是一个
+Markdown 文档。我们在此处加载 Notion 数据库中的文档并进行分割。</p>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">#加载数据库的内容</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> NotionDirectoryLoader(<span class="st">&quot;docs/Notion_DB&quot;</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> loader.load()</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>txt <span class="op">=</span> <span class="st">&#39; &#39;</span>.join([d.page_content <span class="cf">for</span> d <span class="kw">in</span> docs])<span class="co">#拼接文档</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>headers_to_split_on <span class="op">=</span> [</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;#&quot;</span>, <span class="st">&quot;Header 1&quot;</span>),</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;##&quot;</span>, <span class="st">&quot;Header 2&quot;</span>),</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="co">#加载文档分割器</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>markdown_splitter <span class="op">=</span> MarkdownHeaderTextSplitter(</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    headers_to_split_on<span class="op">=</span>headers_to_split_on</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>md_header_splits <span class="op">=</span> markdown_splitter.split_text(txt)<span class="co">#分割文本内容</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(md_header_splits[<span class="dv">0</span>])<span class="co">#分割结果</span></span></code></pre></div>
+<pre><code>page_content=&#39;Let’s talk about stress. Too much stress.  \nWe know this can be a topic.  \nSo let’s get this conversation going.  \n[Intro: two things you should know](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/Intro%20two%20things%20you%20should%20know%20b5fd0c5393a9498b93396e79fe71e8bf.md)  \n[What is stress](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/What%20is%20stress%20b198b685ed6a474ab14f6fafff7004b6.md)  \n[When is there too much stress?](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/When%20is%20there%20too%20much%20stress%20dc135b9a86a843cbafd115aa128c5c90.md)  \n[What can I do](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/What%20can%20I%20do%2009c1b13703ef42d4a889e2059c5b25fe.md)  \n[What can Blendle do?](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/What%20can%20Blendle%20do%20618ab89df4a647bf96e7b432af82779f.md)  \n[Good reads](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/Good%20reads%20e817491d84d549f886af972e0668192e.md)  \nGo to **#letstalkaboutstress** on slack to chat about this topic&#39; metadata={&#39;Header 1&#39;: &#39;#letstalkaboutstress&#39;}</code></pre>
+<h2 id="六英文版">六、英文版</h2>
+<p><strong>3.1 短句分割</strong></p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co">#导入文本分割器</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.text_splitter <span class="im">import</span> RecursiveCharacterTextSplitter, CharacterTextSplitter</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>chunk_size <span class="op">=</span> <span class="dv">26</span> <span class="co">#设置块大小</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>chunk_overlap <span class="op">=</span> <span class="dv">4</span> <span class="co">#设置块重叠大小</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="co">#初始化文本分割器</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>r_splitter <span class="op">=</span> RecursiveCharacterTextSplitter(</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span>chunk_size,</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span>chunk_overlap</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>c_splitter <span class="op">=</span> CharacterTextSplitter(</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span>chunk_size,</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span>chunk_overlap</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<p>递归字符分割器效果</p>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="st">&quot;a b c d e f g h i j k l m n o p q r s t u v w x y z&quot;</span><span class="co">#测试文本</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>r_splitter.split_text(text)</span></code></pre></div>
+<pre><code>[&#39;a b c d e f g h i j k l m&#39;, &#39;l m n o p q r s t u v w x&#39;, &#39;w x y z&#39;]</code></pre>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(<span class="st">&quot; l m n o p q r s t u v w x&quot;</span>)</span></code></pre></div>
+<pre><code>25</code></pre>
+<p>字符分割器效果</p>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co">#字符文本分割器</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>c_splitter.split_text(text)</span></code></pre></div>
+<pre><code>[&#39;a b c d e f g h i j k l m n o p q r s t u v w x y z&#39;]</code></pre>
+<p>设置空格为分隔符的字符分割器</p>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 设置空格分隔符</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>c_splitter <span class="op">=</span> CharacterTextSplitter(</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span>chunk_size,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span>chunk_overlap,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    separator<span class="op">=</span><span class="st">&#39; &#39;</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>c_splitter.split_text(text)</span></code></pre></div>
+<pre><code>[&#39;a b c d e f g h i j k l m&#39;, &#39;l m n o p q r s t u v w x&#39;, &#39;w x y z&#39;]</code></pre>
+<p><strong>3.2 长文本分割</strong></p>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 递归分割长段落</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>some_text <span class="op">=</span> <span class="st">&quot;&quot;&quot;When writing documents, writers will use document structure to group content. </span><span class="ch">\</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="st">This can convey to the reader, which idea&#39;s are related. For example, closely related ideas </span><span class="ch">\</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="st">are in sentances. Similar ideas are in paragraphs. Paragraphs form a document. </span><span class="ch">\n\n</span><span class="st">  </span><span class="ch">\</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="st">Paragraphs are often delimited with a carriage return or two carriage returns. </span><span class="ch">\</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="st">Carriage returns are the &quot;backslash n&quot; you see embedded in this string. </span><span class="ch">\</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="st">Sentences have a period at the end, but also, have a space.</span><span class="ch">\</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a><span class="st">and words are separated by space.&quot;&quot;&quot;</span></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>c_splitter <span class="op">=</span> CharacterTextSplitter(</span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span><span class="dv">450</span>,</span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>    separator<span class="op">=</span><span class="st">&#39; &#39;</span></span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a><span class="co">&#39;&#39;&#39; </span></span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a><span class="co">对于递归字符分割器，依次传入分隔符列表，分别是双换行符、单换行符、空格、空字符，</span></span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a><span class="co">因此在分割文本时，首先会采用双分换行符进行分割，同时依次使用其他分隔符进行分割</span></span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a><span class="co">&#39;&#39;&#39;</span></span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>r_splitter <span class="op">=</span> RecursiveCharacterTextSplitter(</span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span><span class="dv">450</span>,</span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>    separators<span class="op">=</span>[<span class="st">&quot;</span><span class="ch">\n\n</span><span class="st">&quot;</span>, <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>, <span class="st">&quot; &quot;</span>, <span class="st">&quot;&quot;</span>]</span>
+<span id="cb33-26"><a href="#cb33-26" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb33-27"><a href="#cb33-27" aria-hidden="true" tabindex="-1"></a></span></code></pre></div>
+<p>字符分割器效果：</p>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>c_splitter.split_text(some_text)</span></code></pre></div>
+<pre><code>[&#39;When writing documents, writers will use document structure to group content. This can convey to the reader, which idea\&#39;s are related. For example, closely related ideas are in sentances. Similar ideas are in paragraphs. Paragraphs form a document. \n\n Paragraphs are often delimited with a carriage return or two carriage returns. Carriage returns are the &quot;backslash n&quot; you see embedded in this string. Sentences have a period at the end, but also,&#39;,
+ &#39;have a space.and words are separated by space.&#39;]</code></pre>
+<p>递归字符分割器效果：</p>
+<div class="sourceCode" id="cb36"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co">#分割结果</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>r_splitter.split_text(some_text)</span></code></pre></div>
+<pre><code>[&quot;When writing documents, writers will use document structure to group content. This can convey to the reader, which idea&#39;s are related. For example, closely related ideas are in sentances. Similar ideas are in paragraphs. Paragraphs form a document.&quot;,
+ &#39;Paragraphs are often delimited with a carriage return or two carriage returns. Carriage returns are the &quot;backslash n&quot; you see embedded in this string. Sentences have a period at the end, but also, have a space.and words are separated by space.&#39;]</code></pre>
+<p>增加按句子分割的效果：</p>
+<div class="sourceCode" id="cb38"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>r_splitter <span class="op">=</span> RecursiveCharacterTextSplitter(</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>    chunk_size<span class="op">=</span><span class="dv">150</span>,</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    chunk_overlap<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>    separators<span class="op">=</span>[<span class="st">&quot;</span><span class="ch">\n\n</span><span class="st">&quot;</span>, <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>, <span class="st">&quot;(?&lt;=\. )&quot;</span>, <span class="st">&quot; &quot;</span>, <span class="st">&quot;&quot;</span>]</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>r_splitter.split_text(some_text)</span></code></pre></div>
+<pre><code>[&quot;When writing documents, writers will use document structure to group content. This can convey to the reader, which idea&#39;s are related.&quot;,
+ &#39;For example, closely related ideas are in sentances. Similar ideas are in paragraphs. Paragraphs form a document.&#39;,
+ &#39;Paragraphs are often delimited with a carriage return or two carriage returns.&#39;,
+ &#39;Carriage returns are the &quot;backslash n&quot; you see embedded in this string.&#39;,
+ &#39;Sentences have a period at the end, but also, have a space.and words are separated by space.&#39;]</code></pre>
+<p><strong>4.1 基于 Token 分割</strong></p>
+<div class="sourceCode" id="cb40"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 使用token分割器进行分割，</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 将块大小设为1，块重叠大小设为0，相当于将任意字符串分割成了单个Token组成的列</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.text_splitter <span class="im">import</span> TokenTextSplitter</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>text_splitter <span class="op">=</span> TokenTextSplitter(chunk_size<span class="op">=</span><span class="dv">1</span>, chunk_overlap<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>text1 <span class="op">=</span> <span class="st">&quot;foo bar bazzyfoo&quot;</span></span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>text_splitter.split_text(text1)</span></code></pre></div>
+<pre><code>[&#39;foo&#39;, &#39; bar&#39;, &#39; b&#39;, &#39;az&#39;, &#39;zy&#39;, &#39;foo&#39;]</code></pre>
+<p><strong>5.1 分割自定义 Markdown 文档</strong></p>
+<div class="sourceCode" id="cb42"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 定义一个Markdown文档</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> NotionDirectoryLoader<span class="co">#Notion加载器</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.text_splitter <span class="im">import</span> MarkdownHeaderTextSplitter<span class="co">#markdown分割器</span></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>markdown_document <span class="op">=</span> <span class="st">&quot;&quot;&quot;# Title</span><span class="ch">\n\n</span><span class="st"> </span><span class="ch">\</span></span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a><span class="st">## Chapter 1</span><span class="ch">\n\n</span><span class="st"> </span><span class="ch">\</span></span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a><span class="st">Hi this is Jim</span><span class="ch">\n\n</span><span class="st"> Hi this is Joe</span><span class="ch">\n\n</span><span class="st"> </span><span class="ch">\</span></span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a><span class="st">### Section </span><span class="ch">\n\n</span><span class="st"> </span><span class="ch">\</span></span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a><span class="st">Hi this is Lance </span><span class="ch">\n\n</span><span class="st"> </span></span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a><span class="st">## Chapter 2</span><span class="ch">\n\n</span><span class="st"> </span><span class="ch">\</span></span>
+<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a><span class="st">Hi this is Molly&quot;&quot;&quot;</span></span>
+<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 初始化Markdown标题文本分割器，分割Markdown文档</span></span>
+<span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a>markdown_splitter <span class="op">=</span> MarkdownHeaderTextSplitter(</span>
+<span id="cb42-16"><a href="#cb42-16" aria-hidden="true" tabindex="-1"></a>    headers_to_split_on<span class="op">=</span>headers_to_split_on</span>
+<span id="cb42-17"><a href="#cb42-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb42-18"><a href="#cb42-18" aria-hidden="true" tabindex="-1"></a>md_header_splits <span class="op">=</span> markdown_splitter.split_text(markdown_document)</span>
+<span id="cb42-19"><a href="#cb42-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-20"><a href="#cb42-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;The first chunk&quot;</span>)</span>
+<span id="cb42-21"><a href="#cb42-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(md_header_splits[<span class="dv">0</span>])</span>
+<span id="cb42-22"><a href="#cb42-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Document(page_content=&#39;Hi this is Jim  \nHi this is Joe&#39;, metadata={&#39;Header 1&#39;: &#39;Title&#39;, &#39;Header 2&#39;: &#39;Chapter 1&#39;})</span></span>
+<span id="cb42-23"><a href="#cb42-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;The second chunk&quot;</span>)</span>
+<span id="cb42-24"><a href="#cb42-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(md_header_splits[<span class="dv">1</span>])</span>
+<span id="cb42-25"><a href="#cb42-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Document(page_content=&#39;Hi this is Lance&#39;, metadata={&#39;Header 1&#39;: &#39;Title&#39;, &#39;Header 2&#39;: &#39;Chapter 1&#39;, &#39;Header 3&#39;: &#39;Section&#39;})</span></span>
+<span id="cb42-26"><a href="#cb42-26" aria-hidden="true" tabindex="-1"></a></span></code></pre></div>
+<pre><code>The first chunk
+page_content=&#39;Hi this is Jim  \nHi this is Joe  \n### Section  \nHi this is Lance&#39; metadata={&#39;Header 1&#39;: &#39;Title&#39;, &#39;Header 2&#39;: &#39;Chapter 1&#39;}
+The second chunk
+page_content=&#39;Hi this is Molly&#39; metadata={&#39;Header 1&#39;: &#39;Title&#39;, &#39;Header 2&#39;: &#39;Chapter 2&#39;}</code></pre>
+<p><strong>5.2 分割数据库中的 Markdown 文档</strong></p>
+<div class="sourceCode" id="cb44"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co">#加载数据库的内容</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> NotionDirectoryLoader(<span class="st">&quot;docs/Notion_DB&quot;</span>)</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> loader.load()</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>txt <span class="op">=</span> <span class="st">&#39; &#39;</span>.join([d.page_content <span class="cf">for</span> d <span class="kw">in</span> docs])<span class="co">#拼接文档</span></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>headers_to_split_on <span class="op">=</span> [</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;#&quot;</span>, <span class="st">&quot;Header 1&quot;</span>),</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;##&quot;</span>, <span class="st">&quot;Header 2&quot;</span>),</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a><span class="co">#加载文档分割器</span></span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>markdown_splitter <span class="op">=</span> MarkdownHeaderTextSplitter(</span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>    headers_to_split_on<span class="op">=</span>headers_to_split_on</span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>md_header_splits <span class="op">=</span> markdown_splitter.split_text(txt)<span class="co">#分割文本内容</span></span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(md_header_splits[<span class="dv">0</span>])<span class="co">#分割结果</span></span></code></pre></div>
+<pre><code>page_content=&#39;Let’s talk about stress. Too much stress.  \nWe know this can be a topic.  \nSo let’s get this conversation going.  \n[Intro: two things you should know](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/Intro%20two%20things%20you%20should%20know%20b5fd0c5393a9498b93396e79fe71e8bf.md)  \n[What is stress](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/What%20is%20stress%20b198b685ed6a474ab14f6fafff7004b6.md)  \n[When is there too much stress?](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/When%20is%20there%20too%20much%20stress%20dc135b9a86a843cbafd115aa128c5c90.md)  \n[What can I do](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/What%20can%20I%20do%2009c1b13703ef42d4a889e2059c5b25fe.md)  \n[What can Blendle do?](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/What%20can%20Blendle%20do%20618ab89df4a647bf96e7b432af82779f.md)  \n[Good reads](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/Good%20reads%20e817491d84d549f886af972e0668192e.md)  \nGo to **#letstalkaboutstress** on slack to chat about this topic&#39; metadata={&#39;Header 1&#39;: &#39;#letstalkaboutstress&#39;}</code></pre>
+</body>
+</html>

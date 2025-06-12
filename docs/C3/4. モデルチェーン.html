@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>4. モデルチェーン</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第四章-モデルチェーン">第四章 モデルチェーン</h1>
+<p>チェーン（Chains）は通常、大規模言語モデル（LLM）とプロンプト（Prompt）を結合し、これに基づいてテキストやデータに一連の操作を行うことができます。チェーン（Chains）は一度に複数の入力を受け取ることができます。例えば、ユーザー入力を受け取り、プロンプトテンプレートでフォーマットし、その後フォーマットされたレスポンスをLLMに渡すチェーンを作成できます。複数のチェーンを組み合わせたり、チェーンを他のコンポーネントと組み合わせたりすることで、より複雑なチェーンを構築できます。</p>
+<h2 id="一大規模言語モデルチェーン">一、大規模言語モデルチェーン</h2>
+<p>大規模言語モデルチェーン（LLMChain）はシンプルでありながら非常に強力なチェーンで、後で紹介する多くのチェーンの基礎でもあります。</p>
+<h3 id="言語モデルの初期化">1.1 言語モデルの初期化</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">&#39;ignore&#39;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.prompts <span class="im">import</span> ChatPromptTemplate  </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> LLMChain   </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 这里我们将参数temperature设置为0.0，从而减少生成答案的随机性。</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 如果你想要每次得到不一样的有新意的答案，可以尝试调整该参数。</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.0</span>)  </span></code></pre></div>
+<h3 id="プロンプトテンプレートの初期化">1.2
+プロンプトテンプレートの初期化</h3>
+<p>プロンプトを初期化します。このプロンプトはproductという名前の変数を受け取ります。このpromptはLLMにその製品を製造する会社の最適な名前を生成するよう求めます。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> ChatPromptTemplate.from_template(<span class="st">&quot;描述制造</span><span class="sc">{product}</span><span class="st">的一个公司的最佳名称是什么?&quot;</span>)</span></code></pre></div>
+<h3 id="大規模言語モデルチェーンの構築">1.3
+大規模言語モデルチェーンの構築</h3>
+<p>将大语言模型(LLM)和提示（Prompt）组合成链。这个大语言模型链非常简单，可以让我们以一种顺序的方式去通过运行提示并且结合到大语言模型中。</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>chain <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>prompt)</span></code></pre></div>
+<h3 id="大規模言語モデルチェーンの実行">1.4
+大規模言語モデルチェーンの実行</h3>
+<p>因此，如果我们有一个名为”Queen Size Sheet
+Set”的产品，我们可以通过使用<code>chain.run</code>将其通过这个链运行</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>product <span class="op">=</span> <span class="st">&quot;大号床单套装&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>chain.run(product)</span></code></pre></div>
+<pre><code>&#39;&quot;豪华床纺&quot;&#39;</code></pre>
+<p>您可以输入任何产品描述，然后查看链将输出什么结果。</p>
+<h2
+id="二シンプルシーケンシャルチェーン">二、シンプルシーケンシャルチェーン</h2>
+<p>シーケンシャルチェーン（SequentialChains）は、事前に定義された順序で連結されたチェーンを実行するチェーンです。具体的には、シンプルシーケンシャルチェーン（SimpleSequentialChain）を使用します。これはシーケンシャルチェーンの最もシンプルなタイプで、各ステップに1つの入力/出力があり、あるステップの出力が次のステップの入力になります。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> SimpleSequentialChain</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.9</span>)</span></code></pre></div>
+<h3 id="つのサブチェーンの作成">2.1 2つのサブチェーンの作成</h3>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 提示模板 1 ：这个提示将接受产品并返回最佳名称来描述该公司</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>first_prompt <span class="op">=</span> ChatPromptTemplate.from_template(   </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;描述制造</span><span class="sc">{product}</span><span class="st">的一个公司的最好的名称是什么&quot;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>chain_one <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>first_prompt)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 提示模板 2 ：接受公司名称，然后输出该公司的长为20个单词的描述</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>second_prompt <span class="op">=</span> ChatPromptTemplate.from_template(   </span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;写一个20字的描述对于下面这个</span><span class="ch">\</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="st">    公司：</span><span class="sc">{company_name}</span><span class="st">的&quot;</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>chain_two <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>second_prompt)</span></code></pre></div>
+<h3 id="シンプルシーケンシャルチェーンの構築">2.2
+シンプルシーケンシャルチェーンの構築</h3>
+<p>今度は2つのLLMChainを組み合わせて、一つのステップで会社名と説明を作成できるようにします。</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>overall_simple_chain <span class="op">=</span> SimpleSequentialChain(chains<span class="op">=</span>[chain_one, chain_two],</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                                             verbose<span class="op">=</span><span class="va">True</span>)</span></code></pre></div>
+<p>给一个输入，然后运行上面的链</p>
+<h3 id="シンプルシーケンシャルチェーンの実行">2.3
+シンプルシーケンシャルチェーンの実行</h3>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>product <span class="op">=</span> <span class="st">&quot;大号床单套装&quot;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>overall_simple_chain.run(product)</span></code></pre></div>
+<pre><code>&gt; Entering new SimpleSequentialChain chain...
+优床制造公司
+优床制造公司是一家专注于生产高品质床具的公司。
+
+&gt; Finished chain.
+
+
+
+
+
+&#39;优床制造公司是一家专注于生产高品质床具的公司。&#39;</code></pre>
+<h2 id="三シーケンシャルチェーン">三、シーケンシャルチェーン</h2>
+<p>入力と出力が1つずつしかない場合、シンプルシーケンシャルチェーン（SimpleSequentialChain）で実現できます。複数の入力または複数の出力がある場合は、シーケンシャルチェーン（SequentialChain）を使用する必要があります。</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> SequentialChain</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI    <span class="co">#导入OpenAI模型</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.prompts <span class="im">import</span> ChatPromptTemplate   <span class="co">#导入聊天提示模板</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> LLMChain    <span class="co">#导入LLM链。</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.9</span>)</span></code></pre></div>
+<p>接下来我们将创建一系列的链，然后一个接一个使用他们</p>
+<h3 id="つのサブチェーンの作成-1">3.1 4つのサブチェーンの作成</h3>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">#子链1</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># prompt模板 1: 翻译成英语（把下面的review翻译成英语）</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>first_prompt <span class="op">=</span> ChatPromptTemplate.from_template(</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;把下面的评论review翻译成英文:&quot;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;</span><span class="ch">\n\n</span><span class="sc">{Review}</span><span class="st">&quot;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># chain 1: 输入：Review    输出：英文的 Review</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>chain_one <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>first_prompt, output_key<span class="op">=</span><span class="st">&quot;English_Review&quot;</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="co">#子链2</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="co"># prompt模板 2: 用一句话总结下面的 review</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>second_prompt <span class="op">=</span> ChatPromptTemplate.from_template(</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;请你用一句话来总结下面的评论review:&quot;</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;</span><span class="ch">\n\n</span><span class="sc">{English_Review}</span><span class="st">&quot;</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="co"># chain 2: 输入：英文的Review   输出：总结</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>chain_two <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>second_prompt, output_key<span class="op">=</span><span class="st">&quot;summary&quot;</span>)</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="co">#子链3</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="co"># prompt模板 3: 下面review使用的什么语言</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>third_prompt <span class="op">=</span> ChatPromptTemplate.from_template(</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;下面的评论review使用的什么语言:</span><span class="ch">\n\n</span><span class="sc">{Review}</span><span class="st">&quot;</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="co"># chain 3: 输入：Review  输出：语言</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>chain_three <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>third_prompt, output_key<span class="op">=</span><span class="st">&quot;language&quot;</span>)</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a><span class="co">#子链4</span></span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a><span class="co"># prompt模板 4: 使用特定的语言对下面的总结写一个后续回复</span></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>fourth_prompt <span class="op">=</span> ChatPromptTemplate.from_template(</span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;使用特定的语言对下面的总结写一个后续回复:&quot;</span></span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;</span><span class="ch">\n\n</span><span class="st">总结: </span><span class="sc">{summary}</span><span class="ch">\n\n</span><span class="st">语言: </span><span class="sc">{language}</span><span class="st">&quot;</span></span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a><span class="co"># chain 4: 输入： 总结, 语言    输出： 后续回复</span></span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>chain_four <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>fourth_prompt, output_key<span class="op">=</span><span class="st">&quot;followup_message&quot;</span>)</span></code></pre></div>
+<h3 id="つのサブチェーンの組み合わせ">3.2
+4つのサブチェーンの組み合わせ</h3>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">#输入：review    </span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">#输出：英文review，总结，后续回复 </span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>overall_chain <span class="op">=</span> SequentialChain(</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    chains<span class="op">=</span>[chain_one, chain_two, chain_three, chain_four],</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    input_variables<span class="op">=</span>[<span class="st">&quot;Review&quot;</span>],</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    output_variables<span class="op">=</span>[<span class="st">&quot;English_Review&quot;</span>, <span class="st">&quot;summary&quot;</span>,<span class="st">&quot;followup_message&quot;</span>],</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    verbose<span class="op">=</span><span class="va">True</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<p>让我们选择一篇评论并通过整个链传递它，可以发现，原始review是法语，可以把英文review看做是一种翻译，接下来是根据英文review得到的总结，最后输出的是用法语原文进行的续写信息。</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">&#39;../data/Data.csv&#39;</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>review <span class="op">=</span> df.Review[<span class="dv">5</span>]</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>overall_chain(review)</span></code></pre></div>
+<pre><code>&gt; Entering new SequentialChain chain...
+
+&gt; Finished chain.
+
+
+
+
+
+{&#39;Review&#39;: &quot;Je trouve le goût médiocre. La mousse ne tient pas, c&#39;est bizarre. J&#39;achète les mêmes dans le commerce et le goût est bien meilleur...\nVieux lot ou contrefaçon !?&quot;,
+ &#39;English_Review&#39;: &quot;I find the taste mediocre. The foam doesn&#39;t hold, it&#39;s weird. I buy the same ones in stores and the taste is much better...\nOld batch or counterfeit!?&quot;,
+ &#39;summary&#39;: &quot;The reviewer finds the taste mediocre, the foam doesn&#39;t hold well, and suspects the product may be either an old batch or a counterfeit.&quot;,
+ &#39;followup_message&#39;: &quot;后续回复（法语）：Merci beaucoup pour votre avis. Nous sommes désolés d&#39;apprendre que vous avez trouvé le goût médiocre et que la mousse ne tient pas bien. Nous prenons ces problèmes très au sérieux et nous enquêterons sur la possibilité que le produit soit soit un ancien lot, soit une contrefaçon. Nous vous prions de nous excuser pour cette expérience décevante et nous ferons tout notre possible pour résoudre ce problème. Votre satisfaction est notre priorité et nous apprécions vos commentaires précieux.&quot;}</code></pre>
+<h2 id="四ルーティングチェーン">四、ルーティングチェーン</h2>
+<p>これまで、大規模言語モデルチェーンとシーケンシャルチェーンを学習しました。しかし、より複雑なことをしたい場合はどうしたらよいでしょうか？非常に一般的で基本的な操作の一つは、入力に基づいてそれを特定のチェーンにルーティングすることで、その入力が具体的に何であるかに依存します。特定のタイプの入力専用の複数のサブチェーンがある場合、まずどのサブチェーンに渡すかを決定し、その後そのチェーンに渡すルーティングチェーンを組み立てることができます。</p>
+<p>ルーターは2つのコンポーネントで構成されています：</p>
+<ul>
+<li>ルーティングチェーン（Router
+Chain）：ルーターチェーン自体で、呼び出す次のチェーンを選択する責任を負います。</li>
+<li>destination_chains：ルーターチェーンがルーティングできるチェーン</li>
+</ul>
+<p>举一个具体的例子，让我们看一下我们在不同类型的链之间路由的地方，我们在这里有不同的prompt:</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains.router <span class="im">import</span> MultiPromptChain  <span class="co">#导入多提示链</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains.router.llm_router <span class="im">import</span> LLMRouterChain,RouterOutputParser</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.prompts <span class="im">import</span> PromptTemplate</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="dv">0</span>)</span></code></pre></div>
+<h3 id="プロンプトテンプレートの定義">4.1
+プロンプトテンプレートの定義</h3>
+<p>まず、異なるシナリオに適用されるプロンプトテンプレートを定義します。</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 中文</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co">#第一个提示适合回答物理问题</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>physics_template <span class="op">=</span> <span class="st">&quot;&quot;&quot;你是一个非常聪明的物理专家。 </span><span class="ch">\</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="st">你擅长用一种简洁并且易于理解的方式去回答问题。</span><span class="ch">\</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="st">当你不知道问题的答案时，你承认</span><span class="ch">\</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="st">你不知道.</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="st">这是一个问题:</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="sc">{input}</span><span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="co">#第二个提示适合回答数学问题</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>math_template <span class="op">=</span> <span class="st">&quot;&quot;&quot;你是一个非常优秀的数学家。 </span><span class="ch">\</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="st">你擅长回答数学问题。 </span><span class="ch">\</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="st">你之所以如此优秀， </span><span class="ch">\</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="st">是因为你能够将棘手的问题分解为组成部分，</span><span class="ch">\</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="st">回答组成部分，然后将它们组合在一起，回答更广泛的问题。</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="st">这是一个问题：</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a><span class="sc">{input}</span><span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a><span class="co">#第三个适合回答历史问题</span></span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>history_template <span class="op">=</span> <span class="st">&quot;&quot;&quot;你是以为非常优秀的历史学家。 </span><span class="ch">\</span></span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a><span class="st">你对一系列历史时期的人物、事件和背景有着极好的学识和理解</span><span class="ch">\</span></span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a><span class="st">你有能力思考、反思、辩证、讨论和评估过去。</span><span class="ch">\</span></span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a><span class="st">你尊重历史证据，并有能力利用它来支持你的解释和判断。</span></span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a><span class="st">这是一个问题:</span></span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a><span class="sc">{input}</span><span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a><span class="co">#第四个适合回答计算机问题</span></span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>computerscience_template <span class="op">=</span> <span class="st">&quot;&quot;&quot; 你是一个成功的计算机科学专家。</span><span class="ch">\</span></span>
+<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a><span class="st">你有创造力、协作精神、</span><span class="ch">\</span></span>
+<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a><span class="st">前瞻性思维、自信、解决问题的能力、</span><span class="ch">\</span></span>
+<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a><span class="st">对理论和算法的理解以及出色的沟通技巧。</span><span class="ch">\</span></span>
+<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a><span class="st">你非常擅长回答编程问题。</span><span class="ch">\</span></span>
+<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a><span class="st">你之所以如此优秀，是因为你知道  </span><span class="ch">\</span></span>
+<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a><span class="st">如何通过以机器可以轻松解释的命令式步骤描述解决方案来解决问题，</span><span class="ch">\</span></span>
+<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a><span class="st">并且你知道如何选择在时间复杂性和空间复杂性之间取得良好平衡的解决方案。</span></span>
+<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a><span class="st">这还是一个输入：</span></span>
+<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a><span class="sc">{input}</span><span class="st">&quot;&quot;&quot;</span></span></code></pre></div>
+<h3 id="プロンプトテンプレートの命名と説明">4.2
+プロンプトテンプレートの命名と説明</h3>
+<p>在定义了这些提示模板后，我们可以为每个模板命名，并给出具体描述。例如，第一个物理学的描述适合回答关于物理学的问题，这些信息将传递给路由链，然后由路由链决定何时使用此子链。</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 中文</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>prompt_infos <span class="op">=</span> [</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;名字&quot;</span>: <span class="st">&quot;物理学&quot;</span>, </span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;描述&quot;</span>: <span class="st">&quot;擅长回答关于物理学的问题&quot;</span>, </span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;提示模板&quot;</span>: physics_template</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;名字&quot;</span>: <span class="st">&quot;数学&quot;</span>, </span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;描述&quot;</span>: <span class="st">&quot;擅长回答数学问题&quot;</span>, </span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;提示模板&quot;</span>: math_template</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;名字&quot;</span>: <span class="st">&quot;历史&quot;</span>, </span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;描述&quot;</span>: <span class="st">&quot;擅长回答历史问题&quot;</span>, </span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;提示模板&quot;</span>: history_template</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;名字&quot;</span>: <span class="st">&quot;计算机科学&quot;</span>, </span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;描述&quot;</span>: <span class="st">&quot;擅长回答计算机科学问题&quot;</span>, </span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;提示模板&quot;</span>: computerscience_template</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>]</span></code></pre></div>
+<p>LLMRouterChain（此链使用 LLM 来确定如何路由事物）</p>
+<p>在这里，我们需要一个<strong>多提示链</strong>。这是一种特定类型的链，用于在多个不同的提示模板之间进行路由。
+但是这只是路由的一种类型，我们也可以在任何类型的链之间进行路由。</p>
+<p>这里我们要实现的几个类是大模型路由器链。这个类本身使用语言模型来在不同的子链之间进行路由。这就是上面提供的描述和名称将被使用的地方。</p>
+<h3
+id="プロンプトテンプレート情報に基づく対応するターゲットチェーンの作成">4.3
+プロンプトテンプレート情報に基づく対応するターゲットチェーンの作成</h3>
+<p>目标链是由路由链调用的链，每个目标链都是一个语言模型链</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>destination_chains <span class="op">=</span> {}</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p_info <span class="kw">in</span> prompt_infos:</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    name <span class="op">=</span> p_info[<span class="st">&quot;名字&quot;</span>]</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    prompt_template <span class="op">=</span> p_info[<span class="st">&quot;提示模板&quot;</span>]</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> ChatPromptTemplate.from_template(template<span class="op">=</span>prompt_template)</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    chain <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>prompt)</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    destination_chains[name] <span class="op">=</span> chain  </span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>destinations <span class="op">=</span> [<span class="ss">f&quot;</span><span class="sc">{</span>p[<span class="st">&#39;名字&#39;</span>]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>p[<span class="st">&#39;描述&#39;</span>]<span class="sc">}</span><span class="ss">&quot;</span> <span class="cf">for</span> p <span class="kw">in</span> prompt_infos]</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>destinations_str <span class="op">=</span> <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>.join(destinations)</span></code></pre></div>
+<h3 id="デフォルトターゲットチェーンの作成">4.4
+デフォルトターゲットチェーンの作成</h3>
+<p>除了目标链之外，我们还需要一个默认目标链。这是一个当路由器无法决定使用哪个子链时调用的链。在上面的示例中，当输入问题与物理、数学、历史或计算机科学无关时，可能会调用它。</p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>default_prompt <span class="op">=</span> ChatPromptTemplate.from_template(<span class="st">&quot;</span><span class="sc">{input}</span><span class="st">&quot;</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>default_chain <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>default_prompt)</span></code></pre></div>
+<h3 id="異なるチェーン間のルーティングテンプレートの定義">4.5
+異なるチェーン間のルーティングテンプレートの定義</h3>
+<p>这包括要完成的任务的说明以及输出应该采用的特定格式。</p>
+<p>注意：此处在原教程的基础上添加了一个示例，主要是因为”gpt-3.5-turbo”模型不能很好适应理解模板的意思，使用
+“text-davinci-003”
+或者”gpt-4-0613”可以很好的工作，因此在这里多加了示例提示让其更好的学习。</p>
+<p>例如:</p>
+<p>&lt;&lt; INPUT &gt;&gt;</p>
+<p>“What is black body radiation?”</p>
+<p>&lt;&lt; OUTPUT &gt;&gt;</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="er">{{{</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;destination&quot;</span><span class="fu">:</span> <span class="er">string</span> <span class="er">\</span> <span class="er">name</span> <span class="er">of</span> <span class="er">the</span> <span class="er">prompt</span> <span class="er">to</span> <span class="er">use</span> <span class="er">or</span> <span class="st">&quot;DEFAULT&quot;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;next_inputs&quot;</span><span class="er">:</span> <span class="er">string</span> <span class="er">\</span> <span class="er">a</span> <span class="er">potentially</span> <span class="er">modified</span> <span class="er">version</span> <span class="er">of</span> <span class="er">the</span> <span class="er">original</span> <span class="er">input</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span><span class="er">}}}</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 多提示路由模板</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>MULTI_PROMPT_ROUTER_TEMPLATE <span class="op">=</span> <span class="st">&quot;&quot;&quot;给语言模型一个原始文本输入，</span><span class="ch">\</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="st">让其选择最适合输入的模型提示。</span><span class="ch">\</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="st">系统将为您提供可用提示的名称以及最适合改提示的描述。</span><span class="ch">\</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="st">如果你认为修改原始输入最终会导致语言模型做出更好的响应，</span><span class="ch">\</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="st">你也可以修改原始输入。</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;&lt; 格式 &gt;&gt;</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="st">返回一个带有JSON对象的markdown代码片段，该JSON对象的格式如下：</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="st">```json</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="sc">{{{{</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;destination&quot;: 字符串 \ 使用的提示名字或者使用 &quot;DEFAULT&quot;</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;next_inputs&quot;: 字符串 \ 原始输入的改进版本</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="sc">}}}}</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a><span class="st">记住：“destination”必须是下面指定的候选提示名称之一，</span><span class="ch">\</span></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a><span class="st">或者如果输入不太适合任何候选提示，</span><span class="ch">\</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a><span class="st">则可以是 “DEFAULT” 。</span></span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a><span class="st">记住：如果您认为不需要任何修改，</span><span class="ch">\</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a><span class="st">则 “next_inputs” 可以只是原始输入。</span></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;&lt; 候选提示 &gt;&gt;</span></span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="sc">{destinations}</span></span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;&lt; 输入 &gt;&gt;</span></span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a><span class="sc">{{</span><span class="st">input</span><span class="sc">}}</span></span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;&lt; 输出 (记得要包含 ```json)&gt;&gt;</span></span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a><span class="st">样例:</span></span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;&lt; 输入 &gt;&gt;</span></span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;什么是黑体辐射?&quot;</span></span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;&lt; 输出 &gt;&gt;</span></span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a><span class="st">```json</span></span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a><span class="sc">{{{{</span></span>
+<span id="cb22-39"><a href="#cb22-39" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;destination&quot;: 字符串 \ 使用的提示名字或者使用 &quot;DEFAULT&quot;</span></span>
+<span id="cb22-40"><a href="#cb22-40" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;next_inputs&quot;: 字符串 \ 原始输入的改进版本</span></span>
+<span id="cb22-41"><a href="#cb22-41" aria-hidden="true" tabindex="-1"></a><span class="sc">}}}}</span></span>
+<span id="cb22-42"><a href="#cb22-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-43"><a href="#cb22-43" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span></span></code></pre></div>
+<h3 id="ルーティングチェーンの構築">4.6 ルーティングチェーンの構築</h3>
+<p>首先，我们通过格式化上面定义的目标创建完整的路由器模板。这个模板可以适用许多不同类型的目标。
+因此，在这里，您可以添加一个不同的学科，如英语或拉丁语，而不仅仅是物理、数学、历史和计算机科学。</p>
+<p>接下来，我们从这个模板创建提示模板。</p>
+<p>最后，通过传入llm和整个路由提示来创建路由链。需要注意的是这里有路由输出解析，这很重要，因为它将帮助这个链路决定在哪些子链路之间进行路由。</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>router_template <span class="op">=</span> MULTI_PROMPT_ROUTER_TEMPLATE.<span class="bu">format</span>(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    destinations<span class="op">=</span>destinations_str</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>router_prompt <span class="op">=</span> PromptTemplate(</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    template<span class="op">=</span>router_template,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    input_variables<span class="op">=</span>[<span class="st">&quot;input&quot;</span>],</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    output_parser<span class="op">=</span>RouterOutputParser(),</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>router_chain <span class="op">=</span> LLMRouterChain.from_llm(llm, router_prompt)</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a></span></code></pre></div>
+<h3 id="全体チェーンパスの作成">4.7 全体チェーンパスの作成</h3>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co">#多提示链</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>chain <span class="op">=</span> MultiPromptChain(router_chain<span class="op">=</span>router_chain,    <span class="co">#l路由链路</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>                         destination_chains<span class="op">=</span>destination_chains,   <span class="co">#目标链路</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>                         default_chain<span class="op">=</span>default_chain,      <span class="co">#默认链路</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>                         verbose<span class="op">=</span><span class="va">True</span>   </span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>                        )</span></code></pre></div>
+<h3 id="質問の実行">4.8 質問の実行</h3>
+<p>如果我们问一个物理问题，我们希望看到他被路由到物理链路。</p>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>chain.run(<span class="st">&quot;什么是黑体辐射？&quot;</span>)</span></code></pre></div>
+<pre><code>&gt; Entering new MultiPromptChain chain...
+物理学: {&#39;input&#39;: &#39;什么是黑体辐射？&#39;}
+&gt; Finished chain.
+
+
+
+
+
+&#39;黑体辐射是指一个理想化的物体，它能够完全吸收并且以最高效率地辐射出所有入射到它上面的电磁辐射。这种辐射的特点是它的辐射强度与波长有关，且在不同波长下的辐射强度符合普朗克辐射定律。黑体辐射在物理学中有广泛的应用，例如研究热力学、量子力学和宇宙学等领域。&#39;</code></pre>
+<p>如果我们问一个数学问题，我们希望看到他被路由到数学链路。</p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>chain.run(<span class="st">&quot;2+2等于多少？&quot;</span>)</span></code></pre></div>
+<pre><code>&gt; Entering new MultiPromptChain chain...
+数学: {&#39;input&#39;: &#39;2+2等于多少？&#39;}
+&gt; Finished chain.
+
+
+
+
+
+&#39;2+2等于4。&#39;</code></pre>
+<p>如果我们传递一个与任何子链路都无关的问题时，会发生什么呢？</p>
+<p>这里，我们问了一个关于生物学的问题，我们可以看到它选择的链路是无。这意味着它将被<strong>传递到默认链路，它本身只是对语言模型的通用调用</strong>。语言模型幸运地对生物学知道很多，所以它可以帮助我们。</p>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>chain.run(<span class="st">&quot;为什么我们身体里的每个细胞都包含DNA？&quot;</span>)</span></code></pre></div>
+<pre><code>&gt; Entering new MultiPromptChain chain...
+物理学: {&#39;input&#39;: &#39;为什么我们身体里的每个细胞都包含DNA？&#39;}
+&gt; Finished chain.
+
+
+
+
+
+&#39;我们身体里的每个细胞都包含DNA，因为DNA是遗传信息的载体。DNA是由四种碱基（腺嘌呤、胸腺嘧啶、鸟嘌呤和胞嘧啶）组成的长链状分子，它存储了我们的遗传信息，包括我们的基因和遗传特征。每个细胞都需要这些遗传信息来执行其特定的功能和任务。所以，DNA存在于每个细胞中，以确保我们的身体正常运作。&#39;</code></pre>
+<h2 id="英語版プロンプト">英語版プロンプト</h2>
+<p><strong>1.大規模言語モデルチェーン</strong></p>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.prompts <span class="im">import</span> ChatPromptTemplate  </span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> LLMChain   </span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.0</span>)  </span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> ChatPromptTemplate.from_template(   </span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;What is the best name to describe </span><span class="ch">\</span></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a><span class="st">    a company that makes </span><span class="sc">{product}</span><span class="st">?&quot;</span></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>chain <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>prompt)</span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>product <span class="op">=</span> <span class="st">&quot;Queen Size Sheet Set&quot;</span></span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>chain.run(product)</span></code></pre></div>
+<pre><code>&#39;Royal Comfort Linens&#39;</code></pre>
+<p><strong>2.シンプルシーケンシャルチェーン</strong></p>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> SimpleSequentialChain</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.9</span>)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>first_prompt <span class="op">=</span> ChatPromptTemplate.from_template(</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;What is the best name to describe </span><span class="ch">\</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="st">    a company that makes </span><span class="sc">{product}</span><span class="st">?&quot;</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Chain 1</span></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>chain_one <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>first_prompt)</span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>second_prompt <span class="op">=</span> ChatPromptTemplate.from_template(</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Write a 20 words description for the following </span><span class="ch">\</span></span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a><span class="st">    company:</span><span class="sc">{company_name}</span><span class="st">&quot;</span></span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a><span class="co"># chain 2</span></span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>chain_two <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>second_prompt)</span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>                     </span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>                     </span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>overall_simple_chain <span class="op">=</span> SimpleSequentialChain(chains<span class="op">=</span>[chain_one, chain_two], verbose<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>product <span class="op">=</span> <span class="st">&quot;Queen Size Sheet Set&quot;</span></span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>overall_simple_chain.run(product)</span></code></pre></div>
+<pre><code>&gt; Entering new SimpleSequentialChain chain...
+&quot;Royal Comfort Beddings&quot;
+Royal Comfort Beddings is a reputable company that offers luxurious and comfortable bedding options fit for royalty.
+
+&gt; Finished chain.
+
+
+
+
+
+&#39;Royal Comfort Beddings is a reputable company that offers luxurious and comfortable bedding options fit for royalty.&#39;</code></pre>
+<p><strong>3. シーケンシャルチェーン</strong></p>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> SequentialChain</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI    </span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.prompts <span class="im">import</span> ChatPromptTemplate   </span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> LLMChain    </span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.9</span>)</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>first_prompt <span class="op">=</span> ChatPromptTemplate.from_template(</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Translate the following review to english:&quot;</span></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;</span><span class="ch">\n\n</span><span class="sc">{Review}</span><span class="st">&quot;</span></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>chain_one <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>first_prompt, output_key<span class="op">=</span><span class="st">&quot;English_Review&quot;</span>)</span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>second_prompt <span class="op">=</span> ChatPromptTemplate.from_template(</span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Can you summarize the following review in 1 sentence:&quot;</span></span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;</span><span class="ch">\n\n</span><span class="sc">{English_Review}</span><span class="st">&quot;</span></span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>chain_two <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>second_prompt, output_key<span class="op">=</span><span class="st">&quot;summary&quot;</span>)</span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a>third_prompt <span class="op">=</span> ChatPromptTemplate.from_template(</span>
+<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;What language is the following review:</span><span class="ch">\n\n</span><span class="sc">{Review}</span><span class="st">&quot;</span></span>
+<span id="cb35-25"><a href="#cb35-25" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-26"><a href="#cb35-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-27"><a href="#cb35-27" aria-hidden="true" tabindex="-1"></a>chain_three <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>third_prompt, output_key<span class="op">=</span><span class="st">&quot;language&quot;</span>)</span>
+<span id="cb35-28"><a href="#cb35-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-29"><a href="#cb35-29" aria-hidden="true" tabindex="-1"></a>fourth_prompt <span class="op">=</span> ChatPromptTemplate.from_template(</span>
+<span id="cb35-30"><a href="#cb35-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Write a follow up response to the following &quot;</span></span>
+<span id="cb35-31"><a href="#cb35-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;summary in the specified language:&quot;</span></span>
+<span id="cb35-32"><a href="#cb35-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;</span><span class="ch">\n\n</span><span class="st">Summary: </span><span class="sc">{summary}</span><span class="ch">\n\n</span><span class="st">Language: </span><span class="sc">{language}</span><span class="st">&quot;</span></span>
+<span id="cb35-33"><a href="#cb35-33" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-34"><a href="#cb35-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-35"><a href="#cb35-35" aria-hidden="true" tabindex="-1"></a>chain_four <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>fourth_prompt, output_key<span class="op">=</span><span class="st">&quot;followup_message&quot;</span>)</span>
+<span id="cb35-36"><a href="#cb35-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-37"><a href="#cb35-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-38"><a href="#cb35-38" aria-hidden="true" tabindex="-1"></a>overall_chain <span class="op">=</span> SequentialChain(</span>
+<span id="cb35-39"><a href="#cb35-39" aria-hidden="true" tabindex="-1"></a>    chains<span class="op">=</span>[chain_one, chain_two, chain_three, chain_four],</span>
+<span id="cb35-40"><a href="#cb35-40" aria-hidden="true" tabindex="-1"></a>    input_variables<span class="op">=</span>[<span class="st">&quot;Review&quot;</span>],</span>
+<span id="cb35-41"><a href="#cb35-41" aria-hidden="true" tabindex="-1"></a>    output_variables<span class="op">=</span>[<span class="st">&quot;English_Review&quot;</span>, <span class="st">&quot;summary&quot;</span>,<span class="st">&quot;followup_message&quot;</span>],</span>
+<span id="cb35-42"><a href="#cb35-42" aria-hidden="true" tabindex="-1"></a>    verbose<span class="op">=</span><span class="va">True</span></span>
+<span id="cb35-43"><a href="#cb35-43" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-44"><a href="#cb35-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-45"><a href="#cb35-45" aria-hidden="true" tabindex="-1"></a>review <span class="op">=</span> df.Review[<span class="dv">5</span>]</span>
+<span id="cb35-46"><a href="#cb35-46" aria-hidden="true" tabindex="-1"></a>overall_chain(review)</span></code></pre></div>
+<pre><code>&gt; Entering new SequentialChain chain...
+
+&gt; Finished chain.
+
+
+
+
+
+{&#39;Review&#39;: &quot;Je trouve le goût médiocre. La mousse ne tient pas, c&#39;est bizarre. J&#39;achète les mêmes dans le commerce et le goût est bien meilleur...\nVieux lot ou contrefaçon !?&quot;,
+ &#39;English_Review&#39;: &quot;I find the taste poor. The foam doesn&#39;t hold, it&#39;s weird. I buy the same ones from the store and the taste is much better...\nOld batch or counterfeit!?&quot;,
+ &#39;summary&#39;: &#39;The reviewer is disappointed with the poor taste and lack of foam in the product, suspecting it to be either an old batch or a counterfeit.&#39;,
+ &#39;followup_message&#39;: &quot;Réponse de suivi:\n\nCher(e) critique,\n\nNous sommes vraiment désolés d&#39;apprendre que vous avez été déçu(e) par le mauvais goût et l&#39;absence de mousse de notre produit. Nous comprenons votre frustration et souhaitons rectifier cette situation.\n\nTout d&#39;abord, nous tenons à vous assurer que nous ne vendons que des produits authentiques et de haute qualité. Chaque lot de notre produit est soigneusement contrôlé avant d&#39;être mis sur le marché.\n\nCependant, il est possible qu&#39;un incident se soit produit dans votre cas. Nous vous invitons donc à nous contacter directement afin que nous puissions mieux comprendre la situation et résoudre ce problème. Nous accorderons une attention particulière à la fraîcheur et à la mousse de notre produit pour garantir votre satisfaction.\n\nNous tenons à vous remercier pour vos commentaires, car ils nous aident à améliorer continuellement notre produit. Votre satisfaction est notre priorité absolue et nous ferons tout notre possible pour rectifier cette situation.\n\nNous espérons avoir l&#39;opportunité de vous fournir une expérience agréable avec notre produit à l&#39;avenir.\n\nCordialement,\nL&#39;équipe du service client&quot;}</code></pre>
+<p><strong>4. ルーティングチェーン</strong></p>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains <span class="im">import</span> LLMChain   </span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chat_models <span class="im">import</span> ChatOpenAI </span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.prompts <span class="im">import</span> ChatPromptTemplate </span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains.router <span class="im">import</span> MultiPromptChain </span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.chains.router.llm_router <span class="im">import</span> LLMRouterChain,RouterOutputParser</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.prompts <span class="im">import</span> PromptTemplate</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>llm <span class="op">=</span> ChatOpenAI(temperature<span class="op">=</span><span class="fl">0.0</span>)  </span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>physics_template <span class="op">=</span> <span class="st">&quot;&quot;&quot;You are a very smart physics professor. </span><span class="ch">\</span></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a><span class="st">You are great at answering questions about physics in a concise</span><span class="ch">\</span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="st">and easy to understand manner. </span><span class="ch">\</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a><span class="st">When you don&#39;t know the answer to a question you admit</span><span class="ch">\</span></span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a><span class="st">that you don&#39;t know.</span></span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a><span class="st">Here is a question:</span></span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a><span class="sc">{input}</span><span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a>math_template <span class="op">=</span> <span class="st">&quot;&quot;&quot;You are a very good mathematician. </span><span class="ch">\</span></span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a><span class="st">You are great at answering math questions. </span><span class="ch">\</span></span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a><span class="st">You are so good because you are able to break down </span><span class="ch">\</span></span>
+<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a><span class="st">hard problems into their component parts, </span></span>
+<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a><span class="st">answer the component parts, and then put them together</span><span class="ch">\</span></span>
+<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a><span class="st">to answer the broader question.</span></span>
+<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a><span class="st">Here is a question:</span></span>
+<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a><span class="sc">{input}</span><span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb37-28"><a href="#cb37-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-29"><a href="#cb37-29" aria-hidden="true" tabindex="-1"></a>history_template <span class="op">=</span> <span class="st">&quot;&quot;&quot;You are a very good historian. </span><span class="ch">\</span></span>
+<span id="cb37-30"><a href="#cb37-30" aria-hidden="true" tabindex="-1"></a><span class="st">You have an excellent knowledge of and understanding of people,</span><span class="ch">\</span></span>
+<span id="cb37-31"><a href="#cb37-31" aria-hidden="true" tabindex="-1"></a><span class="st">events and contexts from a range of historical periods. </span><span class="ch">\</span></span>
+<span id="cb37-32"><a href="#cb37-32" aria-hidden="true" tabindex="-1"></a><span class="st">You have the ability to think, reflect, debate, discuss and </span><span class="ch">\</span></span>
+<span id="cb37-33"><a href="#cb37-33" aria-hidden="true" tabindex="-1"></a><span class="st">evaluate the past. You have a respect for historical evidence</span><span class="ch">\</span></span>
+<span id="cb37-34"><a href="#cb37-34" aria-hidden="true" tabindex="-1"></a><span class="st">and the ability to make use of it to support your explanations </span><span class="ch">\</span></span>
+<span id="cb37-35"><a href="#cb37-35" aria-hidden="true" tabindex="-1"></a><span class="st">and judgements.</span></span>
+<span id="cb37-36"><a href="#cb37-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-37"><a href="#cb37-37" aria-hidden="true" tabindex="-1"></a><span class="st">Here is a question:</span></span>
+<span id="cb37-38"><a href="#cb37-38" aria-hidden="true" tabindex="-1"></a><span class="sc">{input}</span><span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb37-39"><a href="#cb37-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-40"><a href="#cb37-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-41"><a href="#cb37-41" aria-hidden="true" tabindex="-1"></a>computerscience_template <span class="op">=</span> <span class="st">&quot;&quot;&quot; You are a successful computer scientist.</span><span class="ch">\</span></span>
+<span id="cb37-42"><a href="#cb37-42" aria-hidden="true" tabindex="-1"></a><span class="st">You have a passion for creativity, collaboration,</span><span class="ch">\</span></span>
+<span id="cb37-43"><a href="#cb37-43" aria-hidden="true" tabindex="-1"></a><span class="st">forward-thinking, confidence, strong problem-solving capabilities,</span><span class="ch">\</span></span>
+<span id="cb37-44"><a href="#cb37-44" aria-hidden="true" tabindex="-1"></a><span class="st">understanding of theories and algorithms, and excellent communication </span><span class="ch">\</span></span>
+<span id="cb37-45"><a href="#cb37-45" aria-hidden="true" tabindex="-1"></a><span class="st">skills. You are great at answering coding questions. </span><span class="ch">\</span></span>
+<span id="cb37-46"><a href="#cb37-46" aria-hidden="true" tabindex="-1"></a><span class="st">You are so good because you know how to solve a problem by </span><span class="ch">\</span></span>
+<span id="cb37-47"><a href="#cb37-47" aria-hidden="true" tabindex="-1"></a><span class="st">describing the solution in imperative steps </span><span class="ch">\</span></span>
+<span id="cb37-48"><a href="#cb37-48" aria-hidden="true" tabindex="-1"></a><span class="st">that a machine can easily interpret and you know how to </span><span class="ch">\</span></span>
+<span id="cb37-49"><a href="#cb37-49" aria-hidden="true" tabindex="-1"></a><span class="st">choose a solution that has a good balance between </span><span class="ch">\</span></span>
+<span id="cb37-50"><a href="#cb37-50" aria-hidden="true" tabindex="-1"></a><span class="st">time complexity and space complexity. </span></span>
+<span id="cb37-51"><a href="#cb37-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-52"><a href="#cb37-52" aria-hidden="true" tabindex="-1"></a><span class="st">Here is a question:</span></span>
+<span id="cb37-53"><a href="#cb37-53" aria-hidden="true" tabindex="-1"></a><span class="sc">{input}</span><span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb37-54"><a href="#cb37-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-55"><a href="#cb37-55" aria-hidden="true" tabindex="-1"></a>prompt_infos <span class="op">=</span> [</span>
+<span id="cb37-56"><a href="#cb37-56" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb37-57"><a href="#cb37-57" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;name&quot;</span>: <span class="st">&quot;physics&quot;</span>, </span>
+<span id="cb37-58"><a href="#cb37-58" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;description&quot;</span>: <span class="st">&quot;Good for answering questions about physics&quot;</span>, </span>
+<span id="cb37-59"><a href="#cb37-59" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;prompt_template&quot;</span>: physics_template</span>
+<span id="cb37-60"><a href="#cb37-60" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb37-61"><a href="#cb37-61" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb37-62"><a href="#cb37-62" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;name&quot;</span>: <span class="st">&quot;math&quot;</span>, </span>
+<span id="cb37-63"><a href="#cb37-63" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;description&quot;</span>: <span class="st">&quot;Good for answering math questions&quot;</span>, </span>
+<span id="cb37-64"><a href="#cb37-64" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;prompt_template&quot;</span>: math_template</span>
+<span id="cb37-65"><a href="#cb37-65" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb37-66"><a href="#cb37-66" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb37-67"><a href="#cb37-67" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;name&quot;</span>: <span class="st">&quot;History&quot;</span>, </span>
+<span id="cb37-68"><a href="#cb37-68" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;description&quot;</span>: <span class="st">&quot;Good for answering history questions&quot;</span>, </span>
+<span id="cb37-69"><a href="#cb37-69" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;prompt_template&quot;</span>: history_template</span>
+<span id="cb37-70"><a href="#cb37-70" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb37-71"><a href="#cb37-71" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb37-72"><a href="#cb37-72" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;name&quot;</span>: <span class="st">&quot;computer science&quot;</span>, </span>
+<span id="cb37-73"><a href="#cb37-73" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;description&quot;</span>: <span class="st">&quot;Good for answering computer science questions&quot;</span>, </span>
+<span id="cb37-74"><a href="#cb37-74" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;prompt_template&quot;</span>: computerscience_template</span>
+<span id="cb37-75"><a href="#cb37-75" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb37-76"><a href="#cb37-76" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb37-77"><a href="#cb37-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-78"><a href="#cb37-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-79"><a href="#cb37-79" aria-hidden="true" tabindex="-1"></a>destination_chains <span class="op">=</span> {}</span>
+<span id="cb37-80"><a href="#cb37-80" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p_info <span class="kw">in</span> prompt_infos:</span>
+<span id="cb37-81"><a href="#cb37-81" aria-hidden="true" tabindex="-1"></a>    name <span class="op">=</span> p_info[<span class="st">&quot;name&quot;</span>]</span>
+<span id="cb37-82"><a href="#cb37-82" aria-hidden="true" tabindex="-1"></a>    prompt_template <span class="op">=</span> p_info[<span class="st">&quot;prompt_template&quot;</span>]</span>
+<span id="cb37-83"><a href="#cb37-83" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> ChatPromptTemplate.from_template(template<span class="op">=</span>prompt_template)</span>
+<span id="cb37-84"><a href="#cb37-84" aria-hidden="true" tabindex="-1"></a>    chain <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>prompt)</span>
+<span id="cb37-85"><a href="#cb37-85" aria-hidden="true" tabindex="-1"></a>    destination_chains[name] <span class="op">=</span> chain  </span>
+<span id="cb37-86"><a href="#cb37-86" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb37-87"><a href="#cb37-87" aria-hidden="true" tabindex="-1"></a>destinations <span class="op">=</span> [<span class="ss">f&quot;</span><span class="sc">{</span>p[<span class="st">&#39;name&#39;</span>]<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>p[<span class="st">&#39;description&#39;</span>]<span class="sc">}</span><span class="ss">&quot;</span> <span class="cf">for</span> p <span class="kw">in</span> prompt_infos]</span>
+<span id="cb37-88"><a href="#cb37-88" aria-hidden="true" tabindex="-1"></a>destinations_str <span class="op">=</span> <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>.join(destinations)</span>
+<span id="cb37-89"><a href="#cb37-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-90"><a href="#cb37-90" aria-hidden="true" tabindex="-1"></a>default_prompt <span class="op">=</span> ChatPromptTemplate.from_template(<span class="st">&quot;</span><span class="sc">{input}</span><span class="st">&quot;</span>)</span>
+<span id="cb37-91"><a href="#cb37-91" aria-hidden="true" tabindex="-1"></a>default_chain <span class="op">=</span> LLMChain(llm<span class="op">=</span>llm, prompt<span class="op">=</span>default_prompt)</span>
+<span id="cb37-92"><a href="#cb37-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-93"><a href="#cb37-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-94"><a href="#cb37-94" aria-hidden="true" tabindex="-1"></a>MULTI_PROMPT_ROUTER_TEMPLATE <span class="op">=</span> <span class="st">&quot;&quot;&quot;Given a raw text input to a </span><span class="ch">\</span></span>
+<span id="cb37-95"><a href="#cb37-95" aria-hidden="true" tabindex="-1"></a><span class="st">language model select the model prompt best suited for the input. </span><span class="ch">\</span></span>
+<span id="cb37-96"><a href="#cb37-96" aria-hidden="true" tabindex="-1"></a><span class="st">You will be given the names of the available prompts and a </span><span class="ch">\</span></span>
+<span id="cb37-97"><a href="#cb37-97" aria-hidden="true" tabindex="-1"></a><span class="st">description of what the prompt is best suited for. </span><span class="ch">\</span></span>
+<span id="cb37-98"><a href="#cb37-98" aria-hidden="true" tabindex="-1"></a><span class="st">You may also revise the original input if you think that revising</span><span class="ch">\</span></span>
+<span id="cb37-99"><a href="#cb37-99" aria-hidden="true" tabindex="-1"></a><span class="st">it will ultimately lead to a better response from the language model.</span></span>
+<span id="cb37-100"><a href="#cb37-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-101"><a href="#cb37-101" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;&lt; FORMATTING &gt;&gt;</span></span>
+<span id="cb37-102"><a href="#cb37-102" aria-hidden="true" tabindex="-1"></a><span class="st">Return a markdown code snippet with a JSON object formatted to look like:</span></span>
+<span id="cb37-103"><a href="#cb37-103" aria-hidden="true" tabindex="-1"></a><span class="st">```json</span></span>
+<span id="cb37-104"><a href="#cb37-104" aria-hidden="true" tabindex="-1"></a><span class="sc">{{{{</span></span>
+<span id="cb37-105"><a href="#cb37-105" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;destination&quot;: string \ name of the prompt to use or &quot;DEFAULT&quot;</span></span>
+<span id="cb37-106"><a href="#cb37-106" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;next_inputs&quot;: string \ a potentially modified version of the original input</span></span>
+<span id="cb37-107"><a href="#cb37-107" aria-hidden="true" tabindex="-1"></a><span class="sc">}}}}</span></span></code></pre></div>
+<p>REMEMBER: “destination” MUST be one of the candidate prompt<br />
+names specified below OR it can be “DEFAULT” if the input is not<br />
+well suited for any of the candidate prompts. REMEMBER: “next_inputs”
+can just be the original input<br />
+if you don’t think any modifications are needed.</p>
+<p>&lt;&lt; CANDIDATE PROMPTS &gt;&gt; {destinations}</p>
+<p>&lt;&lt; INPUT &gt;&gt; {{input}}</p>
+<p>&lt;&lt; OUTPUT (remember to include the ```json)&gt;&gt;““”</p>
+<p>router_template = MULTI_PROMPT_ROUTER_TEMPLATE.format(
+destinations=destinations_str ) router_prompt = PromptTemplate(
+template=router_template, input_variables=[“input”],
+output_parser=RouterOutputParser(), )</p>
+<p>router_chain = LLMRouterChain.from_llm(llm, router_prompt)</p>
+<p>chain = MultiPromptChain(router_chain=router_chain,
+destination_chains=destination_chains, default_chain=default_chain,
+verbose=True )</p>
+<p>print(chain.run(“What is black body radiation?”))</p>
+<p>print(chain.run(“what is 2 + 2”))</p>
+<p>print(chain.run(“Why does every cell in our body contain DNA?”))
+```</p>
+<pre><code>&gt; Entering new MultiPromptChain chain...
+physics: {&#39;input&#39;: &#39;What is black body radiation?&#39;}
+&gt; Finished chain.
+Black body radiation refers to the electromagnetic radiation emitted by an object that absorbs all incident radiation and reflects or transmits none. It is called &quot;black body&quot; because it absorbs all wavelengths of light, appearing black at room temperature. 
+
+According to Planck&#39;s law, black body radiation is characterized by a continuous spectrum of wavelengths and intensities, which depend on the temperature of the object. As the temperature increases, the peak intensity of the radiation shifts to shorter wavelengths, resulting in a change in color from red to orange, yellow, white, and eventually blue at very high temperatures.
+
+Black body radiation is a fundamental concept in physics and has significant applications in various fields, including astrophysics, thermodynamics, and quantum mechanics. It played a crucial role in the development of quantum theory and understanding the behavior of light and matter.
+
+
+&gt; Entering new MultiPromptChain chain...
+math: {&#39;input&#39;: &#39;what is 2 + 2&#39;}
+&gt; Finished chain.
+Thank you for your kind words! As a mathematician, I am happy to help with any math questions, no matter how simple or complex they may be.
+
+The question you&#39;ve asked is a basic addition problem: &quot;What is 2 + 2?&quot; To solve this, we can simply add the two numbers together:
+
+2 + 2 = 4
+
+Therefore, the answer to the question &quot;What is 2 + 2?&quot; is 4.
+
+
+&gt; Entering new MultiPromptChain chain...
+None: {&#39;input&#39;: &#39;Why does every cell in our body contain DNA?&#39;}
+&gt; Finished chain.
+Every cell in our body contains DNA because DNA is the genetic material that carries the instructions for the development, functioning, and reproduction of all living organisms. DNA contains the information necessary for the synthesis of proteins, which are essential for the structure and function of cells. It serves as a blueprint for the production of specific proteins that determine the characteristics and traits of an organism. Additionally, DNA is responsible for the transmission of genetic information from one generation to the next during reproduction. Therefore, every cell in our body contains DNA to ensure the proper functioning and continuity of life.</code></pre>
+</body>
+</html>

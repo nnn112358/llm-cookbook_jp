@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>2. プロンプト原則</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第二章-プロンプト原則">第二章 プロンプト原則</h1>
+<p>LLMの性能を最大限に発揮するためにPromptを使用する方法は？まず、Promptを設計する原則を知る必要があります。これらは、すべての開発者がPromptを設計する際に知っておかなければならない基本概念です。本章では、効率的なPromptを設計する2つの重要な原則：<strong>明確で具体的な指示の作成</strong>と<strong>モデルに十分な思考時間を与えること</strong>について説明します。この2点を習得することは、信頼性の高い言語モデルとの相互作用を作成するために特に重要です。</p>
+<p>まず、Promptは要求を明確かつ具体的に表現し、十分なコンテキストを提供して、言語モデルが我々の意図を正確に理解できるようにする必要があります。これは、宇宙人に人間の世界を詳しく説明するようなものです。過度に簡潔なPromptは、モデルが完成すべき具体的なタスクを把握することを困難にします。</p>
+<p>次に、言語モデルに十分な推論時間を与えることも極めて重要です。人間が問題を解くのと同じように、急いで出した結論は間違いが多いものです。したがって、Promptには段階的推論の要求を含め、モデルに十分な思考時間を残すべきで、このようにして生成される結果がより正確で信頼性が高くなります。</p>
+<p>Promptがこの2点で最適化されていれば、言語モデルは可能な限りその潜在能力を発揮し、複雑な推論と生成タスクを完成できます。これらのPrompt設計原則を習得することは、開発者が言語モデルアプリケーションで成功を収めるための重要なステップです。</p>
+<h2 id="一原則一-明確で具体的な指示の作成">一、原則一
+明確で具体的な指示の作成</h2>
+<p>親愛なる読者の皆様、言語モデルと対話する際は、<strong>明確で具体的</strong>な方法でニーズを表現することを心がけてください。目の前に宇宙からの新しい友人が座っており、人間の言語や常識について全く知らないと仮定してください。このような状況では、表現したい意図を非常に明確に説明し、曖昧さを避ける必要があります。同様に、Promptを提供する際も、十分詳細で理解しやすい方法で、ニーズとコンテキストを明確にする必要があります。</p>
+<p>Promptが非常に短く簡潔である必要があるというわけではありません。実際、多くの場合、より長く複雑なPromptの方が言語モデルにとって要点を把握しやすく、期待に沿った回答を得やすくなります。その理由は、複雑なPromptがより豊富なコンテキストと詳細を提供し、モデルが必要な操作と応答方法をより正確に把握できるからです。</p>
+<p>ですから、明確で詳細な言語でPromptを表現することを覚えておいてください。宇宙人に人間の世界を説明するのと同じように、<em>“Adding
+more context helps the model understand you better.”</em></p>
+<p>この原則から出発して、Promptを設計するいくつかの技術を提供します。</p>
+<h3 id="区切り文字を使用して入力の異なる部分を明確に表示">1.1
+区切り文字を使用して入力の異なる部分を明確に表示</h3>
+<p>Promptを作成する際、様々な句読点を「区切り文字」として使用して、異なるテキスト部分を区別することができます。</p>
+<p>区切り文字はPromptの中の壁のようなもので、異なる指示、コンテキスト、入力を分離し、意図しない混乱を避けます。<code>```、"""、&lt; &gt;、&lt;tag&gt; &lt;/tag&gt;、:</code>などを区切り文字として選択でき、明確に分離の役割を果たせれば何でも構いません。</p>
+<p>区切り文字を使用することが特に重要な理由は、<strong>プロンプトインジェクション（Prompt
+Injection）</strong>を防げることです。プロンプトインジェクションとは何でしょうか？ユーザーが入力するテキストに、あなたの事前設定したPromptと矛盾する内容が含まれている可能性があり、区切りがないと、これらの入力が「注入」されて言語モデルを操作し、モデルが全く関連性のないめちゃくちゃな出力を生成する可能性があります。</p>
+<p>以下の例では、段落を提示してGPTに要約を求めており、この例では```を区切り文字として使用しています。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tool <span class="im">import</span> get_completion</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ss">明確で具体的な指示を提供して、モデルに実行してほしいタスクを表現すべきです。</span><span class="ch">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ss">これにより、モデルを望ましい出力に導き、無関係または不正確な応答を受け取る可能性を減らします。</span><span class="ch">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ss">明確なプロンプトを書くことと短いプロンプトを書くことを混同してはいけません。</span><span class="ch">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ss">多くの場合、より長いプロンプトは、モデルにより多くの明確性とコンテキスト情報を提供でき、より詳細で関連性の高い出力につながります。</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 要約するテキスト内容</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="ss">三つのバッククォートで囲まれたテキストを一文で要約してください。</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ss">```</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 指示内容、```を使用して指示と要約すべき内容を分離</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>必要な出力を得るために、明確で具体的な指示を提供し、短いプロンプトとの混乱を避け、より長いプロンプトを使用してより多くの明確性とコンテキスト情報を提供すべきです。</code></pre>
+<h3 id="構造化された出力を求める">1.2 構造化された出力を求める</h3>
+<p>時には、言語モデルに連続したテキストだけでなく、<strong>構造化された出力</strong>を提供してもらう必要があります。</p>
+<p>構造化された出力とは何でしょうか？これは、JSON、HTMLなど、特定の形式で整理された内容です。この種の出力は、コードでのさらなる解析と処理に非常に適しています。例えば、Pythonで辞書やリストに読み込むことができます。</p>
+<p>以下の例では、GPTに3冊の本のタイトル、著者、カテゴリを生成し、JSON形式で返すことを求めています。解析を容易にするため、Jsonのキーを指定しています。</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ss">書名、著者、カテゴリを含む3冊の架空の、実在しない日本語書籍リストを生成し、</span><span class="ch">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ss">次のキーを含むJSON形式で提供してください：book_id、title、author、genre。</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>{
+  &quot;books&quot;: [
+    {
+      &quot;book_id&quot;: 1,
+      &quot;title&quot;: &quot;失われた時間&quot;,
+      &quot;author&quot;: &quot;田中太郎&quot;,
+      &quot;genre&quot;: &quot;SF&quot;
+    },
+    {
+      &quot;book_id&quot;: 2,
+      &quot;title&quot;: &quot;幻想の扉&quot;,
+      &quot;author&quot;: &quot;佐藤花子&quot;,
+      &quot;genre&quot;: &quot;ファンタジー&quot;
+    },
+    {
+      &quot;book_id&quot;: 3,
+      &quot;title&quot;: &quot;仮想現実&quot;,
+      &quot;author&quot;: &quot;鈴木一郎&quot;,
+      &quot;genre&quot;: &quot;SF&quot;
+    }
+  ]
+}</code></pre>
+<h3 id="モデルに条件が満たされているかをチェックするよう要求">1.3
+モデルに条件が満たされているかをチェックするよう要求</h3>
+<p>タスクが必ずしも満たされるとは限らない仮定（条件）を含む場合、モデルにまずこれらの仮定をチェックし、満たされていない場合は指摘して後続の完全なプロセスを停止するよう指示できます。また、起こりうるエッジケースとモデルの対処法を考慮して、予期しない結果やエラーの発生を避けることもできます。</p>
+<p>以下の例では、モデルに2つのテキストを提供します。1つはお茶の作り方の手順、もう1つは明確な手順のないテキストです。モデルに一連の指示が含まれているかを判断し、含まれている場合は指定された形式で指示を書き直し、含まれていない場合は「手順が提供されていません」と回答するよう求めます。</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 条件を満たす入力（textに手順が提供されている）</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>text_1 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ss">お茶を淹れるのは簡単です。まず、水を沸騰させる必要があります。</span><span class="ch">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="ss">待っている間、カップを取ってティーバッグを入れます。</span><span class="ch">\</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ss">水が十分熱くなったら、ティーバッグの上に注ぎます。</span><span class="ch">\</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="ss">しばらく待って、茶葉を浸します。数分後、ティーバッグを取り出します。</span><span class="ch">\</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="ss">お好みで、砂糖やミルクを加えて味を調えることができます。</span><span class="ch">\</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="ss">これで、美味しいお茶を楽しむことができます。</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="ss">三重引用符で囲まれたテキストが提供されます。</span><span class="ch">\</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="ss">一連の指示が含まれている場合は、以下の形式でこれらの指示を書き直してください：</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="ss">第一ステップ - ...</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="ss">第二ステップ - …</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="ss">…</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="ss">第Nステップ - …</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="ss">テキストに一連の指示が含まれていない場合は、「手順が提供されていません」と直接書いてください。&quot;</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="ch">\&quot;\&quot;\&quot;</span><span class="sc">{</span>text_1<span class="sc">}</span><span class="ch">\&quot;\&quot;\&quot;</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Text 1の要約:&quot;</span>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Text 1の要約:
+第一ステップ - 水を沸騰させる。
+第二ステップ - カップを取ってティーバッグを入れる。
+第三ステップ - 沸騰した水をティーバッグの上に注ぐ。
+第四ステップ - 数分間待って、茶葉を浸す。
+第五ステップ - ティーバッグを取り出す。
+第六ステップ - 必要に応じて、砂糖やミルクを加えて味を調える。
+第七ステップ - これで、美味しいお茶を楽しむことができます。</code></pre>
+<p>上記の例では、モデルは一連の指示をうまく識別して出力できました。次の例では、期待される指示を含まないテキストをモデルに提供し、モデルは手順が提供されていないと判断します。</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 条件を満たさない入力（textに期待される指示が提供されていない）</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>text_2 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ss">今日は日差しが明るく、鳥たちが歌っています。</span><span class="ch">\</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ss">公園を散歩するのに美しい日です。</span><span class="ch">\</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="ss">花が咲き、木の枝が微風で優しく揺れています。</span><span class="ch">\</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="ss">人々は外出してこの美しい天気を楽しんでおり、ピクニックをしている人や、ゲームをしたり芝生でリラックスしている人もいます。</span><span class="ch">\</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="ss">これは屋外で過ごし、自然の美しさを鑑賞するのに完璧な日です。</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="ss">三重引用符で囲まれたテキストが提供されます。</span><span class="ch">\</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="ss">一連の指示が含まれている場合は、以下の形式でこれらの指示を書き直してください：</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="ss">第一ステップ - ...</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="ss">第二ステップ - …</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="ss">…</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="ss">第Nステップ - …</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="ss">テキストに一連の指示が含まれていない場合は、「手順が提供されていません」と直接書いてください。&quot;</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="ch">\&quot;\&quot;\&quot;</span><span class="sc">{</span>text_2<span class="sc">}</span><span class="ch">\&quot;\&quot;\&quot;</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Text 2の要約:&quot;</span>)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Text 2の要約:
+手順が提供されていません。</code></pre>
+<h3 id="少数の例を提供">1.4 少数の例を提供</h3>
+<p>「Few-shot」プロンプティング、つまりモデルに実際のタスクを実行させる前に、1〜2個の完成した例をモデルに提供し、モデルに我々の要求と期待する出力スタイルを理解させることです。</p>
+<p>例えば、以下の例では、まず祖父母と孫の対話例を提示し、同じ比喩スタイルで「回復力」について質問に答えるようモデルに求めています。これが少数サンプル例で、モデルが求めるトーンとスタイルを素早く把握するのに役立ちます。</p>
+<p>少数サンプル例を利用することで、言語モデルを簡単に「ウォームアップ」し、新しいタスクに備えることができます。これは、モデルが新しいタスクを素早く習得するための効果的な戦略です。</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ss">一貫したスタイルで質問に答えることがあなたのタスクです。</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&lt;子供&gt;: 忍耐について教えてください。</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="ss">&lt;祖父母&gt;: 最も深い渓谷を掘る川は、目立たない泉から始まります；最も壮大な交響楽は単一の音符から始まります；最も複雑なタペストリーは一本の孤独な糸から編み始められます。</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="ss">&lt;子供&gt;: 回復力について教えてください。</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>&lt;祖父母&gt;: 回復力とは、嵐の中でも決して折れることのない頑丈な竹のようなものです。激しい風に吹かれても、しなやかに曲がりながらも根を深く張り続けます。小さな種が岩の隙間から芽を出し、やがて大きな木になるように、困難という土壌の中でこそ真の強さが育まれるのです。</code></pre>
+<h2 id="二原則二-モデルに思考する時間を与える">二、原則二
+モデルに思考する時間を与える</h2>
+<p>Promptを設計する際、言語モデルに十分な推論時間を与えることは非常に重要です。言語モデルは人間と同じように、複雑な問題を考えて解決するのに時間が必要です。言語モデルに急いで結論を出させると、その結果は正確でない可能性が高いです。例えば、言語モデルに本のテーマを推論させたい場合、簡単な書名と一文の紹介だけでは不十分です。これは、人に極めて短時間で困難な数学問題を解かせるようなもので、間違いは避けられません。</p>
+<p>逆に、Promptを通じて言語モデルに深く考えるよう導くべきです。問題に対する様々な見解をまず列挙し、推論の根拠を説明してから、最終的な結論を出すよう求めることができます。Promptに段階的推論の要求を追加することで、言語モデルがより多くの時間を論理的思考に投入できるようになり、出力結果もより信頼性が高く正確になります。</p>
+<p>要約すると、言語モデルに十分な推論時間を与えることは、Prompt
+Engineeringにおいて非常に重要な設計原則です。これにより、言語モデルが複雑な問題を処理する効果が大幅に向上し、高品質なPromptを構築する鍵にもなります。開発者は、モデルに思考空間を残すことに注意を払い、言語モデルの最大の潜在能力を発揮させるべきです。</p>
+<h3 id="タスク完了に必要な手順を指定">2.1
+タスク完了に必要な手順を指定</h3>
+<p>次に、複雑なタスクを提示し、そのタスクを完了するための一連の手順を示すことで、この戦略の効果を示します。</p>
+<p>まず、ジャックとジルの物語を説明し、プロンプトに以下の操作を実行するよう指示します：まず、三重バッククォートで区切られたテキストを一文で要約する。第二に、要約を英語に翻訳する。第三に、英語要約に各名前をリストアップする。第四に、以下のキーを含むJSONオブジェクトを出力する：英語要約と名前の個数。出力は改行で区切るよう要求します。</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ss">魅力的な村で、兄妹のジャックとジルが山頂の井戸に水を汲みに出かけました。</span><span class="ch">\</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="ss">彼らは楽しい歌を歌いながら登っていましたが、</span><span class="ch">\</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="ss">不幸が降りかかりました—ジャックが石につまずいて山から転がり落ち、ジルも後に続きました。</span><span class="ch">\</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="ss">少し怪我をしましたが、彼らは温かい家に戻ることができました。</span><span class="ch">\</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="ss">このような事故にもかかわらず、彼らの冒険精神は衰えることなく、喜びに満ちた探索を続けています。</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co"># example 1</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>prompt_1 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="ss">以下の操作を実行してください：</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="ss">1-下記の三重バッククォートで囲まれたテキストを一文で要約する。</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="ss">2-要約を英語に翻訳する。</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="ss">3-英語要約に各人名をリストアップする。</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="ss">4-以下のキーを含むJSONオブジェクトを出力する：english_summary、num_names。</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="ss">改行で回答を区切ってください。</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="ss">Text:</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a><span class="ss">```</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt_1)</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;prompt 1:&quot;</span>)</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>prompt 1:
+1-魅力的な村で兄妹のジャックとジルが山頂の井戸に水を汲みに行き、事故に遭いましたが、冒険精神は衰えませんでした。
+2-In a charming village, siblings Jack and Jill went to fetch water from a well on a hilltop, encountered an accident, but their adventurous spirit remained undimmed.
+3-Jack, Jill
+4-{&quot;english_summary&quot;: &quot;In a charming village, siblings Jack and Jill went to fetch water from a well on a hilltop, encountered an accident, but their adventurous spirit remained undimmed.&quot;, &quot;num_names&quot;: 2}</code></pre>
+<p>上記の出力にはまだ一定の問題があります。例えば、キー「名前」がフランス語に置き換えられる可能性があります（注釈：英語原版では、英語からフランス語への翻訳を要求し、対応する指示の第三ステップの出力が’Noms:’となり、これはNameのフランス語で、この行動は予測困難で、エクスポートに困難をもたらす可能性があります）</p>
+<p>そのため、Promptを改善します。このPromptの前半は変わらず、同時に<strong>出力形式を正確に指定</strong>しています。</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>prompt_2 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ss">1-下記の&lt;&gt;で囲まれたテキストを一文で要約する。</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="ss">2-要約を英語に翻訳する。</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="ss">3-英語要約に各名前をリストアップする。</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="ss">4-以下のキーを含むJSONオブジェクトを出力する：English_summary、num_names。</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="ss">以下の形式を使用してください：</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="ss">テキスト：&lt;要約するテキスト&gt;</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="ss">要約：&lt;要約&gt;</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="ss">翻訳：&lt;要約の翻訳&gt;</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="ss">名前：&lt;英語要約の名前リスト&gt;</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="ss">JSON出力：&lt;English_summaryとnum_namesを含むJSON&gt;</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="ss">Text: &lt;</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">&gt;</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt_2)</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n</span><span class="st">prompt 2:&quot;</span>)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>prompt 2:
+テキスト：&lt;魅力的な村で、兄妹のジャックとジルが山頂の井戸に水を汲みに出かけました。彼らは楽しい歌を歌いながら登っていましたが、不幸が降りかかりました—ジャックが石につまずいて山から転がり落ち、ジルも後に続きました。少し怪我をしましたが、彼らは温かい家に戻ることができました。このような事故にもかかわらず、彼らの冒険精神は衰えることなく、喜びに満ちた探索を続けています。&gt;
+
+要約：兄妹のジャックとジルが山頂の井戸に水を汲みに行き、事故に遭ったが、冒険精神を失わずに家に帰った。
+
+翻訳：Siblings Jack and Jill went to fetch water from a hilltop well, had an accident, but returned home without losing their adventurous spirit.
+
+名前：Jack, Jill
+
+JSON出力：{&quot;English_summary&quot;: &quot;Siblings Jack and Jill went to fetch water from a hilltop well, had an accident, but returned home without losing their adventurous spirit.&quot;, &quot;num_names&quot;: 2}</code></pre>
+<h3 id="結論を出す前にモデルに独自の解法を見つけるよう指導">2.2
+結論を出す前にモデルに独自の解法を見つけるよう指導</h3>
+<p>Promptを設計する際、言語モデルに自主的に思考するよう明確に指導することで、より良い効果を得ることもできます。</p>
+<p>例を挙げると、言語モデルに数学問題の解答が正しいかどうかを判断させたいとしましょう。問題と解答を提供するだけでは不十分で、言語モデルは急いで間違った判断を下す可能性があります。</p>
+<p>逆に、Promptでまず言語モデルに自分でこの問題を解いてみるよう求め、自分の解法を考え出してから、提供された解答と比較して正確性を判断することができます。この方法で先に言語モデルに自主的に思考させることで、問題をより深く理解し、より正確な判断を下すことができます。</p>
+<p>次に、問題と学生の解答を提示し、モデルに解答が正しいかどうかを判断させます：</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ss">学生の解決方法が正しいかどうかを判断してください。</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="ss">問題:</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="ss">太陽光発電所を建設しており、財務計算を手伝ってください。</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="ss">    土地費用は100ドル/平方フィート</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="ss">    250ドル/平方フィートでソーラーパネルを購入できます</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="ss">    年間固定10万ドルを支払い、さらに平方フィートあたり10ドルを追加で支払うメンテナンス契約を交渉しました</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="ss">    平方フィート数の関数として、初年度運営の総費用はいくらですか。</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="ss">学生の解決方法：</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="ss">発電所のサイズをx平方フィートとします。</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="ss">費用：</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="ss">    土地費用：100x</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="ss">    ソーラーパネル費用：250x</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="ss">    メンテナンス費用：100,000ドル+100x</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="ss">    総費用：100x+250x+100,000ドル+100x=450x+100,000ドル</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>学生の解決方法は正しくありません。学生は土地費用とソーラーパネル費用を正しく計算しましたが、メンテナンス費用の計算に誤りがあります。
+
+正しい計算：
+- 土地費用：100x ドル
+- ソーラーパネル費用：250x ドル  
+- メンテナンス費用：100,000ドル + 10x ドル（平方フィートあたり10ドル、100ドルではない）
+
+総費用：100x + 250x + 100,000 + 10x = 360x + 100,000ドル
+
+学生は「平方フィートあたり10ドル」を「100x」と計算しましたが、正しくは「10x」です。そのため学生の総費用「450x + 100,000ドル」は間違いで、正しくは「360x + 100,000ドル」です。</code></pre>
+<p>しかし、注意してください。学生の解決方法は実際には間違っています。（<em>メンテナンス費用項100xは10xであるべきで、総費用450xは360xであるべき</em>）</p>
+<p>モデルにまず自分で解法を見つけさせることで、この問題を解決できます。</p>
+<p>次のPromptでは、モデルにまず自分でこの問題を解決し、自分の解法と学生の解法を比較して、学生の解法が正しいかどうかを判断するよう求めています。同時に、出力形式の要件も指定しています。タスクを分割し、手順を明確にして、モデルにより多くの思考時間を与えることで、時にはより正確な結果を得ることができます。この例では、学生の答えは間違っていますが、モデルに先に自分で計算させなければ、学生が正しいと誤導される可能性があります。</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ss">学生の解決方法が正しいかどうかを判断してください。以下の手順でこの問題を解決してください：</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="ss">手順：</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="ss">    まず、自分で問題を解決してください。</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="ss">    その後、あなたの解決方法と学生の解決方法を比較し、計算した総費用と学生が計算した総費用が一致するかどうかを比較し、学生の解決方法が正しいかどうかを評価してください。</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="ss">    自分で問題を完成させる前に、学生の解決方法が正しいかどうかを決定しないでください。</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="ss">以下の形式を使用してください：</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="ss">    問題：問題テキスト</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="ss">    学生の解決方法：学生の解決方法テキスト</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="ss">    実際の解決方法と手順：実際の解決方法と手順テキスト</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="ss">    学生が計算した総費用：学生が計算した総費用</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="ss">    実際に計算した総費用：実際に計算した総費用</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="ss">    学生が計算した費用と実際に計算した費用が同じか：はい または いいえ</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="ss">    学生の解決方法と実際の解決方法が同じか：はい または いいえ</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="ss">    学生の成績：正しい または 間違い</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a><span class="ss">問題：</span></span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a><span class="ss">    太陽光発電所を建設しており、財務計算を手伝ってください。 </span></span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a><span class="ss">    - 土地費用は平方フィートあたり100ドル</span></span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a><span class="ss">    - 平方フィートあたり250ドルでソーラーパネルを購入できます</span></span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a><span class="ss">    - 年間固定10万ドルを支払い、さらに平方フィートあたり10ドルを追加で支払うメンテナンス契約を交渉しました;</span></span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a><span class="ss">    平方フィート数の関数として、初年度運営の総費用はいくらですか。</span></span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a><span class="ss">学生の解決方法：</span></span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a><span class="ss">    発電所のサイズをx平方フィートとします。</span></span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a><span class="ss">    費用：</span></span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a><span class="ss">    1. 土地費用：100xドル</span></span>
+<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a><span class="ss">    2. ソーラーパネル費用：250xドル</span></span>
+<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a><span class="ss">    3. メンテナンス費用：100,000+100x=10万ドル+10xドル</span></span>
+<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a><span class="ss">    総費用：100xドル+250xドル+10万ドル+100xドル=450x+10万ドル</span></span>
+<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a><span class="ss">実際の解決方法と手順：</span></span>
+<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>実際の解決方法と手順：
+
+    1. 土地費用：平方フィートあたり100ドルなので、総費用は100xドル。
+    2. ソーラーパネル費用：平方フィートあたり250ドルなので、総費用は250xドル。
+    3. メンテナンス費用：固定費用が10万ドル、追加費用が平方フィートあたり10ドルなので、総費用は10万ドル+10xドル。
+    4. 総費用：上記の3項目の費用を合計すると、総費用は100xドル+250xドル+10万ドル+10xドル=360x+10万ドル。
+
+学生が計算した総費用：450x+10万ドル
+実際に計算した総費用：360x+10万ドル
+学生が計算した費用と実際に計算した費用が同じか：いいえ
+学生の解決方法と実際の解決方法が同じか：いいえ
+学生の成績：間違い</code></pre>
+<h2 id="三制限事項">三、制限事項</h2>
+<p><strong>大規模言語モデル関連アプリケーションを開発する際は必ず覚えておいてください：</strong></p>
+<p><strong>虚偽知識</strong>：モデルは時折、真実らしく見えるが実際には捏造された知識を生成することがある</p>
+<p>言語モデルを開発・応用する際は、虚偽情報を生成するリスクに注意する必要があります。モデルは大規模な事前訓練を受けて豊富な知識を習得していますが、実際には見た情報を<em>完全に</em>記憶しているわけではなく、自分の知識の境界を正確に判断することが困難で、間違った推論を行う可能性があります。言語モデルに存在しない製品を説明させると、もっともらしい詳細を自分で構築する可能性があります。これは「幻覚」(Hallucination)と呼ばれ、言語モデルの大きな欠陥です。</p>
+<p>以下の例は、大規模言語モデルの幻覚を示しています。華為公司が生産する<em>GT
+Watch
+スポーツウォッチ</em>製品の情報を教えるよう求めていますが、実際にはこの会社は実在しますが、製品は捏造されたもので、モデルは真面目に捏造した知識を提供し、非常に説得力があります。</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ss">華為公司が生産するGT Watchスポーツウォッチの関連情報を教えてください</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>華為公司が生産するGT Watchスポーツウォッチは、スマートウォッチの一種で、多くの機能と特徴を持っています。以下は関連情報です：
+
+1. デザインと外観：GT Watchは円形の文字盤デザインを採用し、精緻な外観と高品質な材料で製造されています。複数の色とバンドの選択肢があり、個人の好みに応じてカスタマイズできます。
+
+2. ディスプレイ：GT Watchには1.39インチのAMOLEDディスプレイが搭載されており、高解像度と良好な視認性を備えています。ユーザーはタッチスクリーンを通じて操作とナビゲーションを行うことができます。
+
+3. 運動追跡：GT Watchには24時間の運動追跡機能があり、ユーザーの歩数、ランニング距離、カロリー消費、心拍数などのデータを監視できます。また、ランニング、サイクリング、水泳など、複数の運動モードもサポートしています。
+
+4. 健康監視：GT Watchはユーザーの心拍数、血中酸素飽和度、睡眠品質などの健康指標を監視できます。また、健康アドバイスとリマインダーを提供し、ユーザーが良好な健康状態を維持するのを助けます。
+
+5. 通知と接続：GT Watchはユーザーの携帯電話と接続でき、Bluetooth技術を通じて通知プッシュと電話リマインダーを実現します。ユーザーは時計でSMS、電話、ソーシャルメディア通知を確認でき、携帯電話を取り出す必要がありません。
+
+6. 長いバッテリー寿命：GT Watchは比較的長いバッテリー寿命を持ち、一度の充電で数日間使用できます。また、急速充電技術もサポートしており、短時間で満充電にできます。
+
+7. その他の機能：GT Watchには他にも天気予報、アラーム、タイマー、歩数計などの機能があります。また、NFC決済と音楽制御などの便利な機能もサポートしています。
+
+全体的に、華為GT Watchは機能が強力で外観が精緻なスマートスポーツウォッチで、健康と運動を重視するユーザーに適しています。</code></pre>
+<p>言語モデルが虚偽情報を生成する「幻覚」問題は、言語モデルの使用と開発時に高度に注意すべきリスクです。幻覚情報は往々にして真偽の判別が困難なため、開発者は警戒し、その発生を可能な限り避けなければなりません。</p>
+<p>現在、OpenAIなどの会社は言語モデルの幻覚問題の解決に積極的に研究を行っています。技術がさらに改善される前に、開発者はPrompt設計を通じて幻覚発生の可能性を減らすことができます。例えば、まず言語モデルにテキスト中の原文を直接引用させ、その後解答させることができます。これにより情報源を追跡でき、虚偽内容のリスクを低減できます。</p>
+<p>要約すると、言語モデルの幻覚問題はアプリケーションの信頼性と安全性に関わります。開発者はこの欠陥を認識し（注：2023年7月時点）、Prompt最適化などの措置を講じて緩和し、より信頼できる言語モデルアプリケーションを開発する必要があります。これは今後の言語モデル進化の重要な方向の一つでもあります。</p>
+<p><strong>注意</strong>：</p>
+<p>バックスラッシュ使用についての説明：本チュートリアルでは、読書体験を向上させるためにテキストを画面サイズに合わせるためにバックスラッシュ
+ を使用し、改行文字 は使用していません。GPT-3は改行文字（newline
+characters）の影響を受けませんが、他の大規模言語モデルを呼び出す際は、改行文字がモデル性能に影響するかどうかを追加で考慮する必要があります。</p>
+<h2 id="四英語原版-prompt">四、英語原版 Prompt</h2>
+<p><strong>1.1
+区切り文字を使用して入力の異なる部分を明確に表示</strong></p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ss">You should express what you want a model to do by \ </span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="ss">providing instructions that are as clear and \ </span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="ss">specific as you can possibly make them. \ </span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="ss">This will guide the model towards the desired output, \ </span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="ss">and reduce the chances of receiving irrelevant \ </span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="ss">or incorrect responses. Don&#39;t confuse writing a \ </span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="ss">clear prompt with writing a short prompt. \ </span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="ss">In many cases, longer prompts provide more clarity \ </span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="ss">and context for the model, which can lead to \ </span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="ss">more detailed and relevant outputs.</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="ss">Summarize the text delimited by triple backticks \ </span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="ss">into a single sentence.</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="ss">```</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>To guide a model towards the desired output and reduce irrelevant or incorrect responses, it is important to provide clear and specific instructions, which can be achieved through longer prompts that offer more clarity and context.</code></pre>
+<p><strong>1.2 構造化された出力を求める</strong></p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Generate a list of three made-up book titles along \ </span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="ss">with their authors and genres. </span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="ss">Provide them in JSON format with the following keys: </span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="ss">book_id, title, author, genre.</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>{
+  &quot;books&quot;: [
+    {
+      &quot;book_id&quot;: 1,
+      &quot;title&quot;: &quot;The Enigma of Elysium&quot;,
+      &quot;author&quot;: &quot;Evelyn Sinclair&quot;,
+      &quot;genre&quot;: &quot;Mystery&quot;
+    },
+    {
+      &quot;book_id&quot;: 2,
+      &quot;title&quot;: &quot;Whispers in the Wind&quot;,
+      &quot;author&quot;: &quot;Nathaniel Blackwood&quot;,
+      &quot;genre&quot;: &quot;Fantasy&quot;
+    },
+    {
+      &quot;book_id&quot;: 3,
+      &quot;title&quot;: &quot;Echoes of the Past&quot;,
+      &quot;author&quot;: &quot;Amelia Hart&quot;,
+      &quot;genre&quot;: &quot;Romance&quot;
+    }
+  ]
+}</code></pre>
+<p><strong>1.3
+モデルに条件が満たされているかをチェックするよう要求</strong></p>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>text_1 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Making a cup of tea is easy! First, you need to get some \ </span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="ss">water boiling. While that&#39;s happening, \ </span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="ss">grab a cup and put a tea bag in it. Once the water is \ </span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="ss">hot enough, just pour it over the tea bag. \ </span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="ss">Let it sit for a bit so the tea can steep. After a \ </span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="ss">few minutes, take out the tea bag. If you \ </span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><span class="ss">like, you can add some sugar or milk to taste. \ </span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a><span class="ss">And that&#39;s it! You&#39;ve got yourself a delicious \ </span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="ss">cup of tea to enjoy.</span></span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a><span class="ss">You will be provided with text delimited by triple quotes. </span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="ss">If it contains a sequence of instructions, \ </span></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a><span class="ss">re-write those instructions in the following format:</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 1 - ...</span></span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 2 - …</span></span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a><span class="ss">…</span></span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a><span class="ss">Step N - …</span></span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a><span class="ss">If the text does not contain a sequence of instructions, \ </span></span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a><span class="ss">then simply write </span><span class="ch">\&quot;</span><span class="ss">No steps provided.</span><span class="ch">\&quot;</span></span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a><span class="ch">\&quot;\&quot;\&quot;</span><span class="sc">{</span>text_1<span class="sc">}</span><span class="ch">\&quot;\&quot;\&quot;</span></span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Completion for Text 1:&quot;</span>)</span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Completion for Text 1:
+Step 1 - Get some water boiling.
+Step 2 - Grab a cup and put a tea bag in it.
+Step 3 - Once the water is hot enough, pour it over the tea bag.
+Step 4 - Let it sit for a bit so the tea can steep.
+Step 5 - After a few minutes, take out the tea bag.
+Step 6 - If you like, add some sugar or milk to taste.
+Step 7 - Enjoy your delicious cup of tea.</code></pre>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>text_2 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="ss">The sun is shining brightly today, and the birds are </span><span class="ch">\</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="ss">singing. It&#39;s a beautiful day to go for a \ </span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="ss">walk in the park. The flowers are blooming, and the \ </span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="ss">trees are swaying gently in the breeze. People \ </span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="ss">are out and about, enjoying the lovely weather. \ </span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="ss">Some are having picnics, while others are playing \ </span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="ss">games or simply relaxing on the grass. It&#39;s a \ </span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="ss">perfect day to spend time outdoors and appreciate the \ </span></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a><span class="ss">beauty of nature.</span></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;You will be provided with text delimited by triple quotes. </span></span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a><span class="ss">If it contains a sequence of instructions, \ </span></span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a><span class="ss">re-write those instructions in the following format:</span></span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 1 - ...</span></span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a><span class="ss">Step 2 - …</span></span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a><span class="ss">…</span></span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a><span class="ss">Step N - …</span></span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a><span class="ss">If the text does not contain a sequence of instructions, \ </span></span>
+<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a><span class="ss">then simply write </span><span class="ch">\&quot;</span><span class="ss">No steps provided.</span><span class="ch">\&quot;</span></span>
+<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a><span class="ch">\&quot;\&quot;\&quot;</span><span class="sc">{</span>text_2<span class="sc">}</span><span class="ch">\&quot;\&quot;\&quot;</span></span>
+<span id="cb27-24"><a href="#cb27-24" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb27-25"><a href="#cb27-25" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb27-26"><a href="#cb27-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Completion for Text 2:&quot;</span>)</span>
+<span id="cb27-27"><a href="#cb27-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Completion for Text 2:
+No steps provided.</code></pre>
+<p><strong>1.4 少数の例を提供</strong>（少数サンプルプロンプト、Few-shot
+prompting）</p>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Your task is to answer in a consistent style.</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="ss">&lt;child&gt;: Teach me about patience.</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="ss">&lt;grandparent&gt;: The river that carves the deepest \ </span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="ss">valley flows from a modest spring; the \ </span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a><span class="ss">grandest symphony originates from a single note; \ </span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a><span class="ss">the most intricate tapestry begins with a solitary thread.</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a><span class="ss">&lt;child&gt;: Teach me about resilience.</span></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>&lt;grandparent&gt;: Resilience is like a mighty oak tree that withstands the strongest storms, bending but never breaking. It is the unwavering determination to rise again after every fall, and the ability to find strength in the face of adversity. Just as a diamond is formed under immense pressure, resilience is forged through challenges and hardships, making us stronger and more resilient in the process.</code></pre>
+<p><strong>2.1 タスク完了に必要な手順を指定</strong></p>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="ss">In a charming village, siblings Jack and Jill set out on \ </span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="ss">a quest to fetch water from a hilltop \ </span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="ss">well. As they climbed, singing joyfully, misfortune \ </span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="ss">struck—Jack tripped on a stone and tumbled \ </span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="ss">down the hill, with Jill following suit. \ </span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="ss">Though slightly battered, the pair returned home to \ </span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a><span class="ss">comforting embraces. Despite the mishap, \ </span></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a><span class="ss">their adventurous spirits remained undimmed, and they \ </span></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a><span class="ss">continued exploring with delight.</span></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a><span class="co"># example 1</span></span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>prompt_1 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a><span class="ss">Perform the following actions: </span></span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a><span class="ss">1 - Summarize the following text delimited by triple </span><span class="ch">\</span></span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a><span class="ss">backticks with 1 sentence.</span></span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a><span class="ss">2 - Translate the summary into French.</span></span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a><span class="ss">3 - List each name in the French summary.</span></span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a><span class="ss">4 - Output a json object that contains the following </span><span class="ch">\</span></span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a><span class="ss">keys: french_summary, num_names.</span></span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a><span class="ss">Separate your answers with line breaks.</span></span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a><span class="ss">Text:</span></span>
+<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a><span class="ss">```</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb31-26"><a href="#cb31-26" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb31-27"><a href="#cb31-27" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt_1)</span>
+<span id="cb31-28"><a href="#cb31-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Completion for prompt 1:&quot;</span>)</span>
+<span id="cb31-29"><a href="#cb31-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Completion for prompt 1:
+1 - Jack and Jill, siblings, go on a quest to fetch water from a hilltop well, but encounter misfortune when Jack trips on a stone and tumbles down the hill, with Jill following suit, yet they return home and remain undeterred in their adventurous spirits.
+
+2 - Jack et Jill, frère et sœur, partent en quête d&#39;eau d&#39;un puits au sommet d&#39;une colline, mais rencontrent un malheur lorsque Jack trébuche sur une pierre et dévale la colline, suivi par Jill, pourtant ils rentrent chez eux et restent déterminés dans leur esprit d&#39;aventure.
+
+3 - Jack, Jill
+
+4 - {
+  &quot;french_summary&quot;: &quot;Jack et Jill, frère et sœur, partent en quête d&#39;eau d&#39;un puits au sommet d&#39;une colline, mais rencontrent un malheur lorsque Jack trébuche sur une pierre et dévale la colline, suivi par Jill, pourtant ils rentrent chez eux et restent déterminés dans leur esprit d&#39;aventure.&quot;,
+  &quot;num_names&quot;: 2
+}</code></pre>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>prompt_2 <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Your task is to perform the following actions: </span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="ss">1 - Summarize the following text delimited by &lt;&gt; with 1 sentence.</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="ss">2 - Translate the summary into French.</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="ss">3 - List each name in the French summary.</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="ss">4 - Output a json object that contains the </span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="ss">following keys: french_summary, num_names.</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a><span class="ss">Use the following format:</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a><span class="ss">Text: &lt;text to summarize&gt;</span></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a><span class="ss">Summary: &lt;summary&gt;</span></span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a><span class="ss">Translation: &lt;summary translation&gt;</span></span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a><span class="ss">Names: &lt;list of names in French summary&gt;</span></span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a><span class="ss">Output JSON: &lt;json with summary and num_names&gt;</span></span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a><span class="ss">Text: &lt;</span><span class="sc">{</span>text<span class="sc">}</span><span class="ss">&gt;</span></span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt_2)</span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;</span><span class="ch">\n</span><span class="st">Completion for prompt 2:&quot;</span>)</span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Completion for prompt 2:
+Summary: Jack and Jill, siblings from a charming village, go on a quest to fetch water from a hilltop well, but encounter misfortune when Jack trips on a stone and tumbles down the hill, with Jill following suit, yet they remain undeterred and continue exploring with delight.
+
+Translation: Jack et Jill, frère et sœur d&#39;un charmant village, partent en quête d&#39;eau d&#39;un puits au sommet d&#39;une colline, mais rencontrent un malheur lorsque Jack trébuche sur une pierre et dévale la colline, suivi par Jill, pourtant ils restent déterminés et continuent à explorer avec joie.
+
+Names: Jack, Jill
+
+Output JSON: 
+{
+  &quot;french_summary&quot;: &quot;Jack et Jill, frère et sœur d&#39;un charmant village, partent en quête d&#39;eau d&#39;un puits au sommet d&#39;une colline, mais rencontrent un malheur lorsque Jack trébuche sur une pierre et dévale la colline, suivi par Jill, pourtant ils restent déterminés et continuent à explorer avec joie.&quot;,
+  &quot;num_names&quot;: 2
+}</code></pre>
+<p><strong>2.2
+結論を出す前にモデルに独自の解法を見つけるよう指導</strong></p>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Determine if the student&#39;s solution is correct or not.</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="ss">Question:</span></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="ss">I&#39;m building a solar power installation and I need </span><span class="ch">\</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a><span class="ss"> help working out the financials. </span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="ss">- Land costs $100 / square foot</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a><span class="ss">- I can buy solar panels for $250 / square foot</span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a><span class="ss">- I negotiated a contract for maintenance that will cost \ </span></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a><span class="ss">me a flat $100k per year, and an additional $10 / square </span><span class="ch">\</span></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a><span class="ss">foot</span></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a><span class="ss">What is the total cost for the first year of operations </span></span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a><span class="ss">as a function of the number of square feet.</span></span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a><span class="ss">Student&#39;s Solution:</span></span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a><span class="ss">Let x be the size of the installation in square feet.</span></span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a><span class="ss">Costs:</span></span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a><span class="ss">1. Land cost: 100x</span></span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a><span class="ss">2. Solar panel cost: 250x</span></span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a><span class="ss">3. Maintenance cost: 100,000 + 100x</span></span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a><span class="ss">Total cost: 100x + 250x + 100,000 + 100x = 450x + 100,000</span></span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>The student&#39;s solution is correct. They correctly identified the costs for land, solar panels, and maintenance, and calculated the total cost for the first year of operations as a function of the number of square feet.</code></pre>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Your task is to determine if the student&#39;s solution </span><span class="ch">\</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="ss">is correct or not.</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="ss">To solve the problem do the following:</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- First, work out your own solution to the problem. </span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a><span class="ss">- Then compare your solution to the student&#39;s solution \ </span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="ss">and evaluate if the student&#39;s solution is correct or not. </span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a><span class="ss">Don&#39;t decide if the student&#39;s solution is correct until </span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a><span class="ss">you have done the problem yourself.</span></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="ss">Use the following format:</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a><span class="ss">Question:</span></span></code></pre></div>
+<p>question here</p>
+<pre><code>Student&#39;s solution:</code></pre>
+<p>student’s solution here</p>
+<pre><code>Actual solution:</code></pre>
+<p>steps to work out the solution and your solution here</p>
+<pre><code>Is the student&#39;s solution the same as actual solution \
+just calculated:</code></pre>
+<p>yes or no</p>
+<pre><code>Student grade:</code></pre>
+<p>correct or incorrect</p>
+<pre><code>
+Question:</code></pre>
+<p>I’m building a solar power installation and I need help<br />
+working out the financials. - Land costs $100 / square foot - I can buy
+solar panels for $250 / square foot - I negotiated a contract for
+maintenance that will cost<br />
+me a flat $100k per year, and an additional $10 / square<br />
+foot What is the total cost for the first year of operations<br />
+as a function of the number of square feet.</p>
+<pre><code>Student&#39;s solution:</code></pre>
+<p>Let x be the size of the installation in square feet. Costs: 1. Land
+cost: 100x 2. Solar panel cost: 250x 3. Maintenance cost: 100,000 + 100x
+Total cost: 100x + 250x + 100,000 + 100x = 450x + 100,000</p>
+<pre><code>Actual solution:
+&quot;&quot;&quot;
+response = get_completion(prompt)
+print(response)</code></pre>
+<pre><code>To calculate the total cost for the first year of operations, we need to add up the costs of land, solar panels, and maintenance.
+
+1. Land cost: $100 / square foot
+The cost of land is $100 multiplied by the number of square feet.
+
+2. Solar panel cost: $250 / square foot
+The cost of solar panels is $250 multiplied by the number of square feet.
+
+3. Maintenance cost: $100,000 + $10 / square foot
+The maintenance cost is a flat fee of $100,000 per year, plus $10 multiplied by the number of square feet.
+
+Total cost: Land cost + Solar panel cost + Maintenance cost
+
+So the actual solution is:
+Total cost = (100 * x) + (250 * x) + (100,000 + (10 * x))
+
+Is the student&#39;s solution the same as the actual solution just calculated:
+No
+
+Student grade:
+Incorrect</code></pre>
+<p><strong>3.1 幻覚</strong></p>
+<div class="sourceCode" id="cb46"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Tell me about AeroGlide UltraSlim Smart Toothbrush by Boie</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>The AeroGlide UltraSlim Smart Toothbrush by Boie is a technologically advanced toothbrush designed to provide a superior brushing experience. Boie is a company known for its innovative oral care products, and the AeroGlide UltraSlim Smart Toothbrush is no exception.
+
+One of the standout features of this toothbrush is its ultra-slim design. The brush head is only 2mm thick, making it much thinner than traditional toothbrushes. This slim profile allows for better access to hard-to-reach areas of the mouth, ensuring a thorough and effective clean.
+
+The AeroGlide UltraSlim Smart Toothbrush also incorporates smart technology. It connects to a mobile app via Bluetooth, allowing users to track their brushing habits and receive personalized recommendations for improving their oral hygiene routine. The app provides real-time feedback on brushing technique, duration, and coverage, helping users to achieve optimal oral health.
+
+The toothbrush features soft, antimicrobial bristles made from a durable thermoplastic elastomer. These bristles are gentle on the gums and teeth, while also being effective at removing plaque and debris. The antimicrobial properties help to keep the brush head clean and hygienic between uses.
+
+Another notable feature of the AeroGlide UltraSlim Smart Toothbrush is its long battery life. It can last up to 30 days on a single charge, making it convenient for travel or everyday use without the need for frequent recharging.
+
+Overall, the AeroGlide UltraSlim Smart Toothbrush by Boie offers a combination of advanced technology, slim design, and effective cleaning capabilities. It is a great option for those looking to upgrade their oral care routine and achieve a healthier smile.</code></pre>
+</body>
+</html>

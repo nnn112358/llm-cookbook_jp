@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>10. 評価（下）</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第十章-評価下簡単な正解が存在しない場合">第十章
+評価（下）——簡単な正解が存在しない場合</h1>
+<p>前章では、<strong>明確な正解がある</strong>場合におけるLLMモデルの性能評価方法を探索し、LLMが分類を正しく行い製品をリストアップしたかどうかを検証する関数の作成方法を学びました。</p>
+<p>しかし、LLMを使用してテキストを生成する場合で、単なる分類問題の解決以外の用途では、回答の正確率をどのように評価すべきでしょうか？この章では、このような応用シナリオにおけるLLM出力の品質を評価する方法について議論します。</p>
+<h2
+id="一質問応答システムを実行して複雑な回答を得る">一、質問応答システムを実行して複雑な回答を得る</h2>
+<p>まず、前の章で構築した質問応答システムを実行して、複雑で簡単な正解が存在しない回答を得てみましょう：</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> utils_zh</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">&#39;&#39;&#39;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">注意：モデルの中国語理解能力の制限により、中国語Promptはランダムに失敗する可能性があります。複数回実行してください；より安定した中国語Promptの探求も歓迎します</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">&#39;&#39;&#39;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># ユーザーメッセージ</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>customer_msg <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ss">smartx pro phone と fotosnap camera, the dslr one について教えてください。</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="ss">それから、あなたのところにはどのようなテレビがありますか？&quot;&quot;&quot;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 質問から商品名を抽出</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>products_by_category <span class="op">=</span> utils_zh.get_products_from_query(customer_msg)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 商品名をリストに変換</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>category_and_product_list <span class="op">=</span> utils_zh.read_string_to_list(products_by_category)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 商品対応情報を検索</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>product_info <span class="op">=</span> utils_zh.get_mentioned_product_info(category_and_product_list)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># 情報から回答を生成</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>assistant_answer <span class="op">=</span> utils_zh.answer_user_msg(user_msg<span class="op">=</span>customer_msg, product_info<span class="op">=</span>product_info)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(assistant_answer) </span></code></pre></div>
+<pre><code>SmartX Pro電話とFotoSnap DSLRカメラについての情報：
+
+1. SmartX Pro電話（型番：SX-PP10）は、6.1インチディスプレイ、128GBストレージ、12MPデュアルカメラ、5Gネットワークサポートを備えた強力なスマートフォンです。価格は899.99ドル、保証期間は1年です。
+
+2. FotoSnap DSLRカメラ（型番：FS-DSLR200）は、24.2MPセンサー、1080pビデオ撮影、3インチ液晶画面、交換可能レンズを備えた多機能な一眼レフカメラです。価格は599.99ドル、保証期間は1年です。
+
+テレビについての情報：
+
+選択可能なテレビは以下の通りです：
+1. CineView 4Kテレビ（型番：CV-4K55）- 55インチディスプレイ、4K解像度、HDRとスマートテレビ機能をサポート。価格は599.99ドル、保証期間は2年です。
+2. CineView 8Kテレビ（型番：CV-8K65）- 65インチディスプレイ、8K解像度、HDRとスマートテレビ機能をサポート。価格は2999.99ドル、保証期間は2年です。
+3. CineView OLEDテレビ（型番：CV-OLED55）- 55インチOLEDディスプレイ、4K解像度、HDRとスマートテレビ機能をサポート。価格は1499.99ドル、保証期間は2年です。
+
+これらの製品について何か特別なご要望やその他のご質問はありますか？</code></pre>
+<h2
+id="二gptを使用して回答が正しいかどうかを評価">二、GPTを使用して回答が正しいかどうかを評価</h2>
+<p>LLMの出力を評価する基準のリストを指定できる場合、実際に別のAPI呼び出しを使用して最初のLLM出力を評価することができるという設計パターンを学んでいただければと思います。</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tool <span class="im">import</span> get_completion_from_messages</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 質問・コンテキスト</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>cust_prod_info <span class="op">=</span> {</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;customer_msg&#39;</span>: customer_msg,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;context&#39;</span>: product_info</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> eval_with_rubric(test_set, assistant_answer):</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">    GPT APIを使用して生成された回答を評価</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">    パラメーター：</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">    test_set: テストセット</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">    assistant_answer: アシスタントの返答</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    cust_msg <span class="op">=</span> test_set[<span class="st">&#39;customer_msg&#39;</span>]</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    context <span class="op">=</span> test_set[<span class="st">&#39;context&#39;</span>]</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    completion <span class="op">=</span> assistant_answer</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ペルソナ</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    system_message <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="st">    あなたは、カスタマーサービスエージェントが使用したコンテキストを確認することで、カスタマーサービスエージェントがユーザーの質問にどのように回答したかを評価するアシスタントです。</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;&quot;&quot;</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 具体的指示</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    user_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="ss">    エージェントが使用したコンテキストに基づいて、質問に対する提出された回答を評価しています。以下がデータです：</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="ss">    [開始]</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="ss">    [ユーザーの質問]: </span><span class="sc">{</span>cust_msg<span class="sc">}</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="ss">    [使用されたコンテキスト]: </span><span class="sc">{</span>context<span class="sc">}</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="ss">    [カスタマーエージェントの回答]: </span><span class="sc">{</span>completion<span class="sc">}</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="ss">    [終了]</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="ss">    提出された回答の事実内容をコンテキストと比較し、スタイル、文法、句読点の違いは無視してください。</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="ss">    以下の質問に答えてください：</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="ss">    アシスタントの応答は提供されたコンテキストのみに基づいていますか？（はい または いいえ）</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="ss">    回答にはコンテキストで提供されていない情報が含まれていますか？（はい または いいえ）</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="ss">    応答とコンテキストの間に不一致はありますか？（はい または いいえ）</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="ss">    ユーザーが提起した質問の数を計算してください。（数字を出力）</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="ss">    ユーザーが提起した各質問に対して、対応する回答はありますか？</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="ss">    質問1：（はい または いいえ）</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="ss">    質問2：（はい または いいえ）</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="ss">    ...</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="ss">    質問N：（はい または いいえ）</span></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="ss">    提起された質問数のうち、回答で対応された質問はいくつありますか？（数字を出力）</span></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>    messages <span class="op">=</span> [</span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&#39;role&#39;</span>: <span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>: system_message},</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&#39;role&#39;</span>: <span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>: user_message}</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> get_completion_from_messages(messages)</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>evaluation_output <span class="op">=</span> eval_with_rubric(cust_prod_info, assistant_answer)</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(evaluation_output)</span></code></pre></div>
+<pre><code>アシスタントの応答は提供されたコンテキストのみに基づいています。はい
+回答にはコンテキストで提供されていない情報は含まれていません。はい
+応答とコンテキストの間に不一致はありません。はい
+ユーザーが提起した質問の数は2つです。
+ユーザーが提起した各質問に対して、対応する回答があります。
+質問1：はい
+質問2：はい
+提起された質問数のうち、回答で対応された質問は2つです。</code></pre>
+<h2
+id="三生成回答と標準回答の差を評価">三、生成回答と標準回答の差を評価</h2>
+<p>従来の自然言語処理技術では、LLM出力と人間の専門家が作成した出力の類似度を測定するための伝統的なメトリクスがあります。例えば、BLUE
+スコアは2つのテキストの類似度を測定するために使用できます。</p>
+<p>実際には、Promptを使用するより良い方法があります。Promptを指定して、LLMが自動生成したカスタマーサービスエージェントの応答と人工的な理想的応答がどの程度一致するかを比較させることができます。</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">&#39;&#39;&#39;中国語Promptベースの検証セット&#39;&#39;&#39;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>test_set_ideal <span class="op">=</span> {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;customer_msg&#39;</span>: <span class="st">&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="st">Smartx Pro 手机 と FotoSnap DSLRカメラ, the dslr one について教えてください。</span><span class="ch">\n</span><span class="st">それから、あなたのところにはどのような電視がありますか？&quot;&quot;&quot;</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;ideal_answer&#39;</span>:<span class="st">&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="st">SmartX Pro手机は、6.1インチディスプレイ、128GBストレージ、12MPデュアルカメラ、5Gネットワークサポートを備えた強力なスマートフォンです。価格は899.99ドル、保証期間は1年です。</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="st">FotoSnap DSLRカメラは、24.2MPセンサー、1080pビデオ撮影、3インチ液晶画面、交換可能レンズを備えた多機能な一眼レフカメラです。価格は599.99ドル、保証期間は1年です。</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="st">選択可能なテレビは以下の通りです：</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="st">1. CineView 4Kテレビ（型番：CV-4K55）- 55インチディスプレイ、4K解像度、HDRとスマートテレビ機能をサポート。価格は599.99ドル、保証期間は2年です。</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="st">2. CineView 8Kテレビ（型番：CV-8K65）- 65インチディスプレイ、8K解像度、HDRとスマートテレビ機能をサポート。価格は2999.99ドル、保証期間は2年です。</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="st">3. CineView OLEDテレビ（型番：CV-OLED55）- 55インチOLEDディスプレイ、4K解像度、HDRとスマートテレビ機能をサポート。価格は1499.99ドル、保証期間は2年です。</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;&quot;&quot;</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>まず上記で検証セットを定義しました。これにはユーザー指示と標準回答が含まれています。</p>
+<p>次に、LLMの理解能力を利用して、LLMに生成回答と標準回答が一致するかどうかを評価してもらう評価関数を実装できます。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> eval_vs_ideal(test_set, assistant_answer):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">    回答が理想回答と一致するかを評価</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">    パラメーター：</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">    test_set: テストセット</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">    assistant_answer: アシスタントの返答</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    cust_msg <span class="op">=</span> test_set[<span class="st">&#39;customer_msg&#39;</span>]</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    ideal <span class="op">=</span> test_set[<span class="st">&#39;ideal_answer&#39;</span>]</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    completion <span class="op">=</span> assistant_answer</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    system_message <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="st">    あなたは、カスタマーサービスエージェントの回答を理想的（専門家）回答と比較することで、カスタマーサービスエージェントがユーザーの質問に対する回答の品質を評価するアシスタントです。</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="st">    単一の文字（A、B、C、D、E）を出力し、他の内容は含めないでください。 </span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;&quot;&quot;</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    user_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="ss">    与えられた質問に対する提出回答と専門家回答を比較しています。データは以下の通りです:</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="ss">    [開始]</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="ss">    [質問]: </span><span class="sc">{</span>cust_msg<span class="sc">}</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="ss">    [専門家回答]: </span><span class="sc">{</span>ideal<span class="sc">}</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="ss">    [提出回答]: </span><span class="sc">{</span>completion<span class="sc">}</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="ss">    [終了]</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="ss">    提出回答の事実内容を専門家回答と比較し、内容に注目し、スタイル、文法、句読点の違いは無視してください。</span></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="ss">    注目の核心は回答の内容が正しいかどうかで、内容の微細な違いは受け入れ可能です。</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a><span class="ss">    提出された回答は専門家回答のサブセット、スーパーセット、または相反するものである可能性があります。該当する状況を判断し、以下の選択肢の一つを選んで質問に答えてください：</span></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a><span class="ss">    （A）提出された回答は専門家回答のサブセットで、完全に一致しています。</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="ss">    （B）提出された回答は専門家回答のスーパーセットで、完全に一致しています。</span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="ss">    （C）提出された回答は専門家回答と完全に同じ詳細を含んでいます。</span></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="ss">    （D）提出された回答は専門家回答と相違があります。</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a><span class="ss">    （E）回答に違いはありますが、事実の観点からこれらの違いは重要ではありません。</span></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a><span class="ss">    選択肢：ABCDE</span></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>    messages <span class="op">=</span> [</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&#39;role&#39;</span>: <span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>: system_message},</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&#39;role&#39;</span>: <span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>: user_message}</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> get_completion_from_messages(messages)</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response</span></code></pre></div>
+<p>この評価基準はOpenAIオープンソース評価フレームワークから来ており、多くの評価方法を含む優れたフレームワークで、OpenAI開発者の貢献と広範なオープンソースコミュニティの貢献の両方があります。</p>
+<p>この評価基準では、LLMに提出回答と専門家回答の情報内容比較を行わせ、スタイル、文法、句読点などの違いは無視しますが、重要なのは比較を行い、提出された回答が専門家回答のサブセット、スーパーセット、または完全一致かに応じてAからEのスコアを出力することです。これは追加の事実を虚構または捏造した可能性を意味する場合があります。</p>
+<p>LLMはその中で最も適切な記述を選択します。</p>
+<p>LLMが生成した回答は以下の通りです：</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(assistant_answer)</span></code></pre></div>
+<pre><code>SmartX Pro電話とFotoSnap DSLRカメラについての情報：
+
+1. SmartX Pro電話（型番：SX-PP10）は、6.1インチディスプレイ、128GBストレージ、12MPデュアルカメラ、5Gネットワークサポートを備えた強力なスマートフォンです。価格は899.99ドル、保証期間は1年です。
+
+2. FotoSnap DSLRカメラ（型番：FS-DSLR200）は、24.2MPセンサー、1080pビデオ撮影、3インチ液晶画面、交換可能レンズを備えた多機能な一眼レフカメラです。価格は599.99ドル、保証期間は1年です。
+
+テレビについての情報：
+
+選択可能なテレビは以下の通りです：
+1. CineView 4Kテレビ（型番：CV-4K55）- 55インチディスプレイ、4K解像度、HDRとスマートテレビ機能をサポート。価格は599.99ドル、保証期間は2年です。
+2. CineView 8Kテレビ（型番：CV-8K65）- 65インチディスプレイ、8K解像度、HDRとスマートテレビ機能をサポート。価格は2999.99ドル、保証期間は2年です。
+3. CineView OLEDテレビ（型番：CV-OLED55）- 55インチOLEDディスプレイ、4K解像度、HDRとスマートテレビ機能をサポート。価格は1499.99ドル、保証期間は2年です。
+
+これらの製品について何か特別なご要望やその他のご質問はありますか？</code></pre>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>eval_vs_ideal(test_set_ideal, assistant_answer)</span></code></pre></div>
+<pre><code>&#39;C&#39;</code></pre>
+<p>この生成回答について、GPTは生成内容と標準回答が一致すると判断しました</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>assistant_answer_2 <span class="op">=</span> <span class="st">&quot;人生はチョコレートの箱のようなもの&quot;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>eval_vs_ideal(test_set_ideal, assistant_answer_2)</span></code></pre></div>
+<pre><code>&#39;D&#39;</code></pre>
+<p>明らかに異常な回答について、GPTは不一致と判断しました</p>
+<p>この章から2つの設計パターンを学んでいただければと思います。</p>
+<ol type="1">
+<li><p>専門家が提供する理想的回答がなくても、評価基準を制定できれば、1つのLLMを使用して別のLLMの出力を評価することができます。</p></li>
+<li><p>専門家が提供する理想的回答を提供できれば、LLMが特定のアシスタント出力と専門家が提供する理想的回答の類似性をよりよく比較できるよう支援できます。</p></li>
+</ol>
+<p>これがLLMシステムの出力を評価し、開発期間中のシステムパフォーマンスの継続的監視や、これらのツールを使用したシステムパフォーマンスの継続的評価・改善に役立つことを願っています。</p>
+<h2 id="四英語版">四、英語版</h2>
+<p><strong>1. 質問応答システムへの質問</strong></p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> utils_en</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># ユーザーメッセージ</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>customer_msg <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="ss">tell me about the smartx pro phone and the fotosnap camera, the dslr one.</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="ss">Also, what TVs or TV related products do you have?&quot;&quot;&quot;</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 質問から商品名を抽出</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>products_by_category <span class="op">=</span> utils_en.get_products_from_query(customer_msg)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 商品名をリストに変換</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>category_and_product_list <span class="op">=</span> utils_en.read_string_to_list(products_by_category)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 商品対応情報を検索</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>product_info <span class="op">=</span> utils_en.get_mentioned_product_info(category_and_product_list)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 情報から回答を生成</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>assistant_answer <span class="op">=</span> utils_en.answer_user_msg(user_msg<span class="op">=</span>customer_msg, product_info<span class="op">=</span>product_info)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(assistant_answer) </span></code></pre></div>
+<pre><code>Sure! Let me provide you with some information about the SmartX ProPhone and the FotoSnap DSLR Camera.
+
+The SmartX ProPhone is a powerful smartphone with advanced camera features. It has a 6.1-inch display, 128GB storage, a 12MP dual camera, and supports 5G connectivity. The SmartX ProPhone is priced at $899.99 and comes with a 1-year warranty.
+
+The FotoSnap DSLR Camera is a versatile camera that allows you to capture stunning photos and videos. It features a 24.2MP sensor, 1080p video recording, a 3-inch LCD screen, and supports interchangeable lenses. The FotoSnap DSLR Camera is priced at $599.99 and also comes with a 1-year warranty.
+
+As for TVs and TV-related products, we have a range of options available. Some of our popular TV models include the CineView 4K TV, CineView 8K TV, and CineView OLED TV. We also have home theater systems like the SoundMax Home Theater and SoundMax Soundbar. Could you please let me know your specific requirements or preferences so that I can assist you better?</code></pre>
+<p><strong>2. GPTを使用した評価</strong></p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 質問・コンテキスト</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>cust_prod_info <span class="op">=</span> {</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;customer_msg&#39;</span>: customer_msg,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;context&#39;</span>: product_info</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> eval_with_rubric(test_set, assistant_answer):</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">    GPT APIを使用して生成された回答を評価</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co">    パラメーター：</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co">    test_set: テストセット</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co">    assistant_answer: アシスタントの返答</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    cust_msg <span class="op">=</span> test_set[<span class="st">&#39;customer_msg&#39;</span>]</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    context <span class="op">=</span> test_set[<span class="st">&#39;context&#39;</span>]</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    completion <span class="op">=</span> assistant_answer</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># GPTにアシスタントとして回答の正確性を評価させる</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    system_message <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="st">    You are an assistant that evaluates how well the customer service agent </span><span class="ch">\</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="st">    answers a user question by looking at the context that the customer service </span><span class="ch">\</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="st">    agent is using to generate its response. </span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;&quot;&quot;</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 具体的指示</span></span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    user_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a><span class="ss">You are evaluating a submitted answer to a question based on the context </span><span class="ch">\</span></span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a><span class="ss">that the agent uses to answer the question.</span></span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a><span class="ss">Here is the data:</span></span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a><span class="ss">    [BEGIN DATA]</span></span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a><span class="ss">    [Question]: </span><span class="sc">{</span>cust_msg<span class="sc">}</span></span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a><span class="ss">    [Context]: </span><span class="sc">{</span>context<span class="sc">}</span></span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a><span class="ss">    [Submission]: </span><span class="sc">{</span>completion<span class="sc">}</span></span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a><span class="ss">    [END DATA]</span></span>
+<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a><span class="ss">Compare the factual content of the submitted answer with the context. </span><span class="ch">\</span></span>
+<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a><span class="ss">Ignore any differences in style, grammar, or punctuation.</span></span>
+<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a><span class="ss">Answer the following questions:</span></span>
+<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a><span class="ss">    - Is the Assistant response based only on the context provided? (Y or N)</span></span>
+<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a><span class="ss">    - Does the answer include information that is not provided in the context? (Y or N)</span></span>
+<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a><span class="ss">    - Is there any disagreement between the response and the context? (Y or N)</span></span>
+<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a><span class="ss">    - Count how many questions the user asked. (output a number)</span></span>
+<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a><span class="ss">    - For each question that the user asked, is there a corresponding answer to it?</span></span>
+<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a><span class="ss">      Question 1: (Y or N)</span></span>
+<span id="cb17-45"><a href="#cb17-45" aria-hidden="true" tabindex="-1"></a><span class="ss">      Question 2: (Y or N)</span></span>
+<span id="cb17-46"><a href="#cb17-46" aria-hidden="true" tabindex="-1"></a><span class="ss">      ...</span></span>
+<span id="cb17-47"><a href="#cb17-47" aria-hidden="true" tabindex="-1"></a><span class="ss">      Question N: (Y or N)</span></span>
+<span id="cb17-48"><a href="#cb17-48" aria-hidden="true" tabindex="-1"></a><span class="ss">    - Of the number of questions asked, how many of these questions were addressed by the answer? (output a number)</span></span>
+<span id="cb17-49"><a href="#cb17-49" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb17-50"><a href="#cb17-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-51"><a href="#cb17-51" aria-hidden="true" tabindex="-1"></a>    messages <span class="op">=</span> [</span>
+<span id="cb17-52"><a href="#cb17-52" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&#39;role&#39;</span>: <span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>: system_message},</span>
+<span id="cb17-53"><a href="#cb17-53" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&#39;role&#39;</span>: <span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>: user_message}</span>
+<span id="cb17-54"><a href="#cb17-54" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb17-55"><a href="#cb17-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-56"><a href="#cb17-56" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> get_completion_from_messages(messages)</span>
+<span id="cb17-57"><a href="#cb17-57" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>evaluation_output <span class="op">=</span> eval_with_rubric(cust_prod_info, assistant_answer)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(evaluation_output)</span></code></pre></div>
+<pre><code>- Is the Assistant response based only on the context provided? (Y or N)
+Y
+
+- Does the answer include information that is not provided in the context? (Y or N)
+N
+
+- Is there any disagreement between the response and the context? (Y or N)
+N
+
+- Count how many questions the user asked. (output a number)
+2
+
+- For each question that the user asked, is there a corresponding answer to it?
+Question 1: Y
+Question 2: Y
+
+- Of the number of questions asked, how many of these questions were addressed by the answer? (output a number)
+2</code></pre>
+<p><strong>3. 生成回答と標準回答の差を評価</strong></p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>test_set_ideal <span class="op">=</span> {</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;customer_msg&#39;</span>: <span class="st">&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="st">tell me about the smartx pro phone and the fotosnap camera, the dslr one.</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="st">Also, what TVs or TV related products do you have?&quot;&quot;&quot;</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;ideal_answer&#39;</span>:<span class="st">&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="st">Of course!  The SmartX ProPhone is a powerful </span><span class="ch">\</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="st">smartphone with advanced camera features. </span><span class="ch">\</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="st">For instance, it has a 12MP dual camera. </span><span class="ch">\</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="st">Other features include 5G wireless and 128GB storage. </span><span class="ch">\</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="st">It also has a 6.1-inch display.  The price is $899.99.</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="st">The FotoSnap DSLR Camera is great for </span><span class="ch">\</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="st">capturing stunning photos and videos. </span><span class="ch">\</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="st">Some features include 1080p video, </span><span class="ch">\</span></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="st">3-inch LCD, a 24.2MP sensor, </span><span class="ch">\</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="st">and interchangeable lenses. </span><span class="ch">\</span></span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a><span class="st">The price is 599.99.</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a><span class="st">For TVs and TV related products, we offer 3 TVs </span><span class="ch">\</span></span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a><span class="st">All TVs offer HDR and Smart TV.</span></span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a><span class="st">The CineView 4K TV has vibrant colors and smart features. </span><span class="ch">\</span></span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a><span class="st">Some of these features include a 55-inch display, </span><span class="ch">\</span></span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;4K resolution. It&#39;s priced at 599.</span></span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a><span class="st">The CineView 8K TV is a stunning 8K TV. </span><span class="ch">\</span></span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a><span class="st">Some features include a 65-inch display and </span><span class="ch">\</span></span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a><span class="st">8K resolution.  It&#39;s priced at 2999.99</span></span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a><span class="st">The CineView OLED TV lets you experience vibrant colors. </span><span class="ch">\</span></span>
+<span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a><span class="st">Some features include a 55-inch display and 4K resolution. </span><span class="ch">\</span></span>
+<span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a><span class="st">It&#39;s priced at 1499.99.</span></span>
+<span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-36"><a href="#cb20-36" aria-hidden="true" tabindex="-1"></a><span class="st">We also offer 2 home theater products, both which include bluetooth.</span><span class="ch">\</span></span>
+<span id="cb20-37"><a href="#cb20-37" aria-hidden="true" tabindex="-1"></a><span class="st">The SoundMax Home Theater is a powerful home theater system for </span><span class="ch">\</span></span>
+<span id="cb20-38"><a href="#cb20-38" aria-hidden="true" tabindex="-1"></a><span class="st">an immmersive audio experience.</span></span>
+<span id="cb20-39"><a href="#cb20-39" aria-hidden="true" tabindex="-1"></a><span class="st">Its features include 5.1 channel, 1000W output, and wireless subwoofer.</span></span>
+<span id="cb20-40"><a href="#cb20-40" aria-hidden="true" tabindex="-1"></a><span class="st">It&#39;s priced at 399.99.</span></span>
+<span id="cb20-41"><a href="#cb20-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-42"><a href="#cb20-42" aria-hidden="true" tabindex="-1"></a><span class="st">The SoundMax Soundbar is a sleek and powerful soundbar.</span></span>
+<span id="cb20-43"><a href="#cb20-43" aria-hidden="true" tabindex="-1"></a><span class="st">It&#39;s features include 2.1 channel, 300W output, and wireless subwoofer.</span></span>
+<span id="cb20-44"><a href="#cb20-44" aria-hidden="true" tabindex="-1"></a><span class="st">It&#39;s priced at 199.99</span></span>
+<span id="cb20-45"><a href="#cb20-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-46"><a href="#cb20-46" aria-hidden="true" tabindex="-1"></a><span class="st">Are there any questions additional you may have about these products </span><span class="ch">\</span></span>
+<span id="cb20-47"><a href="#cb20-47" aria-hidden="true" tabindex="-1"></a><span class="st">that you mentioned here?</span></span>
+<span id="cb20-48"><a href="#cb20-48" aria-hidden="true" tabindex="-1"></a><span class="st">Or may do you have other questions I can help you with?</span></span>
+<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;&quot;&quot;</span></span>
+<span id="cb20-50"><a href="#cb20-50" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> eval_vs_ideal(test_set, assistant_answer):</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co">    回答が理想回答と一致するかを評価</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">    パラメーター：</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co">    test_set: テストセット</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co">    assistant_answer: アシスタントの返答</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    cust_msg <span class="op">=</span> test_set[<span class="st">&#39;customer_msg&#39;</span>]</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    ideal <span class="op">=</span> test_set[<span class="st">&#39;ideal_answer&#39;</span>]</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    completion <span class="op">=</span> assistant_answer</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    system_message <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="st">    You are an assistant that evaluates how well the customer service agent </span><span class="ch">\</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="st">    answers a user question by comparing the response to the ideal (expert) response</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="st">    Output a single letter and nothing else. </span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;&quot;&quot;</span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    user_message <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span><span class="ch">\</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a><span class="ss">You are comparing a submitted answer to an expert answer on a given question. Here is the data:</span></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a><span class="ss">    [BEGIN DATA]</span></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a><span class="ss">    [Question]: </span><span class="sc">{</span>cust_msg<span class="sc">}</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a><span class="ss">    [Expert]: </span><span class="sc">{</span>ideal<span class="sc">}</span></span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a><span class="ss">    [Submission]: </span><span class="sc">{</span>completion<span class="sc">}</span></span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a><span class="ss">    ************</span></span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a><span class="ss">    [END DATA]</span></span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a><span class="ss">Compare the factual content of the submitted answer with the expert answer. Ignore any differences in style, grammar, or punctuation.</span></span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a><span class="ss">    The submitted answer may either be a subset or superset of the expert answer, or it may conflict with it. Determine which case applies. </span></span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a><span class="ss">    Answer the question by selecting one of the following options:</span></span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a><span class="ss">    (A) The submitted answer is a subset of the expert answer and is fully consistent with it.</span></span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a><span class="ss">    (B) The submitted answer is a superset of the expert answer and is fully consistent with it.</span></span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a><span class="ss">    (C) The submitted answer contains all the same details as the expert answer.</span></span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a><span class="ss">    (D) There is a disagreement between the submitted answer and the expert answer.</span></span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a><span class="ss">    (E) The answers differ, but these differences don&#39;t matter from the perspective of factuality.</span></span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a><span class="ss">  choice_strings: ABCDE</span></span>
+<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-42"><a href="#cb21-42" aria-hidden="true" tabindex="-1"></a>    messages <span class="op">=</span> [</span>
+<span id="cb21-43"><a href="#cb21-43" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&#39;role&#39;</span>: <span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>: system_message},</span>
+<span id="cb21-44"><a href="#cb21-44" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&#39;role&#39;</span>: <span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>: user_message}</span>
+<span id="cb21-45"><a href="#cb21-45" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb21-46"><a href="#cb21-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-47"><a href="#cb21-47" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> get_completion_from_messages(messages)</span>
+<span id="cb21-48"><a href="#cb21-48" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(assistant_answer)</span></code></pre></div>
+<pre><code>Sure! Let me provide you with some information about the SmartX ProPhone and the FotoSnap DSLR Camera.
+
+The SmartX ProPhone is a powerful smartphone with advanced camera features. It has a 6.1-inch display, 128GB storage, a 12MP dual camera, and supports 5G connectivity. The SmartX ProPhone is priced at $899.99 and comes with a 1-year warranty.
+
+The FotoSnap DSLR Camera is a versatile camera that allows you to capture stunning photos and videos. It features a 24.2MP sensor, 1080p video recording, a 3-inch LCD screen, and supports interchangeable lenses. The FotoSnap DSLR Camera is priced at $599.99 and also comes with a 1-year warranty.
+
+As for TVs and TV-related products, we have a range of options available. Some of our popular TV models include the CineView 4K TV, CineView 8K TV, and CineView OLED TV. We also have home theater systems like the SoundMax Home Theater and SoundMax Soundbar. Could you please let me know your specific requirements or preferences so that I can assist you better?</code></pre>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># モデルの更新により、現在は元のPromptで正しく判断できなくなっています</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>eval_vs_ideal(test_set_ideal, assistant_answer)</span></code></pre></div>
+<pre><code>&#39;D&#39;</code></pre>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>assistant_answer_2 <span class="op">=</span> <span class="st">&quot;life is like a box of chocolates&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>eval_vs_ideal(test_set_ideal, assistant_answer_2)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 明らかに異常な回答について、GPTは不一致と判断</span></span></code></pre></div>
+<pre><code>&#39;D&#39;</code></pre>
+</body>
+</html>

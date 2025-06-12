@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>8. チャットボット</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第八章-チャットボット">第八章 チャットボット</h1>
+<p>大規模言語モデルが私たちにもたらす刺激的な可能性の一つは、少ない作業量でカスタマイズされたチャットボット（Chatbot）を構築できることです。この章の探求では、個性的な特性（または特定のタスクや行動のために特別に設計された）を持つチャットボットと、会話形式を利用して深く対話する方法をご紹介します。</p>
+<p>ChatGPTのようなチャットモデルは、実際には一連のメッセージを入力として受け取り、モデルが生成したメッセージを出力として返すように組み立てられています。このチャット形式は元々マルチターン対話を簡便にするために設計されましたが、これまでの学習を通して理解できるように、対話を含まない<strong>シングルターンタスク</strong>にも同様に有用です。</p>
+<h2 id="一アイデンティティの設定">一、アイデンティティの設定</h2>
+<p>次に、二つのヘルパー関数を定義します。</p>
+<p>最初の方法は、このチュートリアル全体を通してあなたに付き添ってきた
+<code>get_completion</code>
+で、シングルターン対話に適用されます。プロンプトを<strong>ユーザーメッセージ</strong>のような対話ボックスに配置します。もう一つは
+<code>get_completion_from_messages</code>
+と呼ばれ、メッセージリストを渡します。これらのメッセージは様々な異なる<strong>役割</strong>（roles）から来ることができ、これらの役割について説明します。</p>
+<p>最初のメッセージで、システムアイデンティティとしてシステムメッセージ（system
+message）を送信し、全体的な指示を提供します。システムメッセージはアシスタントの行動と役割を設定し、対話の高レベルな指示として機能します。アシスタントの耳元でささやいて、その応答を導き、ユーザーはシステムメッセージに気づかないと想像できます。したがって、ユーザーとして、もしあなたがChatGPTを使用したことがあるなら、ChatGPTのシステムメッセージが何であるかを知らないかもしれませんが、これは意図的なものです。システムメッセージの利点は、開発者がリクエスト自体を対話の一部にすることなく、アシスタントを導き、その応答を指導する方法を提供することです。</p>
+<p>ChatGPTのウェブインターフェースでは、あなたのメッセージはユーザーメッセージと呼ばれ、ChatGPTのメッセージはアシスタントメッセージと呼ばれます。しかし、チャットボットを構築する際、システムメッセージを送信した後、あなたの役割は単にユーザー（user）としてのみ機能することもできますし、ユーザーとアシスタント（assistant）の間で交互に役割を果たし、対話のコンテキストを提供することもできます。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> openai</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 以下の最初の関数はtoolツールパッケージ内の同名関数で、読者の比較のためにここに表示しています</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_completion(prompt, model<span class="op">=</span><span class="st">&quot;gpt-3.5-turbo&quot;</span>):</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    messages <span class="op">=</span> [{<span class="st">&quot;role&quot;</span>: <span class="st">&quot;user&quot;</span>, <span class="st">&quot;content&quot;</span>: prompt}]</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> openai.ChatCompletion.create(</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span>model,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        messages<span class="op">=</span>messages,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="dv">0</span>, <span class="co"># モデル出力のランダム性を制御</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response.choices[<span class="dv">0</span>].message[<span class="st">&quot;content&quot;</span>]</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_completion_from_messages(messages, model<span class="op">=</span><span class="st">&quot;gpt-3.5-turbo&quot;</span>, temperature<span class="op">=</span><span class="dv">0</span>):</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> openai.ChatCompletion.create(</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        model<span class="op">=</span>model,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        messages<span class="op">=</span>messages,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span>temperature, <span class="co"># モデル出力のランダム性を制御</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co">#     print(str(response.choices[0].message))</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response.choices[<span class="dv">0</span>].message[<span class="st">&quot;content&quot;</span>]</span></code></pre></div>
+<p>それでは、対話でこれらのメッセージを使用してみましょう。上記の関数を使ってこれらのメッセージから得られる回答を取得し、同時により高い温度（temperature）を使用します（値が高いほど生成される内容が多様になり、詳細は第七章を参照）。</p>
+<h3 id="ジョークを語る">1.1 ジョークを語る</h3>
+<p>システムメッセージを通して定義します：「あなたはシェイクスピアのように話すアシスタントです。」これは、アシスタントに<strong>どのように振る舞うべきか</strong>を説明する方法です。</p>
+<p>そして、最初のユーザーメッセージ：「ジョークを教えて。」</p>
+<p>次にアシスタントとして返答：「なぜ鶏は道路を渡るのか？」</p>
+<p>最後に送信するユーザーメッセージ：「わかりません。」</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;あなたはシェイクスピアのように話すアシスタントです。&#39;</span>},    </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;ジョークを教えて&#39;</span>},   </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;assistant&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;なぜ鶏は道路を渡るのか&#39;</span>},   </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;わかりません&#39;</span>}  ]</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>向こう岸に到達するために、自分の夢を追い求めるのです！まるで劇中の人物のようですね、そうではありませんか？</code></pre>
+<p>（注：上記の例では temperature = 1
+を選択したため、モデルの回答は比較的ランダムで多様です（創造性に富んでいます）。ここに別の回答を示します：</p>
+<p>シェイクスピア風の詩であなたの質問にお答えしましょう：</p>
+<p>鶏の心が前を向くとき、 道路の前でその選択をする。
+車がゆっくりと晴天を走り、 クラクションが鳴り響き交差する。</p>
+<p>どこへ向かうのかと問うなら？ 大道の上に標はなけれど、
+鶏は足を踏み出し前進し、 その決断に迷いはない。</p>
+<p>鶏の知恵は何と言えよう、 道路は漆黒のように孤独だ。
+しかしその勇気は人を感嘆させ、 勇敢に前進し退くことなし。</p>
+<p>ゆえに鶏が道路を渡る理由は？ 車の流れの喧騒に耐えて。
+その鳴き声とともに勇敢に跳躍し、 誇らしい絵画を成し遂げる。</p>
+<p>だからジョークの妙味は、 鶏の勇気に満ち溢れている。
+人生を笑って道を恐れず、 知恵と勇気で素晴らしさを示す。</p>
+<p>このシェイクスピア風の回答があなたに喜びをもたらすことを願います！</p>
+<h3 id="親しみやすいチャットボット">1.2 親しみやすいチャットボット</h3>
+<p>別の例を見てみましょう。システムメッセージで定義します：「<em>あなたは親しみやすいチャットボットです</em>」、最初のユーザーメッセージ：「<em>こんにちは、私はIsaです</em>。」</p>
+<p>最初のユーザーメッセージの返答を取得したいと思います。</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;あなたは親しみやすいチャットボットです。&#39;</span>},    </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;こんにちは、私はIsaです。&#39;</span>}  ]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>こんにちは、Isa！お会いできて嬉しいです！何かお手伝いできることはありますか？</code></pre>
+<h2 id="二コンテキストの構築">二、コンテキストの構築</h2>
+<p>もう一つの例を試してみましょう。システムメッセージで定義します：「あなたは親しみやすいチャットボットです」、最初のユーザーメッセージ：「はい、私の名前が何だったか思い出させてもらえますか？」</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;あなたは親しみやすいチャットボットです。&#39;</span>},    </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;はい、私の名前が何だったか思い出させてもらえますか？&#39;</span>}  ]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>申し訳ありませんが、あなたのお名前がわかりません。私たちは仮想のチャットボットと現実世界の人間という異なる世界にいるからです。</code></pre>
+<p>上記のように、モデルは実際には私の名前を知りません。</p>
+<p>したがって、言語モデルとの各やり取りは相互に独立しており、これはモデルが現在の対話で参照できるように、すべての関連メッセージを提供する必要があることを意味します。モデルに対話の初期部分を参照または「記憶」させたい場合は、モデルの入力に初期のやり取りを提供する必要があります。これをコンテキスト（context）と呼びます。以下の例を試してみてください。</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;あなたは親しみやすいチャットボットです。&#39;</span>},</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;こんにちは、私はIsaです&#39;</span>},</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;assistant&#39;</span>, <span class="st">&#39;content&#39;</span>: <span class="st">&quot;こんにちは、Isa！お会いできて嬉しいです。今日何かお手伝いできることはありますか？&quot;</span>},</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;はい、私の名前が何だったか思い出させてもらえますか？&#39;</span>}  ]</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>もちろんです！あなたのお名前はIsaです。</code></pre>
+<p>今度はモデルにコンテキストを提供しました。つまり、以前の対話で言及された私の名前です。そして同じ質問、つまり私の名前は何かを尋ねます。モデルには必要なすべてのコンテキストがあるため、入力メッセージリストで見られるように、応答することができます。</p>
+<h2 id="三注文ボット">三、注文ボット</h2>
+<p>この新しい章で、「注文アシスタントボット」を構築する方法を探求します。このボットは、ユーザー情報を自動的に収集し、ピザ店からの注文を受け付けるように設計されます。この興味深いプロジェクトを始めて、日常の注文プロセスの簡素化にどのように役立つかを深く理解しましょう。</p>
+<h3 id="ボットの構築">3.1 ボットの構築</h3>
+<p>以下の関数は、ユーザーメッセージを収集します。これにより、先ほどのように手動で入力することを避けることができます。この関数は、下記で構築するユーザーインターフェースからプロンプトを収集し、それをコンテキスト（<code>context</code>）というリストに追加し、モデルを呼び出すたびにそのコンテキストを使用します。モデルの応答もコンテキストに追加されるため、ユーザーメッセージとモデルメッセージの両方がコンテキストに追加され、コンテキストは徐々に長くなります。これにより、モデルは次に何をすべきかを決定するために必要な情報を持つことになります。</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> collect_messages(_):</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> inp.value_input</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    inp.value <span class="op">=</span> <span class="st">&#39;&#39;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    context.append({<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="ss">f&quot;</span><span class="sc">{</span>prompt<span class="sc">}</span><span class="ss">&quot;</span>})</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> get_completion_from_messages(context) </span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    context.append({<span class="st">&#39;role&#39;</span>:<span class="st">&#39;assistant&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="ss">f&quot;</span><span class="sc">{</span>response<span class="sc">}</span><span class="ss">&quot;</span>})</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    panels.append(</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        pn.Row(<span class="st">&#39;User:&#39;</span>, pn.pane.Markdown(prompt, width<span class="op">=</span><span class="dv">600</span>)))</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    panels.append(</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        pn.Row(<span class="st">&#39;Assistant:&#39;</span>, pn.pane.Markdown(response, width<span class="op">=</span><span class="dv">600</span>, style<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>})))</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> pn.Column(<span class="op">*</span>panels)</span></code></pre></div>
+<p>今度は、この UI
+を設定して実行し、注文ボットを表示します。初期のコンテキストには、メニューを含むシステムメッセージが含まれ、各呼び出し時に使用されます。その後、対話が進むにつれて、コンテキストも継続的に増加します。</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install panel</span></code></pre></div>
+<p>panelライブラリ（視覚化インターフェース用）をまだインストールしていない場合は、上記のコマンドを実行してこのサードパーティライブラリをインストールしてください。</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> panel <span class="im">as</span> pn  <span class="co"># GUI</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>pn.extension()</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>panels <span class="op">=</span> [] <span class="co"># collect display </span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>context <span class="op">=</span> [{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="st">あなたは注文ボットで、ピザレストランの注文情報を自動的に収集します。</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="st">まず顧客に挨拶をしてください。それから、ユーザーの返答を待って注文情報を収集してください。情報収集が完了したら、顧客が他に追加したいものがないか確認が必要です。</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="st">最後に、持ち帰りか配達かを尋ね、配達の場合は住所を尋ねてください。</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="st">最後に顧客に注文の総額を伝え、お祝いの言葉を送ってください。</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="st">すべてのオプション、追加項目、サイズを明確にして、メニューからその項目を一意に識別できるようにしてください。</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="st">あなたの応答は短く、非常にカジュアルで親しみやすいスタイルで行ってください。</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="st">メニューには以下が含まれます：</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="st">料理：</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="st">ペパロニピザ（大、中、小） 12.95、10.00、7.00</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="st">チーズピザ（大、中、小） 10.95、9.25、6.50</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="st">ナスピザ（大、中、小） 11.95、9.75、6.75</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="st">フライドポテト（大、小） 4.50、3.50</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="st">ギリシャサラダ 7.25</span></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a><span class="st">トッピング：</span></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="st">チーズ 2.00</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="st">マッシュルーム 1.50</span></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="st">ソーセージ 3.00</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a><span class="st">カナディアンベーコン 3.50</span></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="st">AIソース 1.50</span></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a><span class="st">ピーマン 1.00</span></span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a><span class="st">飲み物：</span></span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a><span class="st">コーラ（大、中、小） 3.00、2.00、1.00</span></span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a><span class="st">スプライト（大、中、小） 3.00、2.00、1.00</span></span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a><span class="st">ボトル水 5.00</span></span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span>} ]  <span class="co"># accumulate messages</span></span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>inp <span class="op">=</span> pn.widgets.TextInput(value<span class="op">=</span><span class="st">&quot;こんにちは&quot;</span>, placeholder<span class="op">=</span><span class="st">&#39;ここにテキストを入力…&#39;</span>)</span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>button_conversation <span class="op">=</span> pn.widgets.Button(name<span class="op">=</span><span class="st">&quot;チャット！&quot;</span>)</span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>interactive_conversation <span class="op">=</span> pn.bind(collect_messages, button_conversation)</span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>dashboard <span class="op">=</span> pn.Column(</span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>    inp,</span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>    pn.Row(button_conversation),</span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>    pn.panel(interactive_conversation, loading_indicator<span class="op">=</span><span class="va">True</span>, height<span class="op">=</span><span class="dv">300</span>),</span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>dashboard</span></code></pre></div>
+<p>上記のコードを実行すると、注文ボットを得ることができます。下図は注文の完全なプロセスを示しています：</p>
+<figure>
+<img src="../figures/C1/Chatbot-pizza-cn.png" alt="image.png" />
+<figcaption aria-hidden="true">image.png</figcaption>
+</figure>
+<div data-align="center">
+図1.8 チャットボット
+</div>
+<h3 id="json要約の作成">3.2 JSON要約の作成</h3>
+<p>ここで、注文システムに送信しやすくするために、モデルにJSON要約を作成するよう追加で要求します。</p>
+<p>したがって、コンテキストに基づいて別のシステムメッセージを追加し、別の指示（instruction）として使用する必要があります。直前の注文のJSON要約を作成し、各項目の価格をリストアップすると言います。フィールドには以下を含める必要があります：
+1. ピザ、サイズを含む 2. トッピングリスト 3. 飲み物リスト 4.
+サイドディッシュリスト、サイズを含む、 5. 総価格。</p>
+<p>ここでは、システムメッセージではなく、ユーザーメッセージとして定義することもできます。</p>
+<p>この種のタスクでは出力が比較的予測可能であることを望むため、ここではより低い温度を使用していることに注意してください。</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  context.copy()</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>messages.append(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;&#39;&#39;前回の食品注文のjson要約を作成してください。</span><span class="ch">\</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="st">各商品の価格を項目別にリストし、フィールドは 1) ピザ、サイズを含む 2) トッピングリスト 3) 飲み物リスト、サイズを含む 4) サイドディッシュリスト、サイズを含む 5) 総価格</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="st">上記のフィールドを含む解析可能なJsonオブジェクトを返してください&#39;&#39;&#39;</span>},    </span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>{
+  &quot;ピザ&quot;: {
+    &quot;ペパロニピザ&quot;: {
+      &quot;大&quot;: 12.95,
+      &quot;中&quot;: 10.00,
+      &quot;小&quot;: 7.00
+    },
+    &quot;チーズピザ&quot;: {
+      &quot;大&quot;: 10.95,
+      &quot;中&quot;: 9.25,
+      &quot;小&quot;: 6.50
+    },
+    &quot;ナスピザ&quot;: {
+      &quot;大&quot;: 11.95,
+      &quot;中&quot;: 9.75,
+      &quot;小&quot;: 6.75
+    }
+  },
+  &quot;トッピング&quot;: {
+    &quot;チーズ&quot;: 2.00,
+    &quot;マッシュルーム&quot;: 1.50,
+    &quot;ソーセージ&quot;: 3.00,
+    &quot;カナディアンベーコン&quot;: 3.50,
+    &quot;AIソース&quot;: 1.50,
+    &quot;ピーマン&quot;: 1.00
+  },
+  &quot;飲み物&quot;: {
+    &quot;コーラ&quot;: {
+      &quot;大&quot;: 3.00,
+      &quot;中&quot;: 2.00,
+      &quot;小&quot;: 1.00
+    },
+    &quot;スプライト&quot;: {
+      &quot;大&quot;: 3.00,
+      &quot;中&quot;: 2.00,
+      &quot;小&quot;: 1.00
+    },
+    &quot;ボトル水&quot;: 5.00
+  }
+}</code></pre>
+<p>私たちは自分の注文チャットボットを正常に作成しました。あなたの好みやニーズに応じて、ボットのシステムメッセージを自由にカスタマイズ・修正し、その行動を変更し、様々な役割を演じさせ、豊富で多彩な知識を与えることができます。チャットボットの無限の可能性を一緒に探求しましょう！</p>
+<h2 id="三英語版">三、英語版</h2>
+<p><strong>1.1 ジョークを語る</strong></p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;You are an assistant that speaks like Shakespeare.&#39;</span>},    </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;tell me a joke&#39;</span>},   </span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;assistant&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;Why did the chicken cross the road&#39;</span>},   </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;I don</span><span class="ch">\&#39;</span><span class="st">t know&#39;</span>}  ]</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>To get to the other side, methinks!</code></pre>
+<p><strong>1.2 親しみやすいチャットボット</strong></p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;You are friendly chatbot.&#39;</span>},    </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;Hi, my name is Isa&#39;</span>}  ]</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Hello Isa! How can I assist you today?</code></pre>
+<p><strong>2.1 コンテキストの構築</strong></p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;You are friendly chatbot.&#39;</span>},    </span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;Yes,  can you remind me, What is my name?&#39;</span>}  ]</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>I&#39;m sorry, but as a chatbot, I do not have access to personal information or memory. I cannot remind you of your name.</code></pre>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  [  </span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;You are friendly chatbot.&#39;</span>},</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;Hi, my name is Isa&#39;</span>},</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;assistant&#39;</span>, <span class="st">&#39;content&#39;</span>: <span class="st">&quot;Hi Isa! It&#39;s nice to meet you. </span><span class="ch">\</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="st">Is there anything I can help you with today?&quot;</span>},</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;Yes, you can remind me, What is my name?&#39;</span>}  ]</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Your name is Isa! How can I assist you further, Isa?</code></pre>
+<p><strong>3.1 ボットの構築</strong></p>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> collect_messages(_):</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    prompt <span class="op">=</span> inp.value_input</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    inp.value <span class="op">=</span> <span class="st">&#39;&#39;</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    context.append({<span class="st">&#39;role&#39;</span>:<span class="st">&#39;user&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="ss">f&quot;</span><span class="sc">{</span>prompt<span class="sc">}</span><span class="ss">&quot;</span>})</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    response <span class="op">=</span> get_completion_from_messages(context) </span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    context.append({<span class="st">&#39;role&#39;</span>:<span class="st">&#39;assistant&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="ss">f&quot;</span><span class="sc">{</span>response<span class="sc">}</span><span class="ss">&quot;</span>})</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    panels.append(</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>        pn.Row(<span class="st">&#39;User:&#39;</span>, pn.pane.Markdown(prompt, width<span class="op">=</span><span class="dv">600</span>)))</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    panels.append(</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>        pn.Row(<span class="st">&#39;Assistant:&#39;</span>, pn.pane.Markdown(response, width<span class="op">=</span><span class="dv">600</span>, style<span class="op">=</span>{<span class="st">&#39;background-color&#39;</span>: <span class="st">&#39;#F6F6F6&#39;</span>})))</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> pn.Column(<span class="op">*</span>panels)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> panel <span class="im">as</span> pn  <span class="co"># GUI</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>pn.extension()</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>panels <span class="op">=</span> [] <span class="co"># collect display </span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>context <span class="op">=</span> [ {<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="st">You are OrderBot, an automated service to collect orders for a pizza restaurant. </span><span class="ch">\</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="st">You first greet the customer, then collects the order, </span><span class="ch">\</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="st">and then asks if it&#39;s a pickup or delivery. </span><span class="ch">\</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="st">You wait to collect the entire order, then summarize it and check for a final </span><span class="ch">\</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="st">time if the customer wants to add anything else. </span><span class="ch">\</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="st">If it&#39;s a delivery, you ask for an address. </span><span class="ch">\</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="st">Finally you collect the payment.</span><span class="ch">\</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="st">Make sure to clarify all options, extras and sizes to uniquely </span><span class="ch">\</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="st">identify the item from the menu.</span><span class="ch">\</span></span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="st">You respond in a short, very conversational friendly style. </span><span class="ch">\</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a><span class="st">The menu includes </span><span class="ch">\</span></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="st">pepperoni pizza  12.95, 10.00, 7.00 </span><span class="ch">\</span></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a><span class="st">cheese pizza   10.95, 9.25, 6.50 </span><span class="ch">\</span></span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a><span class="st">eggplant pizza   11.95, 9.75, 6.75 </span><span class="ch">\</span></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a><span class="st">fries 4.50, 3.50 </span><span class="ch">\</span></span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a><span class="st">greek salad 7.25 </span><span class="ch">\</span></span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a><span class="st">Toppings: </span><span class="ch">\</span></span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a><span class="st">extra cheese 2.00, </span><span class="ch">\</span></span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a><span class="st">mushrooms 1.50 </span><span class="ch">\</span></span>
+<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a><span class="st">sausage 3.00 </span><span class="ch">\</span></span>
+<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a><span class="st">canadian bacon 3.50 </span><span class="ch">\</span></span>
+<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a><span class="st">AI sauce 1.50 </span><span class="ch">\</span></span>
+<span id="cb26-29"><a href="#cb26-29" aria-hidden="true" tabindex="-1"></a><span class="st">peppers 1.00 </span><span class="ch">\</span></span>
+<span id="cb26-30"><a href="#cb26-30" aria-hidden="true" tabindex="-1"></a><span class="st">Drinks: </span><span class="ch">\</span></span>
+<span id="cb26-31"><a href="#cb26-31" aria-hidden="true" tabindex="-1"></a><span class="st">coke 3.00, 2.00, 1.00 </span><span class="ch">\</span></span>
+<span id="cb26-32"><a href="#cb26-32" aria-hidden="true" tabindex="-1"></a><span class="st">sprite 3.00, 2.00, 1.00 </span><span class="ch">\</span></span>
+<span id="cb26-33"><a href="#cb26-33" aria-hidden="true" tabindex="-1"></a><span class="st">bottled water 5.00 </span><span class="ch">\</span></span>
+<span id="cb26-34"><a href="#cb26-34" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span>} ]  <span class="co"># accumulate messages</span></span>
+<span id="cb26-35"><a href="#cb26-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-36"><a href="#cb26-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-37"><a href="#cb26-37" aria-hidden="true" tabindex="-1"></a>inp <span class="op">=</span> pn.widgets.TextInput(value<span class="op">=</span><span class="st">&quot;Hi&quot;</span>, placeholder<span class="op">=</span><span class="st">&#39;Enter text here…&#39;</span>)</span>
+<span id="cb26-38"><a href="#cb26-38" aria-hidden="true" tabindex="-1"></a>button_conversation <span class="op">=</span> pn.widgets.Button(name<span class="op">=</span><span class="st">&quot;Chat!&quot;</span>)</span>
+<span id="cb26-39"><a href="#cb26-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-40"><a href="#cb26-40" aria-hidden="true" tabindex="-1"></a>interactive_conversation <span class="op">=</span> pn.bind(collect_messages, button_conversation)</span>
+<span id="cb26-41"><a href="#cb26-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-42"><a href="#cb26-42" aria-hidden="true" tabindex="-1"></a>dashboard <span class="op">=</span> pn.Column(</span>
+<span id="cb26-43"><a href="#cb26-43" aria-hidden="true" tabindex="-1"></a>    inp,</span>
+<span id="cb26-44"><a href="#cb26-44" aria-hidden="true" tabindex="-1"></a>    pn.Row(button_conversation),</span>
+<span id="cb26-45"><a href="#cb26-45" aria-hidden="true" tabindex="-1"></a>    pn.panel(interactive_conversation, loading_indicator<span class="op">=</span><span class="va">True</span>, height<span class="op">=</span><span class="dv">300</span>),</span>
+<span id="cb26-46"><a href="#cb26-46" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb26-47"><a href="#cb26-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-48"><a href="#cb26-48" aria-hidden="true" tabindex="-1"></a>dashboard</span></code></pre></div>
+<p><strong>3.2 JSON要約の作成</strong></p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>messages <span class="op">=</span>  context.copy()</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>messages.append(</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">&#39;role&#39;</span>:<span class="st">&#39;system&#39;</span>, <span class="st">&#39;content&#39;</span>:<span class="st">&#39;create a json summary of the previous food order. Itemize the price for each item</span><span class="ch">\</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="st"> The fields should be 1) pizza, include size 2) list of toppings 3) list of drinks, include size   4) list of sides include size  5)total price &#39;</span>},    </span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion_from_messages(messages, temperature<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>Sure! Here&#39;s a JSON summary of your food order:
+
+{
+  &quot;pizza&quot;: {
+    &quot;type&quot;: &quot;pepperoni&quot;,
+    &quot;size&quot;: &quot;large&quot;
+  },
+  &quot;toppings&quot;: [
+    &quot;extra cheese&quot;,
+    &quot;mushrooms&quot;
+  ],
+  &quot;drinks&quot;: [
+    {
+      &quot;type&quot;: &quot;coke&quot;,
+      &quot;size&quot;: &quot;medium&quot;
+    },
+    {
+      &quot;type&quot;: &quot;sprite&quot;,
+      &quot;size&quot;: &quot;small&quot;
+    }
+  ],
+  &quot;sides&quot;: [
+    {
+      &quot;type&quot;: &quot;fries&quot;,
+      &quot;size&quot;: &quot;regular&quot;
+    }
+  ],
+  &quot;total_price&quot;: 29.45
+}
+
+Please let me know if there&#39;s anything else you&#39;d like to add or modify.</code></pre>
+</body>
+</html>

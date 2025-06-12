@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>2. ドキュメント読み込み</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第2章-文書読み込み">第2章 文書読み込み</h1>
+<p>ユーザーの個人データは多様な形式で存在します：PDF文書、動画、ウェブページなど。LangChainがLLMにユーザー個人データへのアクセス能力を提供することに基づいて、まずユーザーの多様で非構造化された個人データを読み込み、処理する必要があります。本章では、まず文書（文書、動画、ウェブページなどを含む）の読み込み方法を紹介します。これは個人データアクセスの最初のステップです。</p>
+<p>まずPDF文書から始めましょう。</p>
+<h2 id="一pdf文書">一、PDF文書</h2>
+<p>まず、以下のリンクから<a
+href="https://datawhalechina.github.io/fantastic-matplotlib/">PDF文書</a>を読み込みます。これはDataWhaleが提供するオープンソースチュートリアル『Fantastic
+Matplotlib』です。なお、英語版では、アンドリュー・ン教授が<a
+href="https://see.stanford.edu/materials/aimlcs229/transcripts/MachineLearning-Lecture01.pdf">2009年の機械学習講義の字幕ファイル</a>を例として使用しています。中国語読者により適するため、上記の中国語チュートリアルを例として選択しました。ただし、英語版のコードでは、アンドリュー・ン教授の機械学習講義ファイルを参考として見つけることができます。後続のコード実践もこの調整に従います。</p>
+<p>注意，要运行以下代码，你需要安装第三方库 pypdf：</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install <span class="op">-</span>q pypdf</span></code></pre></div>
+<h3 id="pdf文書の読み込み">1.1 PDF文書の読み込み</h3>
+<p>最初に、<code>PyPDFLoader</code>を使用してPDFファイルの読み取りと読み込みを行います。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> PyPDFLoader</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 创建一个 PyPDFLoader Class 实例，输入为待加载的pdf文档路径</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> PyPDFLoader(<span class="st">&quot;docs/matplotlib/第一回：Matplotlib初相识.pdf&quot;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 调用 PyPDFLoader Class 的函数 load对pdf文件进行加载</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> loader.load()</span></code></pre></div>
+<h3 id="読み込まれたデータの探索">1.2 読み込まれたデータの探索</h3>
+<p>文書が読み込まれると、<code>pages</code>という変数に格納されます。さらに、<code>pages</code>のデータ構造は<code>List</code>型です。その型を確認するために、Pythonの組み込み<code>type</code>関数を使用して<code>pages</code>の正確なデータ型を確認できます。</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">type</span>(pages))</span></code></pre></div>
+<pre><code>&lt;class &#39;list&#39;&gt;</code></pre>
+<p><code>pages</code>の長さを出力することで、そのPDFファイルに含まれる総ページ数を簡単に確認できます。</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">len</span>(pages))</span></code></pre></div>
+<pre><code>3</code></pre>
+<p><code>page</code>変数では、各要素が一つの文書を表し、それらのデータ型は<code>langchain.schema.document.Document</code>です。</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>page <span class="op">=</span> pages[<span class="dv">0</span>]</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">type</span>(page))</span></code></pre></div>
+<pre><code>&lt;class &#39;langchain.schema.document.Document&#39;&gt;</code></pre>
+<p><code>langchain.schema.document.Document</code>型には2つの属性があります：</p>
+<ol type="1">
+<li><code>page_content</code>：その文書ページの内容を含みます。</li>
+</ol>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(page.page_content[<span class="dv">0</span>:<span class="dv">500</span>])</span></code></pre></div>
+<pre><code>第⼀回：Matplotlib 初相识
+⼀、认识matplotlib
+Matplotlib 是⼀个 Python 2D 绘图库，能够以多种硬拷⻉格式和跨平台的交互式环境⽣成出版物质量的图形，⽤来绘制各种静态，动态，
+交互式的图表。
+Matplotlib 可⽤于 Python 脚本， Python 和 IPython Shell 、 Jupyter notebook ， Web 应⽤程序服务器和各种图形⽤户界⾯⼯具包等。
+Matplotlib 是 Python 数据可视化库中的泰⽃，它已经成为 python 中公认的数据可视化⼯具，我们所熟知的 pandas 和 seaborn 的绘图接⼝
+其实也是基于 matplotlib 所作的⾼级封装。
+为了对matplotlib 有更好的理解，让我们从⼀些最基本的概念开始认识它，再逐渐过渡到⼀些⾼级技巧中。
+⼆、⼀个最简单的绘图例⼦
+Matplotlib 的图像是画在 figure （如 windows ， jupyter 窗体）上的，每⼀个 figure ⼜包含了⼀个或多个 axes （⼀个可以指定坐标系的⼦区
+域）。最简单的创建 figure </code></pre>
+<ol start="2" type="1">
+<li><code>meta_data</code>：文書ページに関連する記述的データです。</li>
+</ol>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(page.metadata)</span></code></pre></div>
+<pre><code>{&#39;source&#39;: &#39;docs/matplotlib/第一回：Matplotlib初相识.pdf&#39;, &#39;page&#39;: 0}</code></pre>
+<h2 id="二youtube音声">二、YouTube音声</h2>
+<p>第一部分ではPDF文書の読み込み方法を探索しました。この部分では、指定されたYouTube動画のリンクに対して詳しく説明します：
+-
+<code>langchain</code>読み込みツールを使用し、指定されたYouTube動画リンクの対応する音声をローカルにダウンロード
+-
+<code>OpenAIWhisperPaser</code>ツールを使用して、これらの音声ファイルを読みやすいテキスト内容に変換</p>
+<p>注意，要运行以下代码，你需要安装如下两个第三方库：</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip <span class="op">-</span>q install yt_dlp</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip <span class="op">-</span>q install pydub</span></code></pre></div>
+<h3 id="youtube音声文書の読み込み">2.1 YouTube音声文書の読み込み</h3>
+<p>最初に、<code>GenericLoader</code>インスタンスを構築してYouTube動画をローカルにダウンロードし、読み込みます。</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders.generic <span class="im">import</span> GenericLoader</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders.parsers <span class="im">import</span> OpenAIWhisperParser</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders.blob_loaders.youtube_audio <span class="im">import</span> YoutubeAudioLoader</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>url<span class="op">=</span><span class="st">&quot;https://www.youtube.com/watch?v=_PHdzsQaDgw&quot;</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>save_dir<span class="op">=</span><span class="st">&quot;docs/youtube-zh/&quot;</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 创建一个 GenericLoader Class 实例</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> GenericLoader(</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">#将链接url中的Youtube视频的音频下载下来,存在本地路径save_dir</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    YoutubeAudioLoader([url],save_dir), </span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">#使用OpenAIWhisperPaser解析器将音频转化为文本</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    OpenAIWhisperParser()</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="co"># 调用 GenericLoader Class 的函数 load对视频的音频文件进行加载</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> loader.load()</span></code></pre></div>
+<pre><code>[youtube] Extracting URL: https://www.youtube.com/watch?v=_PHdzsQaDgw
+[youtube] _PHdzsQaDgw: Downloading webpage
+[youtube] _PHdzsQaDgw: Downloading ios player API JSON
+[youtube] _PHdzsQaDgw: Downloading android player API JSON
+[youtube] _PHdzsQaDgw: Downloading m3u8 information
+
+
+WARNING: [youtube] Failed to download m3u8 information: HTTP Error 429: Too Many Requests
+
+
+[info] _PHdzsQaDgw: Downloading 1 format(s): 140
+[download] docs/youtube-zh//【2023年7月最新】ChatGPT注册教程，国内详细注册流程，支持中文使用，chatgpt 中国怎么用？.m4a has already been downloaded
+[download] 100% of    7.72MiB
+[ExtractAudio] Not converting audio docs/youtube-zh//【2023年7月最新】ChatGPT注册教程，国内详细注册流程，支持中文使用，chatgpt 中国怎么用？.m4a; file is already in target format m4a
+Transcribing part 1!</code></pre>
+<h3 id="読み込まれたデータの探索-1">2.2 読み込まれたデータの探索</h3>
+<p>YouTube音声ファイルを読み込んで得られた変数は上記と同様で、ここでは一つずつ説明しません。同様のコードで読み込みデータを表示できます：</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of pages: &quot;</span>, <span class="bu">type</span>(pages))</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Length of pages: &quot;</span>, <span class="bu">len</span>(pages))</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>page <span class="op">=</span> pages[<span class="dv">0</span>]</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of page: &quot;</span>, <span class="bu">type</span>(page))</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Page_content: &quot;</span>, page.page_content[:<span class="dv">500</span>])</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Meta Data: &quot;</span>, page.metadata)</span></code></pre></div>
+<pre><code>Type of pages:  &lt;class &#39;list&#39;&gt;
+Length of pages:  1
+Type of page:  &lt;class &#39;langchain.schema.document.Document&#39;&gt;
+Page_content:  大家好,欢迎来到我的频道 今天我们来介绍如何注册ChetGBT账号 之前我有介绍过一期如何注册ChetGBT账号 但是还是会有一些朋友在注册过程当中 遇到了一些问题 今天我们再来详细介绍最新的注册方法 我们先打开这个网站 这个网站的网址我会放到视频下方的评论区 大家可以直接点击打开 这个网站是需要翻墙才能打开 建议使用全局模式翻墙打开 可以选择台湾,新加坡,日本,美国节点 不要选择香港节点 我这里使用的是台湾节点 这个翻墙软件如果大家需要的话 我也会共享在视频的下方 另外浏览器需要开启无痕模式打开 这个就是打开新的无痕模式窗口 我们可以按快捷键,Ctrl键加Shift键加N 可以打开新的无痕模式窗口 然后用无痕模式窗口来打开这个网站 然后点击这里 然后会出现这个登录注册界面 如果没有显示这个界面 显示的是拒绝访问 那么就表示你使用的节点可能有问题 我们需要切换其他的节点 我们可以这样切换其他的节点 能够正常打开这个页面 表示节点是没问题的 我们可以点击注册 这里需要填一个邮箱 然后点击继续 然后需要输入密码 再点击继续 然后会出现这个提示 我们需要去收一封邮件 刷新一下 邮件已经收到了
+Meta Data:  {&#39;source&#39;: &#39;docs/youtube-zh/【2023年7月最新】ChatGPT注册教程，国内详细注册流程，支持中文使用，chatgpt 中国怎么用？.m4a&#39;, &#39;chunk&#39;: 0}</code></pre>
+<h2 id="三ウェブページ文書">三、ウェブページ文書</h2>
+<p>第二部分では、指定されたYouTube動画リンク（URL）に対して、LangChainローダーを使用して動画の音声をローカルにダウンロードし、その後OpenAIWhisperPaserパーサーを使用して音声をテキストに変換しました。</p>
+<p>この部分では、ウェブページリンク（URLs）の処理方法を研究します。そのため、GitHub上のmarkdown形式の文書を例として、その読み込み方法を学習します。</p>
+<h3 id="ウェブページ文書の読み込み">3.1 ウェブページ文書の読み込み</h3>
+<p>最初に、<code>WebBaseLoader</code>インスタンスを構築してウェブページを読み込みます。</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> WebBaseLoader</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 创建一个 WebBaseLoader Class 实例</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">&quot;https://github.com/datawhalechina/d2l-ai-solutions-manual/blob/master/docs/README.md&quot;</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>header <span class="op">=</span> {<span class="st">&#39;User-Agent&#39;</span>: <span class="st">&#39;python-requests/2.27.1&#39;</span>, </span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>          <span class="st">&#39;Accept-Encoding&#39;</span>: <span class="st">&#39;gzip, deflate, br&#39;</span>, </span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>          <span class="st">&#39;Accept&#39;</span>: <span class="st">&#39;*/*&#39;</span>,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>          <span class="st">&#39;Connection&#39;</span>: <span class="st">&#39;keep-alive&#39;</span>}</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> WebBaseLoader(web_path<span class="op">=</span>url,header_template<span class="op">=</span>header)</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 调用 WebBaseLoader Class 的函数 load对文件进行加载</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> loader.load()</span></code></pre></div>
+<h3 id="読み込まれたデータの探索-2">3.2 読み込まれたデータの探索</h3>
+<p>同様に、上記のコードで読み込みデータを表示できます：</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of pages: &quot;</span>, <span class="bu">type</span>(pages))</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Length of pages: &quot;</span>, <span class="bu">len</span>(pages))</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>page <span class="op">=</span> pages[<span class="dv">0</span>]</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of page: &quot;</span>, <span class="bu">type</span>(page))</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Page_content: &quot;</span>, page.page_content[:<span class="dv">500</span>])</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Meta Data: &quot;</span>, page.metadata)</span></code></pre></div>
+<pre><code>Type of pages:  &lt;class &#39;list&#39;&gt;
+Length of pages:  1
+Type of page:  &lt;class &#39;langchain.schema.document.Document&#39;&gt;
+Page_content:  {&quot;payload&quot;:{&quot;allShortcutsEnabled&quot;:false,&quot;fileTree&quot;:{&quot;docs&quot;:{&quot;items&quot;:[{&quot;name&quot;:&quot;ch02&quot;,&quot;path&quot;:&quot;docs/ch02&quot;,&quot;contentType&quot;:&quot;directory&quot;},{&quot;name&quot;:&quot;ch03&quot;,&quot;path&quot;:&quot;docs/ch03&quot;,&quot;contentType&quot;:&quot;directory&quot;},{&quot;name&quot;:&quot;ch05&quot;,&quot;path&quot;:&quot;docs/ch05&quot;,&quot;contentType&quot;:&quot;directory&quot;},{&quot;name&quot;:&quot;ch06&quot;,&quot;path&quot;:&quot;docs/ch06&quot;,&quot;contentType&quot;:&quot;directory&quot;},{&quot;name&quot;:&quot;ch08&quot;,&quot;path&quot;:&quot;docs/ch08&quot;,&quot;contentType&quot;:&quot;directory&quot;},{&quot;name&quot;:&quot;ch09&quot;,&quot;path&quot;:&quot;docs/ch09&quot;,&quot;contentType&quot;:&quot;directory&quot;},{&quot;name&quot;:&quot;ch10&quot;,&quot;path&quot;:&quot;docs/ch10&quot;,&quot;contentType&quot;:&quot;directory&quot;},{&quot;na
+Meta Data:  {&#39;source&#39;: &#39;https://github.com/datawhalechina/d2l-ai-solutions-manual/blob/master/docs/README.md&#39;}</code></pre>
+<p>上記の文書内容には多くの余分な情報が含まれていることが分かります。通常、このようなデータに対してさらなる後処理（Post
+Processing）を行う必要があります。</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>convert_to_json <span class="op">=</span> json.loads(page.page_content)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>extracted_markdown <span class="op">=</span> convert_to_json[<span class="st">&#39;payload&#39;</span>][<span class="st">&#39;blob&#39;</span>][<span class="st">&#39;richText&#39;</span>]</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(extracted_markdown)</span></code></pre></div>
+<pre><code>动手学深度学习习题解答 {docsify-ignore-all}
+  李沐老师的《动手学深度学习》是入门深度学习的经典书籍，这本书基于深度学习框架来介绍深度学习，书中代码可以做到“所学即所用”。对于一般的初学者来说想要把书中课后习题部分独立解答还是比较困难。本项目对《动手学深度学习》习题部分进行解答，作为该书的习题手册，帮助初学者快速理解书中内容。
+使用说明
+  动手学深度学习习题解答，主要完成了该书的所有习题，并提供代码和运行之后的截图，里面的内容是以深度学习的内容为前置知识，该习题解答的最佳使用方法是以李沐老师的《动手学深度学习》为主线，并尝试完成课后习题，如果遇到不会的，再来查阅习题解答。
+  如果觉得解答不详细，可以点击这里提交你希望补充推导或者习题编号，我们看到后会尽快进行补充。
+选用的《动手学深度学习》版本
+
+
+书名：动手学深度学习（PyTorch版）
+著者：阿斯顿·张、[美]扎卡里 C. 立顿、李沐、[德]亚历山大·J.斯莫拉
+译者：何孝霆、瑞潮儿·胡
+出版社：人民邮电出版社
+版次：2023年2月第1版
+
+项目结构
+codes----------------------------------------------习题代码
+docs-----------------------------------------------习题解答
+notebook-------------------------------------------习题解答JupyterNotebook格式
+requirements.txt-----------------------------------运行环境依赖包
+
+关注我们
+
+扫描下方二维码关注公众号：Datawhale
+
+
+  Datawhale，一个专注于AI领域的学习圈子。初衷是for the learner，和学习者一起成长。目前加入学习社群的人数已经数千人，组织了机器学习，深度学习，数据分析，数据挖掘，爬虫，编程，统计学，Mysql，数据竞赛等多个领域的内容学习，微信搜索公众号Datawhale可以加入我们。
+LICENSE
+本作品采用知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议进行许可。</code></pre>
+<h2 id="四notion文書">四、Notion文書</h2>
+<ul>
+<li><a
+href="https://yolospace.notion.site/Blendle-s-Employee-Handbook-e31bff7da17346ee99f531087d8b133f">Notionサンプル文書</a>(https://yolospace.notion.site/Blendle-s-Employee-Handbook-e31bff7da17346ee99f531087d8b133f)の右上のコピーボタン(Duplicate)をクリックし、文書をあなたのNotionスペースにコピー</li>
+<li>右上の<code>⋯</code>ボタンをクリックし、Markdown&amp;CSVとしてエクスポートを選択。エクスポートされたファイルはzipフォルダとなります</li>
+<li>解凍してmarkdown文書をローカルパス<code>docs/Notion_DB/</code>に保存</li>
+</ul>
+<h3 id="notion-markdown文書の読み込み">4.1 Notion
+Markdown文書の読み込み</h3>
+<p>最初に、<code>NotionDirectoryLoader</code>を使用してNotion
+Markdown文書を読み込みます。</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> NotionDirectoryLoader</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> NotionDirectoryLoader(<span class="st">&quot;docs/Notion_DB&quot;</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> loader.load()</span></code></pre></div>
+<h3 id="読み込まれたデータの探索-3">4.2 読み込まれたデータの探索</h3>
+<p>同様に、上記のコードを使用します：</p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of pages: &quot;</span>, <span class="bu">type</span>(pages))</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Length of pages: &quot;</span>, <span class="bu">len</span>(pages))</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>page <span class="op">=</span> pages[<span class="dv">0</span>]</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of page: &quot;</span>, <span class="bu">type</span>(page))</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Page_content: &quot;</span>, page.page_content[:<span class="dv">500</span>])</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Meta Data: &quot;</span>, page.metadata)</span></code></pre></div>
+<pre><code>Type of pages:  &lt;class &#39;list&#39;&gt;
+Length of pages:  51
+Type of page:  &lt;class &#39;langchain.schema.document.Document&#39;&gt;
+Page_content:  # #letstalkaboutstress
+
+Let’s talk about stress. Too much stress. 
+
+We know this can be a topic.
+
+So let’s get this conversation going. 
+
+[Intro: two things you should know](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/Intro%20two%20things%20you%20should%20know%20b5fd0c5393a9498b93396e79fe71e8bf.md)
+
+[What is stress](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/What%20is%20stress%20b198b685ed6a474ab14f6fafff7004b6.md)
+
+[When is there too much stress?](#letstalkaboutstress%2
+Meta Data:  {&#39;source&#39;: &#39;docs/Notion_DB/#letstalkaboutstress 64040a0733074994976118bbe0acc7fb.md&#39;}</code></pre>
+<h2 id="五英語版">五、英語版</h2>
+<p><strong>1.1 PDF文書の読み込み</strong></p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> PyPDFLoader</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 创建一个 PyPDFLoader Class 实例，输入为待加载的pdf文档路径</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> PyPDFLoader(<span class="st">&quot;docs/cs229_lectures/MachineLearning-Lecture01.pdf&quot;</span>)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 调用 PyPDFLoader Class 的函数 load对pdf文件进行加载</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> loader.load()</span></code></pre></div>
+<p><strong>1.2 読み込まれたデータの探索</strong></p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of pages: &quot;</span>, <span class="bu">type</span>(pages))</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Length of pages: &quot;</span>, <span class="bu">len</span>(pages))</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>page <span class="op">=</span> pages[<span class="dv">0</span>]</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of page: &quot;</span>, <span class="bu">type</span>(page))</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Page_content: &quot;</span>, page.page_content[:<span class="dv">500</span>])</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Meta Data: &quot;</span>, page.metadata)</span></code></pre></div>
+<pre><code>Type of pages:  &lt;class &#39;list&#39;&gt;
+Length of pages:  22
+Type of page:  &lt;class &#39;langchain.schema.document.Document&#39;&gt;
+Page_content:  MachineLearning-Lecture01  
+Instructor (Andrew Ng):  Okay. Good morning. Welcome to CS229, the machine 
+learning class. So what I wanna do today is ju st spend a little time going over the logistics 
+of the class, and then we&#39;ll start to  talk a bit about machine learning.  
+By way of introduction, my name&#39;s  Andrew Ng and I&#39;ll be instru ctor for this class. And so 
+I personally work in machine learning, and I&#39; ve worked on it for about 15 years now, and 
+I actually think that machine learning i
+Meta Data:  {&#39;source&#39;: &#39;docs/cs229_lectures/MachineLearning-Lecture01.pdf&#39;, &#39;page&#39;: 0}</code></pre>
+<p><strong>2.1 YouTube音声の読み込み</strong></p>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 注：由于该视频较长，容易出现网络问题，此处没有运行，读者可自行运行探索</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders.generic <span class="im">import</span> GenericLoader</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders.parsers <span class="im">import</span> OpenAIWhisperParser</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders.blob_loaders.youtube_audio <span class="im">import</span> YoutubeAudioLoader</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>url<span class="op">=</span><span class="st">&quot;https://www.youtube.com/watch?v=jGwO_UgTS7I&quot;</span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>save_dir<span class="op">=</span><span class="st">&quot;docs/youtube/&quot;</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 创建一个 GenericLoader Class 实例</span></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> GenericLoader(</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">#将链接url中的Youtube视频的音频下载下来,存在本地路径save_dir</span></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>    YoutubeAudioLoader([url],save_dir), </span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">#使用OpenAIWhisperPaser解析器将音频转化为文本</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>    OpenAIWhisperParser()</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a><span class="co"># 调用 GenericLoader Class 的函数 load对视频的音频文件进行加载</span></span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>docs <span class="op">=</span> loader.load()</span></code></pre></div>
+<p><strong>2.2 読み込まれたデータの探索</strong></p>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of pages: &quot;</span>, <span class="bu">type</span>(pages))</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Length of pages: &quot;</span>, <span class="bu">len</span>(pages))</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>page <span class="op">=</span> pages[<span class="dv">0</span>]</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of page: &quot;</span>, <span class="bu">type</span>(page))</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Page_content: &quot;</span>, page.page_content[:<span class="dv">500</span>])</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Meta Data: &quot;</span>, page.metadata)</span></code></pre></div>
+<p><strong>3.1 ウェブページ文書の読み込み</strong></p>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> WebBaseLoader</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 创建一个 WebBaseLoader Class 实例</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">&quot;https://github.com/basecamp/handbook/blob/master/37signals-is-you.md&quot;</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>header <span class="op">=</span> {<span class="st">&#39;User-Agent&#39;</span>: <span class="st">&#39;python-requests/2.27.1&#39;</span>, </span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>          <span class="st">&#39;Accept-Encoding&#39;</span>: <span class="st">&#39;gzip, deflate, br&#39;</span>, </span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>          <span class="st">&#39;Accept&#39;</span>: <span class="st">&#39;*/*&#39;</span>,</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>          <span class="st">&#39;Connection&#39;</span>: <span class="st">&#39;keep-alive&#39;</span>}</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> WebBaseLoader(web_path<span class="op">=</span>url,header_template<span class="op">=</span>header)</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 调用 WebBaseLoader Class 的函数 load对文件进行加载</span></span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> loader.load()</span></code></pre></div>
+<p><strong>3.2 読み込まれたデータの探索</strong></p>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of pages: &quot;</span>, <span class="bu">type</span>(pages))</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Length of pages: &quot;</span>, <span class="bu">len</span>(pages))</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>page <span class="op">=</span> pages[<span class="dv">0</span>]</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of page: &quot;</span>, <span class="bu">type</span>(page))</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Page_content: &quot;</span>, page.page_content[:<span class="dv">500</span>])</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Meta Data: &quot;</span>, page.metadata)</span></code></pre></div>
+<pre><code>Type of pages:  &lt;class &#39;list&#39;&gt;
+Length of pages:  1
+Type of page:  &lt;class &#39;langchain.schema.document.Document&#39;&gt;
+Page_content:  {&quot;payload&quot;:{&quot;allShortcutsEnabled&quot;:false,&quot;fileTree&quot;:{&quot;&quot;:{&quot;items&quot;:[{&quot;name&quot;:&quot;37signals-is-you.md&quot;,&quot;path&quot;:&quot;37signals-is-you.md&quot;,&quot;contentType&quot;:&quot;file&quot;},{&quot;name&quot;:&quot;LICENSE.md&quot;,&quot;path&quot;:&quot;LICENSE.md&quot;,&quot;contentType&quot;:&quot;file&quot;},{&quot;name&quot;:&quot;README.md&quot;,&quot;path&quot;:&quot;README.md&quot;,&quot;contentType&quot;:&quot;file&quot;},{&quot;name&quot;:&quot;benefits-and-perks.md&quot;,&quot;path&quot;:&quot;benefits-and-perks.md&quot;,&quot;contentType&quot;:&quot;file&quot;},{&quot;name&quot;:&quot;code-of-conduct.md&quot;,&quot;path&quot;:&quot;code-of-conduct.md&quot;,&quot;contentType&quot;:&quot;file&quot;},{&quot;name&quot;:&quot;faq.md&quot;,&quot;path&quot;:&quot;faq.md&quot;,&quot;contentType&quot;:&quot;file&quot;},{&quot;name&quot;:&quot;ge
+Meta Data:  {&#39;source&#39;: &#39;https://github.com/basecamp/handbook/blob/master/37signals-is-you.md&#39;}</code></pre>
+<p>さらなる処理を行う</p>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>convert_to_json <span class="op">=</span> json.loads(page.page_content)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>extracted_markdown <span class="op">=</span> convert_to_json[<span class="st">&#39;payload&#39;</span>][<span class="st">&#39;blob&#39;</span>][<span class="st">&#39;richText&#39;</span>]</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(extracted_markdown)</span></code></pre></div>
+<pre><code>37signals Is You
+Everyone working at 37signals represents 37signals. When a customer gets a response from Merissa on support, Merissa is 37signals. When a customer reads a tweet by Eron that our systems are down, Eron is 37signals. In those situations, all the other stuff we do to cultivate our best image is secondary. What’s right in front of someone in a time of need is what they’ll remember.
+That’s what we mean when we say marketing is everyone’s responsibility, and that it pays to spend the time to recognize that. This means avoiding the bullshit of outage language and bending our policies, not just lending your ears. It means taking the time to get the writing right and consider how you’d feel if you were on the other side of the interaction.
+The vast majority of our customers come from word of mouth and much of that word comes from people in our audience. This is an audience we’ve been educating and entertaining for 20 years and counting, and your voice is part of us now, whether you like it or not! Tell us and our audience what you have to say!
+This goes for tools and techniques as much as it goes for prose. 37signals not only tries to out-teach the competition, but also out-share and out-collaborate. We’re prolific open source contributors through Ruby on Rails, Trix, Turbolinks, Stimulus, and many other projects. Extracting the common infrastructure that others could use as well is satisfying, important work, and we should continue to do that.
+It’s also worth mentioning that joining 37signals can be all-consuming. We’ve seen it happen. You dig 37signals, so you feel pressure to contribute, maybe overwhelmingly so. The people who work here are some of the best and brightest in our industry, so the self-imposed burden to be exceptional is real. But here’s the thing: stop it. Settle in. We’re glad you love this job because we all do too, but at the end of the day it’s a job. Do your best work, collaborate with your team, write, read, learn, and then turn off your computer and play with your dog. We’ll all be better for it.</code></pre>
+<p><strong>4.1 Notion文書の読み込み</strong></p>
+<div class="sourceCode" id="cb36"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> langchain.document_loaders <span class="im">import</span> NotionDirectoryLoader</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>loader <span class="op">=</span> NotionDirectoryLoader(<span class="st">&quot;docs/Notion_DB&quot;</span>)</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> loader.load()</span></code></pre></div>
+<p><strong>4.2 読み込まれたデータの探索</strong></p>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of pages: &quot;</span>, <span class="bu">type</span>(pages))</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Length of pages: &quot;</span>, <span class="bu">len</span>(pages))</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>page <span class="op">=</span> pages[<span class="dv">0</span>]</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Type of page: &quot;</span>, <span class="bu">type</span>(page))</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Page_content: &quot;</span>, page.page_content[:<span class="dv">500</span>])</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Meta Data: &quot;</span>, page.metadata)</span></code></pre></div>
+<pre><code>Type of pages:  &lt;class &#39;list&#39;&gt;
+Length of pages:  51
+Type of page:  &lt;class &#39;langchain.schema.document.Document&#39;&gt;
+Page_content:  # #letstalkaboutstress
+
+Let’s talk about stress. Too much stress. 
+
+We know this can be a topic.
+
+So let’s get this conversation going. 
+
+[Intro: two things you should know](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/Intro%20two%20things%20you%20should%20know%20b5fd0c5393a9498b93396e79fe71e8bf.md)
+
+[What is stress](#letstalkaboutstress%2064040a0733074994976118bbe0acc7fb/What%20is%20stress%20b198b685ed6a474ab14f6fafff7004b6.md)
+
+[When is there too much stress?](#letstalkaboutstress%2
+Meta Data:  {&#39;source&#39;: &#39;docs/Notion_DB/#letstalkaboutstress 64040a0733074994976118bbe0acc7fb.md&#39;}</code></pre>
+</body>
+</html>

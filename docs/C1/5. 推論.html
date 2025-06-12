@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>5. 推論</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown-min.css" />
+</head>
+<body>
+<h1 id="第5章-推論">第5章 推論</h1>
+<p>この章では、ストーリーを通じて、製品評価やニュース記事から感情やトピックを推論する方法について説明します。</p>
+<p>まず想像してみてください。あなたはスタートアップのデータアナリストで、様々な製品レビューやニュース記事から重要な感情やトピックを抽出する任務があります。これらのタスクには、ラベル抽出、エンティティ抽出、テキストの感情理解などが含まれます。従来の機械学習フローでは、ラベル付きデータセットを収集し、モデルを訓練し、クラウドでモデルをデプロイして推論を実行する方法を決める必要があります。この方式は良い効果を生むかもしれませんが、全プロセスを完了するには大量の時間と労力が必要です。さらに、感情分析、エンティティ抽出などの各タスクごとに、個別のモデルを訓練・デプロイする必要があります。</p>
+<p>しかし、重労働に投入する準備をしていた時、あなたは大規模言語モデル（LLM）を発見しました。LLMの明らかな利点は、このような多くのタスクに対して、Promptを書くだけで結果の生成を開始でき、作業負担を大幅に軽減することです。この発見は魔法の鍵を見つけたようで、アプリケーション開発の速度を大幅に向上させました。最も興奮することは、一つのモデルと一つのAPIを使用するだけで多くの異なるタスクを実行でき、多くの異なるモデルを訓練・デプロイする方法に悩む必要がないことです。</p>
+<p>この章の学習を始めて、LLMを利用して作業プロセスを加速し、作業効率を向上させる方法を一緒に探求しましょう。</p>
+<h2 id="一感情推論">一、感情推論</h2>
+<h3 id="感情傾向分析">1.1 感情傾向分析</h3>
+<p>ECプラットフォームの台灯レビューを例に、このレビューの感情二分類（ポジティブ/ネガティブ）を行う方法を学習します。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>lamp_review <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">私は美しい寝室用ライトが必要で、このライトには追加の収納機能があり、価格もそれほど高くありませんでした。</span><span class="ch">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st">すぐに受け取りました。配送過程で、私たちのライトのコードが断線しましたが、会社は喜んで新しいものを送ってくれました。</span><span class="ch">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">数日後に受け取りました。このライトは組み立てが簡単です。部品が一つ足りないことがわかったので、彼らのカスタマーサービスに連絡したところ、すぐに不足部品を送ってくれました！</span><span class="ch">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">私から見ると、Luminaは顧客と製品を非常に大切にする優秀な会社です！</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span></span></code></pre></div>
+<p>次に、この商品レビューの感情を分類するPromptを書いてみます。システムにこのレビューの感情傾向を解析させたい場合、「以下の商品レビューの感情傾向は何ですか？」のようなPromptを書き、標準的な区切り文字とレビューテキストなどを加えるだけです。</p>
+<p>そして、このプログラムを一度実行してみます。結果は、この商品レビューの感情傾向はポジティブだと示しており、これは非常に正確なようです。この台灯は完璧ではありませんが、この顧客はかなり満足しているようです。この会社は顧客体験と製品品質を非常に重視しているようで、レビューの感情傾向をポジティブと判定するのは正しい判断のようです。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tool <span class="im">import</span> get_completion</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ss">三つのバッククォートで区切られた以下の製品レビューの感情は何ですか？</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューテキスト: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>感情はポジティブです。</code></pre>
+<p>より簡潔な答えを得て、後処理しやすくしたい場合は、上記のPromptに別の指示を追加できます：<em>一つの単語で答えてください：「ポジティブ」または「ネガティブ」</em>。これにより「ポジティブ」という単語のみが印刷され、出力がより統一され、後続処理に便利になります。</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ss">三つのバッククォートで区切られた以下の製品レビューの感情は何ですか？</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ss">一つの単語で答えてください：「ポジティブ」または「ネガティブ」。</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューテキスト: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>ポジティブ</code></pre>
+<h3 id="感情タイプの識別">1.2 感情タイプの識別</h3>
+<p>続いて、前の台灯レビューを使用しますが、今回は新しいPromptを試してみます。モデルにレビュー作者が表現した感情を識別させ、これらの感情を5項目以下のリストにまとめてもらいます。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ss">以下のレビューの作者が表現した感情を識別してください。5項目以下で答えをカンマ区切りの単語リストとして整形してください。</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューテキスト: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>満足,感謝,賞賛,信頼,満足</code></pre>
+<p>大規模言語モデルは、テキストから特定のものを抽出することに非常に長けています。上記の例では、レビューが表現した感情が顧客が特定の製品をどう見ているかを理解するのに役立ちます。</p>
+<h3 id="怒りの識別">1.3 怒りの識別</h3>
+<p>多くの企業にとって、顧客の怒りの感情を洞察することは極めて重要です。これは分類問題を提起します：以下のレビューの作者が怒りを表現しているでしょうか？もし誰かが本当に感情的になっている場合、追加の注意が必要かもしれません。なぜなら、怒っている顧客は皆、サービスを改善し、会社の評判を向上させる機会だからです。この時、カスタマーサポートやカスタマーサービスチームが介入し、顧客と接触して具体的状況を理解し、問題を解決すべきです。</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="ss">以下のレビューの作者が怒りを表現していますか？レビューは三つのバッククォートで区切られています。はいまたはいいえで答えてください。</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューテキスト: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>いいえ</code></pre>
+<p>上記の例では、顧客は怒っていません。注意すべきは、通常の監督学習を使用する場合、すべてのこれらの分類器を構築するのに数分で済むはずがないということです。これらのようなPromptを変更してみることをお勧めします。おそらく顧客が喜びを表現しているか、または何か欠けている部分があるかを尋ね、このライトレビューに対してPromptが異なる推論を行えるかどうかを確認してください。</p>
+<h2 id="二情報抽出">二、情報抽出</h2>
+<h3 id="商品情報抽出">2.1 商品情報抽出</h3>
+<p>情報抽出は自然言語処理（NLP）の重要な構成部分で、テキストから特定の、私たちが関心を持つ情報を抽出するのに役立ちます。顧客レビューの豊富な情報を深く掘り下げます。次の例では、モデルに2つの重要な要素を識別するよう要求します：購入した商品と商品の製造者。</p>
+<p>オンラインECウェブサイトの多くのレビューを分析しようとしていると想像してください。レビューで言及されている商品が何か、誰が製造したか、および関連するポジティブまたはネガティブな感情を理解することで、特定の商品や製造者のユーザー心理の感情傾向を追跡するのに大いに役立ちます。</p>
+<p>次の例では、モデルに回答をJSONオブジェクトの形式で提示するよう要求し、そのkeyは商品とブランドです。</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューテキストから以下の項目を識別してください：</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- レビュー者が購入した商品</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- その商品を製造した会社</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューテキストは三つのバッククォートで区切られています。回答を「商品」と「ブランド」をキーとするJSONオブジェクトとして整形してください。</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="ss">情報が存在しない場合は、値として「不明」を使用してください。</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="ss">回答はできるだけ簡潔にしてください。</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューテキスト: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>{
+  &quot;商品&quot;: &quot;寝室用ライト&quot;,
+  &quot;ブランド&quot;: &quot;Lumina&quot;
+}</code></pre>
+<p>上記のように、商品は寝室用ライト、ブランドはLuminaと表示され、これを簡単にPython辞書に読み込んで、この出力に対して他の処理を行うことができます。</p>
+<h3 id="感情推論と情報抽出の統合">2.2 感情推論と情報抽出の統合</h3>
+<p>上記の小節では、「感情傾向」、「怒っているかどうか」、「商品タイプ」、「ブランド」などの情報を抽出するために3〜4つのPromptを使用しました。しかし、実際には、これらすべての情報を同時に抽出する単一のPromptを設計することができます。</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューテキストから以下の項目を識別してください：</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- 感情（ポジティブまたはネガティブ）</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- レビュー者が怒りを表現しているか？（はいまたはいいえ）</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="ss">- レビュー者が購入した商品</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="ss">- その商品を製造した会社</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューは三つのバッククォートで区切られています。回答を「感情傾向」、「怒っているか」、「商品タイプ」、「ブランド」をキーとするJSONオブジェクトとして整形してください。</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="ss">情報が存在しない場合は、値として「不明」を使用してください。</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="ss">回答はできるだけ簡潔にしてください。</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="ss">「怒っているか」の値をブール値として整形してください。</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="ss">レビューテキスト: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>{
+  &quot;感情傾向&quot;: &quot;ポジティブ&quot;,
+  &quot;怒っているか&quot;: false,
+  &quot;商品タイプ&quot;: &quot;寝室用ライト&quot;,
+  &quot;ブランド&quot;: &quot;Lumina&quot;
+}</code></pre>
+<p>この例では、LLMに「怒っているか」の状況をブール値として整形するよう指示し、JSON形式で出力しました。フォーマットモードに対して様々な変化を試したり、まったく異なるレビューを使用して、LLMがこれらの内容を正確に抽出できるかどうかを実験することができます。</p>
+<h2 id="三トピック推論">三、トピック推論</h2>
+<p>大規模言語モデルのもう一つのクールな応用はトピック推論です。長いテキストがある場合、このテキストの要旨は何か？どのようなトピックが含まれているかをどう判断するでしょうか？以下の架空の新聞記事を通じて具体的に理解してみましょう。</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>story <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="st">政府が最近実施した調査で、公共部門の従業員に所属部門への満足度を評価するよう求めました。</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="st">調査結果により、NASAが満足度95％で最も人気のある部門であることが明らかになりました。</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="st">NASA職員のJohn Smithはこの発見についてコメントし、次のように述べました：</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="st">「NASAが1位になったことに驚きはありません。ここは素晴らしい人々と信じられない機会と一緒に働ける素晴らしい場所です。私はこのような革新的な組織の一員であることを誇りに思います。」</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="st">NASAの管理チームもこの結果を歓迎し、管理者のTom Johnsonは次のように述べました：</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="st">「我々の従業員がNASAでの仕事に満足していることを聞いて非常に嬉しく思います。</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="st">我々には才能豊かで忠実な献身的なチームがあり、彼らは目標達成のために絶え間なく努力しており、彼らの努力が報われているのを見るのは素晴らしいことです。」</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="st">調査ではまた、社会保障庁の満足度が最も低く、従業員の45％のみが仕事に満足していると表明したことも明らかになりました。</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="st">政府は調査で従業員が提起した問題に対処し、すべての部門の仕事満足度を向上させるよう努力することを約束しました。</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span></span></code></pre></div>
+<h3 id="議論トピックの推論">3.1 議論トピックの推論</h3>
+<p>以上は政府職員が所属する職場に対する感想についての架空の新聞記事です。大規模言語モデルにその中で議論されている5つのトピックを確定させ、各トピックを1〜2語で概括してもらうことができます。出力結果はカンマ区切りのPythonリスト形式で提示されます。</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="ss">以下の与えられたテキストで議論されている5つのトピックを確定してください。</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="ss">各トピックを1〜2語で概括してください。</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="ss">解析可能なPythonリストとして出力し、各要素は一つのトピックを示す文字列にしてください。</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="ss">与えられたテキスト: ```</span><span class="sc">{</span>story<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>[&#39;NASA&#39;, &#39;満足度&#39;, &#39;コメント&#39;, &#39;管理チーム&#39;, &#39;社会保障庁&#39;]</code></pre>
+<h3 id="特定トピックのニュースアラート作成">3.2
+特定トピックのニュースアラート作成</h3>
+<p>ニュースウェブサイトや類似のプラットフォームがあり、これらが私たちの関心のあるトピックだと仮定しましょう：アメリカ航空宇宙局、地方政府、エンジニアリング、従業員満足度、連邦政府など。ニュース記事を分析し、どのトピックが含まれているかを理解したいと思います。このようなPromptを使用できます：以下のトピックリストの各項目が以下のテキストのトピックであるかどうかを確定し、0または1の形式で答えのリストを提供してください。</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 日本語</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="ss">トピックリストの各項目が与えられたテキストのトピックであるかどうかを判断し、</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="ss">リスト形式で答えを提供し、各要素は対応するトピックをキー、対応する0または1を値とするJsonオブジェクトにしてください。</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="ss">トピックリスト：アメリカ航空宇宙局、地方政府、エンジニアリング、従業員満足度、連邦政府</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="ss">与えられたテキスト: ```</span><span class="sc">{</span>story<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>[
+  {&quot;アメリカ航空宇宙局&quot;: 1},
+  {&quot;地方政府&quot;: 1},
+  {&quot;エンジニアリング&quot;: 0},
+  {&quot;従業員満足度&quot;: 1},
+  {&quot;連邦政府&quot;: 1}
+]</code></pre>
+<p>出力結果から、この<code>story</code>は「アメリカ航空宇宙局」、「従業員満足度」、「連邦政府」、「地方政府」に関連しており、「エンジニアリング」とは関係がないことがわかります。この能力は機械学習分野でゼロショット（Zero-Shot）学習と呼ばれています。これは、ラベル付きの訓練データを提供していないにもかかわらず、Promptだけでどのトピックがニュース記事に含まれているかを判定できるからです。</p>
+<p>ニュースアラートを制定したい場合も、同様にニュースを処理するフローを運用できます。「アメリカ航空宇宙局」の仕事に深く関心があると仮定すれば、このようなシステムを構築できます：’アメリカ宇宙局’に関連するニュースが出現するたびに、システムがアラートを出力します。</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>result_lst <span class="op">=</span> <span class="bu">eval</span>(response)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>topic_dict <span class="op">=</span> {<span class="bu">list</span>(i.keys())[<span class="dv">0</span>] : <span class="bu">list</span>(i.values())[<span class="dv">0</span>] <span class="cf">for</span> i <span class="kw">in</span> result_lst}</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(topic_dict)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> topic_dict[<span class="st">&#39;アメリカ航空宇宙局&#39;</span>] <span class="op">==</span> <span class="dv">1</span>:</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;アラート: アメリカ航空宇宙局に関する新しいニュース&quot;</span>)</span></code></pre></div>
+<pre><code>{&#39;アメリカ航空宇宙局&#39;: 1, &#39;地方政府&#39;: 1, &#39;エンジニアリング&#39;: 0, &#39;従業員満足度&#39;: 1, &#39;連邦政府&#39;: 1}
+アラート: アメリカ航空宇宙局に関する新しいニュース</code></pre>
+<p>これが推論に関する包括的な紹介です。短時間で、テキスト推論のための複数のシステムを構築することができました。これは以前、機械学習専門家が数日から数週間かけて完成させていたタスクです。この変化は間違いなく興奮を呼び起こします。経験豊富な機械学習開発者であっても、入門したばかりの新人であっても、Promptを入力することで複雑な自然言語処理タスクを迅速に開始できるからです。</p>
+<h2 id="英語版">英語版</h2>
+<p><strong>1.1 感情傾向分析</strong></p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>lamp_review <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="st">Needed a nice lamp for my bedroom, and this one had </span><span class="ch">\</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="st">additional storage and not too high of a price point. </span><span class="ch">\</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="st">Got it fast.  The string to our lamp broke during the </span><span class="ch">\</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="st">transit and the company happily sent over a new one. </span><span class="ch">\</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="st">Came within a few days as well. It was easy to put </span><span class="ch">\</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="st">together.  I had a missing part, so I contacted their </span><span class="ch">\</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="st">support and they very quickly got me the missing piece! </span><span class="ch">\</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="st">Lumina seems to me to be a great company that cares </span><span class="ch">\</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="st">about their customers and products!!</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ss">What is the sentiment of the following product review, </span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="ss">which is delimited with triple backticks?</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="ss">Review text: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>The sentiment of the product review is positive.</code></pre>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="ss">What is the sentiment of the following product review, </span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="ss">which is delimited with triple backticks?</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="ss">Give your answer as a single word, either &quot;positive&quot; </span><span class="ch">\</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="ss">or &quot;negative&quot;.</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="ss">Review text: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>positive</code></pre>
+<p><strong>1.2感情タイプの識別</strong></p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Identify a list of emotions that the writer of the </span><span class="ch">\</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="ss">following review is expressing. Include no more than </span><span class="ch">\</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="ss">five items in the list. Format your answer as a list of </span><span class="ch">\</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="ss">lower-case words separated by commas.</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="ss">Review text: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>satisfied, pleased, grateful, impressed, happy</code></pre>
+<p><strong>1.3 怒りの識別</strong></p>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Is the writer of the following review expressing anger?</span><span class="ch">\</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="ss">The review is delimited with triple backticks. </span><span class="ch">\</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="ss">Give your answer as either yes or no.</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="ss">Review text: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>No</code></pre>
+<p><strong>2.1 商品情報抽出</strong></p>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Identify the following items from the review text: </span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- Item purchased by reviewer</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- Company that made the item</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="ss">The review is delimited with triple backticks. </span><span class="ch">\</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="ss">Format your response as a JSON object with </span><span class="ch">\</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;Item&quot; and &quot;Brand&quot; as the keys. </span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="ss">If the information isn&#39;t present, use &quot;unknown&quot; </span><span class="ch">\</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="ss">as the value.</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a><span class="ss">Make your response as short as possible.</span></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="ss">  </span></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a><span class="ss">Review text: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>{
+  &quot;Item&quot;: &quot;lamp&quot;,
+  &quot;Brand&quot;: &quot;Lumina&quot;
+}</code></pre>
+<p><strong>2.2 感情推論と情報抽出の統合</strong></p>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Identify the following items from the review text: </span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- Sentiment (positive or negative)</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- Is the reviewer expressing anger? (true or false)</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- Item purchased by reviewer</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="ss">- Company that made the item</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="ss">The review is delimited with triple backticks. </span><span class="ch">\</span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a><span class="ss">Format your response as a JSON object with </span><span class="ch">\</span></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;Sentiment&quot;, &quot;Anger&quot;, &quot;Item&quot; and &quot;Brand&quot; as the keys.</span></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a><span class="ss">If the information isn&#39;t present, use &quot;unknown&quot; </span><span class="ch">\</span></span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a><span class="ss">as the value.</span></span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a><span class="ss">Make your response as short as possible.</span></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a><span class="ss">Format the Anger value as a boolean.</span></span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a><span class="ss">Review text: ```</span><span class="sc">{</span>lamp_review<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>{
+  &quot;Sentiment&quot;: &quot;positive&quot;,
+  &quot;Anger&quot;: false,
+  &quot;Item&quot;: &quot;lamp&quot;,
+  &quot;Brand&quot;: &quot;Lumina&quot;
+}</code></pre>
+<p><strong>3.1 議論トピックの推論</strong></p>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>story <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="st">In a recent survey conducted by the government, </span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="st">public sector employees were asked to rate their level </span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="st">of satisfaction with the department they work at. </span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="st">The results revealed that NASA was the most popular </span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="st">department with a satisfaction rating of 95%.</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a><span class="st">One NASA employee, John Smith, commented on the findings, </span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a><span class="st">stating, &quot;I&#39;m not surprised that NASA came out on top. </span></span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a><span class="st">It&#39;s a great place to work with amazing people and </span></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a><span class="st">incredible opportunities. I&#39;m proud to be a part of </span></span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a><span class="st">such an innovative organization.&quot;</span></span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a><span class="st">The results were also welcomed by NASA&#39;s management team, </span></span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a><span class="st">with Director Tom Johnson stating, &quot;We are thrilled to </span></span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a><span class="st">hear that our employees are satisfied with their work at NASA. </span></span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a><span class="st">We have a talented and dedicated team who work tirelessly </span></span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a><span class="st">to achieve our goals, and it&#39;s fantastic to see that their </span></span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a><span class="st">hard work is paying off.&quot;</span></span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a><span class="st">The survey also revealed that the </span></span>
+<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a><span class="st">Social Security Administration had the lowest satisfaction </span></span>
+<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a><span class="st">rating, with only 45</span><span class="sc">% o</span><span class="st">f employees indicating they were </span></span>
+<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a><span class="st">satisfied with their job. The government has pledged to </span></span>
+<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a><span class="st">address the concerns raised by employees in the survey and </span></span>
+<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a><span class="st">work towards improving job satisfaction across all departments.</span></span>
+<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Determine five topics that are being discussed in the </span><span class="ch">\</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="ss">following text, which is delimited by triple backticks.</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="ss">Make each item one or two words long. </span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="ss">Format your response as a list of items separated by commas.</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a><span class="ss">Give me a list which can be read in Python.</span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a><span class="ss">Text sample: ```</span><span class="sc">{</span>story<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>survey, satisfaction rating, NASA, Social Security Administration, job satisfaction</code></pre>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>response.split(sep<span class="op">=</span><span class="st">&#39;,&#39;</span>)</span></code></pre></div>
+<pre><code>[&#39;survey&#39;,
+ &#39; satisfaction rating&#39;,
+ &#39; NASA&#39;,
+ &#39; Social Security Administration&#39;,
+ &#39; job satisfaction&#39;]</code></pre>
+<p><strong>3.2 特定トピックのニュースアラート作成</strong></p>
+<div class="sourceCode" id="cb39"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>topic_list <span class="op">=</span> [</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;nasa&quot;</span>, <span class="st">&quot;local government&quot;</span>, <span class="st">&quot;engineering&quot;</span>, </span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;employee satisfaction&quot;</span>, <span class="st">&quot;federal government&quot;</span></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>]</span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="ss">f&quot;&quot;&quot;</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="ss">Determine whether each item in the following list of </span><span class="ch">\</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="ss">topics is a topic in the text below, which</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a><span class="ss">is delimited with triple backticks.</span></span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a><span class="ss">Give your answer as list with 0 or 1 for each topic.</span><span class="ch">\</span></span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a><span class="ss">List of topics: </span><span class="sc">{</span><span class="st">&quot;, &quot;</span><span class="sc">.</span>join(topic_list)<span class="sc">}</span></span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a><span class="ss">Text sample: ```</span><span class="sc">{</span>story<span class="sc">}</span><span class="ss">```</span></span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a><span class="ss">&quot;&quot;&quot;</span></span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> get_completion(prompt)</span>
+<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response)</span></code></pre></div>
+<pre><code>[1, 0, 0, 1, 1]</code></pre>
+<div class="sourceCode" id="cb42"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>topic_dict <span class="op">=</span> {topic_list[i] : <span class="bu">eval</span>(response)[i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(<span class="bu">eval</span>(response)))}</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(topic_dict)</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> topic_dict[<span class="st">&#39;nasa&#39;</span>] <span class="op">==</span> <span class="dv">1</span>:</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;ALERT: New NASA story!&quot;</span>)</span></code></pre></div>
+<pre><code>{&#39;nasa&#39;: 1, &#39;local government&#39;: 0, &#39;engineering&#39;: 0, &#39;employee satisfaction&#39;: 1, &#39;federal government&#39;: 1}
+ALERT: New NASA story!</code></pre>
+</body>
+</html>
